@@ -380,17 +380,18 @@
 
         /* --- PERBAIKAN NAVIGATION & LANDSCAPE --- */
         window.onpopstate = function(event) {
-            // Jika landscape aktif, tutup landscape saja
+            // Urutan pengecekan sangat penting agar tidak menutup semua sekaligus
             if (document.getElementById('landscapeOverlay').style.display === 'block') {
-                exitLandscape(true); // Kirim true agar tidak terjadi double popstate
+                exitLandscape(true); // Tutup landscape tanpa menghapus history lagi
             } 
-            // Jika modal aktif, tutup modal
             else if (document.getElementById('movieModal').style.display === 'block') {
                 closeModal(true);
             } 
-            // Jika search aktif, tutup search
             else if (document.getElementById('searchOverlay').style.display === 'block') {
                 closeSearch(true);
+            }
+            else if (document.getElementById('sideMenu').style.display === 'block') {
+                toggleSideMenu();
             }
         };
 
@@ -404,7 +405,9 @@
             overlay.appendChild(videoArea);
             
             showLsUI();
-            history.pushState({view: 'landscape'}, ""); // Tambah state baru
+            
+            // Memberikan sinyal ke browser bahwa ada state baru (untuk tombol back)
+            history.pushState({view: 'landscape'}, ""); 
 
             try {
                 if (document.documentElement.requestFullscreen) {
@@ -416,7 +419,7 @@
             } catch (e) {}
         }
 
-        function exitLandscape(fromBackBtn = false) {
+        function exitLandscape(fromPopState = false) {
             const overlay = document.getElementById('landscapeOverlay');
             if(overlay.style.display === 'none') return;
 
@@ -434,8 +437,8 @@
                 screen.orientation.unlock();
             }
             
-            // Jika user klik tombol silang (bukan tombol back HP), kita harus hapus state landscape manual
-            if (!fromBackBtn && history.state && history.state.view === 'landscape') {
+            // Jika keluar lewat tombol X (bukan back HP), hapus state landscape dari history
+            if (!fromPopState) {
                 history.back();
             }
         }
@@ -494,7 +497,6 @@
             const isVisible = menu.style.display === 'block';
             menu.style.display = isVisible ? 'none' : 'block';
             document.body.style.overflow = isVisible ? 'auto' : 'hidden';
-            if (!isVisible) history.pushState({view: 'menu'}, "");
         }
 
         function backToHome() {
@@ -656,10 +658,10 @@
         }
 
         function openSearch() { document.getElementById('searchOverlay').style.display = 'block'; document.body.style.overflow='hidden'; history.pushState({view: 'search'}, ""); }
-        function closeSearch(fromBackBtn = false) { 
+        function closeSearch(fromPopState = false) { 
             document.getElementById('searchOverlay').style.display = 'none'; 
             document.body.style.overflow='auto'; 
-            if(!fromBackBtn && history.state && history.state.view === 'search') history.back();
+            if(!fromPopState && history.state && history.state.view === 'search') history.back();
         }
         
         function searchAction() { currentLibMode = false; currentCastId = ''; searchQuery = document.getElementById('searchInp').value; document.getElementById('smartSearchDropdown').style.display = 'none'; loadFeed(true); }
@@ -733,13 +735,13 @@
             }
         }
         
-        function closeModal(fromBackBtn = false) { 
+        function closeModal(fromPopState = false) { 
             const track = document.getElementById('carouselTrack'); 
             track.querySelectorAll('iframe').forEach(f => f.src = ""); 
             track.innerHTML = ''; 
             document.getElementById('movieModal').style.display = 'none'; 
             document.body.style.overflow = 'auto'; 
-            if(!fromBackBtn && history.state && history.state.view === 'modal') history.back();
+            if(!fromPopState && history.state && history.state.view === 'modal') history.back();
         }
 
         function renderSynopsis() { const descEl = document.getElementById('mDesc'), toggleBtn = document.getElementById('mToggleBtn'); if (globalFullDesc.length > 90) { toggleBtn.classList.remove('hidden'); descEl.innerText = isExpanded ? globalFullDesc : globalFullDesc.substring(0, 90) + "..."; toggleBtn.innerText = isExpanded ? "ringkas" : "selengkapnya"; } else { descEl.innerText = globalFullDesc; toggleBtn.classList.add('hidden'); } }
