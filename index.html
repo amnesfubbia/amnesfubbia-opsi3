@@ -494,7 +494,7 @@
             isLsMuted = !isLsMuted;
             const cmd = isLsMuted ? 'mute' : 'unMute';
             
-            currentIframe.contentWindow.postMessage(JSON.stringify({"event":"command","func":command,"args":""}), '*');
+            currentIframe.contentWindow.postMessage(JSON.stringify({"event":"command","func":cmd,"args":""}), '*');
             btn.className = isLsMuted ? 'fa-solid fa-volume-xmark ls-btn' : 'fa-solid fa-volume-high ls-btn';
             showLsUI();
         }
@@ -834,17 +834,21 @@
             const rel = dId.release_date || dId.first_air_date || ""; 
             document.getElementById('mDateDisplay').innerText = rel ? new Date(rel).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
             
-            // UPDATE: LINK SERVER BARU BERDASARKAN GAMBAR
+            // SERVER LIST (Total 13: 10 Lama + 3 Baru VidCC, VidLink, EmbedCC)
             document.getElementById('serverList').innerHTML = `
-                <button class="server-btn" onclick="playVid('https://streamx.to/embed-${id}.html', this)">streamx</button>
-                <button class="server-btn" onclick="playVid('https://vidcc.to/v/${id}', this)">vidcc</button>
-                <button class="server-btn" onclick="playVid('https://rive.to/embed/${type}/${id}', this)">rive</button>
-                <button class="server-btn" onclick="playVid('https://videasy.to/embed/${type}/${id}', this)">videasy</button>
-                <button class="server-btn" onclick="playVid('https://vidlink.pro/${type}/${id}', this)">vidpro</button>
-                <button class="server-btn" onclick="playVid('https://vidking.net/embed/${id}', this)">vidking</button>
-                <button class="server-btn" onclick="playVid('https://www.2embed.cc/embed/${id}', this)">embedcc</button>
-                <button class="server-btn" onclick="playVid('https://zxcstream.com/embed/${id}', this)">zxcstream</button>
-                <button class="server-btn" onclick="playVid('https://vidsrc.me/embed/${type}?tmdb=${id}', this)">french</button>
+                <button class="server-btn" onclick="playVid('https://vidsrc.me/embed/${type}?tmdb=${id}', this)">Server 1</button>
+                <button class="server-btn" onclick="playVid('https://vidsrc.cc/v2/embed/${type}/${id}${type==='tv'?'?s=1&e=1':''}', this)">Server 2</button>
+                <button class="server-btn" onclick="playVid('https://vidsrc.icu/embed/${type}/${id}${seriesSuffix}', this)">Server 3</button>
+                <button class="server-btn" onclick="playVid('https://www.2embed.cc/embed/${id}', this)">Server 4</button>
+                <button class="server-btn" onclick="playVid('https://embed.smashystream.com/playere.php?tmdb=${id}', this)">Server 5</button>
+                <button class="server-btn" onclick="playVid('https://vidsrc.xyz/embed/${type}/${id}${seriesSuffix}', this)">Server 6</button>
+                <button class="server-btn" onclick="playVid('https://vidsrc.net/embed/${type}/${id}${seriesSuffix}', this)">Server 9</button>
+                <button class="server-btn" onclick="playVid('https://vidlink.pro/${type}/${id}${seriesSuffix}', this)">Server 13</button>
+                <button class="server-btn" onclick="playVid('https://moviesapi.club/${type}/${id}${seriesSuffix}', this)">Server 15</button>
+                <button class="server-btn" onclick="playVid('https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1', this)">Server 17</button>
+                <button class="server-btn" onclick="playVid('https://vidsrc.cc/v2/embed/${type}/${id}${type==='tv'?'?s=1&e=1':''}', this)">VidCC</button>
+                <button class="server-btn" onclick="playVid('https://vidlink.pro/${type}/${id}${seriesSuffix}', this)">VidLink</button>
+                <button class="server-btn" onclick="playVid('https://www.2embed.cc/embed/${id}', this)">EmbedCC</button>
             `;
 
             if(type === 'tv') { document.getElementById('seriesControl').classList.remove('hidden'); document.getElementById('seasonSel').innerHTML = (dId.seasons||[]).filter(s=>s.season_number>0).map(s=>`<option value="${s.season_number}">Season ${s.season_number}</option>`).join(''); loadEpisodes(); } else { document.getElementById('seriesControl').classList.add('hidden'); }
