@@ -148,7 +148,7 @@
         .about-feature { margin-top: 20px; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #222; }
         .about-footer { margin-top: 40px; text-align: center; border-top: 1px solid #222; padding-top: 20px; font-size: 12px; color: #666; }
 
-        /* --- LANDSCAPE CONTROLS --- */
+        /* --- NEW LANDSCAPE CONTROLS --- */
         .landscape-overlay {
             display: none; position: fixed; inset: 0; z-index: 9500; background: #000;
         }
@@ -157,7 +157,7 @@
         .ls-controls {
             position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 50%, rgba(0,0,0,0.7) 100%);
             display: flex; flex-direction: column; justify-content: space-between;
-            padding: 30px; opacity: 0; transition: opacity 0.3s; z-index: 10001; pointer-events: none;
+            padding: 30px; opacity: 0; transition: opacity 0.3s; z-index: 10000; pointer-events: none;
         }
         .ls-controls.visible { opacity: 1; pointer-events: auto; }
         .ls-top { display: flex; justify-content: space-between; align-items: center; }
@@ -166,6 +166,7 @@
         .ls-btn:active { transform: scale(1.1); }
         .ls-lock-screen { position: absolute; inset: 0; z-index: 11000; display: none; align-items: flex-start; justify-content: flex-end; padding: 30px; background: rgba(0,0,0,0.01); pointer-events: auto; }
         
+        /* Landscape Mode Overrides */
         .landscape-active #movieModal { overflow: hidden !important; }
         .landscape-active #modalScrollTop { height: 100vh; max-width: 100%; padding: 0; }
         .landscape-active .carousel-slide { height: 100vh; }
@@ -361,7 +362,7 @@
     <nav class="bottom-nav">
         <i class="fa-solid fa-house cursor-pointer text-xl active-nav" id="homeBtnNav" onclick="updateActiveNav(this); backToHome()"></i>
         <i class="fa-solid fa-magnifying-glass cursor-pointer text-xl" onclick="updateActiveNav(this); openSearch()"></i>
-        <i class="fa-regular fa-bookmark cursor-pointer text-xl" onclick="updateActiveNav(this); switchTab('bookmarks', document.getElementById('tabBookmark'))"></i>
+        <i class="fa-solid fa-bookmark cursor-pointer text-xl" onclick="updateActiveNav(this); switchTab('bookmarks', document.getElementById('tabBookmark'))"></i>
     </nav>
 
     <script>
@@ -406,7 +407,7 @@
             overlay.style.display = 'block';
             
             const videoArea = document.getElementById('mainVideoArea');
-            overlay.appendChild(videoArea);
+            document.getElementById('landscapeOverlay').appendChild(videoArea);
             
             showLsUI();
             history.pushState({view: 'landscape'}, "");
@@ -447,6 +448,9 @@
 
         function exitLandscape() {
             closeLandscapeSilently();
+            if (window.history.state && window.history.state.view === 'landscape') {
+                window.history.back();
+            }
         }
 
         function toggleLsUI() {
@@ -577,7 +581,9 @@
         async function openComingSoon() {
             const grid = document.getElementById('searchGrid');
             const overlay = document.getElementById('searchOverlay');
+            
             document.querySelector('.search-header').style.display = 'none';
+            
             overlay.style.display = 'block';
             grid.innerHTML = '<div class="col-span-3 text-center py-10 text-zinc-500">Memuat jadwal rilis...</div>';
             document.body.style.overflow = 'hidden';
@@ -604,7 +610,7 @@
                             <div class="text-[14px] font-bold text-white truncate w-48">${m.title}</div>
                             <div class="text-[11px] text-zinc-500">Rating: ★ ${m.vote_average.toFixed(1)}</div>
                         </div>
-                        <img src="https://image.tmdb.org/t/p/w92${m.poster_path}" class="w-12 h-16 object-cover rounded shadow-lg" onerror="this.src='https://via.placeholder.com/92x138?text=?'">
+                        <img src="https://image.tmdb.org/t/p/w92${m.poster_path}" class="w-12 h-16 object-cover rounded shadow-lg">
                     `;
                     grid.appendChild(item);
                 });
@@ -722,7 +728,7 @@
                 const card = document.createElement('div'); 
                 card.className = 'post-card'; 
                 card.onclick = function() { openModal(m.id, mType); }; 
-                card.innerHTML = `<div class="badge-rating">★ ${(m.vote_average||0).toFixed(1)}</div><div class="badge-type">${currentType==='short'?'SHORT':(mType==='tv'?'tv':'movie')}</div><img src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onerror="this.src='https://via.placeholder.com/342x513?text=?'" onload="this.style.opacity=1" style="opacity:0">`; 
+                card.innerHTML = `<div class="badge-rating">★ ${(m.vote_average||0).toFixed(1)}</div><div class="badge-type">${currentType==='short'?'SHORT':(mType==='tv'?'tv':'movie')}</div><img src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0">`; 
                 grid.appendChild(card); 
             }); 
         }
@@ -821,10 +827,9 @@
             
             track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
             
-            const origin = window.location.origin;
             if(vids.length > 0) { 
                 vids.forEach((v, i) => { 
-                    track.innerHTML += `<div class="carousel-slide"><iframe id="yt-${i}" src="https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&origin=${origin}" class="w-full h-full" allow="autoplay; fullscreen"></iframe></div>`; 
+                    track.innerHTML += `<div class="carousel-slide"><iframe id="yt-${i}" src="https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0" class="w-full h-full" allow="autoplay; fullscreen"></iframe></div>`; 
                     if(vids.length > 1) {
                         dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; 
                     }
@@ -836,7 +841,7 @@
             }
 
             document.getElementById('castContainer').innerHTML = (dCast.cast || []).slice(0, 10).map(c => {
-                const profileImg = c.profile_path ? `<img src="https://image.tmdb.org/t/p/w185${c.profile_path}" loading="lazy" class="rounded-full" onerror="this.src='https://via.placeholder.com/185?text=?'">` : `<div style="width:100%; height:100%; background:#222; display:flex; align-items:center; justify-content:center; color:#555;"><i class="fa-solid fa-user"></i></div>`;
+                const profileImg = c.profile_path ? `<img src="https://image.tmdb.org/t/p/w185${c.profile_path}" loading="lazy" class="rounded-full">` : `<div style="width:100%; height:100%; background:#222; display:flex; align-items:center; justify-content:center; color:#555;"><i class="fa-solid fa-user"></i></div>`;
                 return `<div class="cast-item" onclick="searchByCast(${c.id})"><div class="cast-img-border"><div class="inner-border">${profileImg}</div></div><span class="cast-name">${c.name}</span></div>`;
             }).join('');
 
@@ -905,8 +910,7 @@
         function playVid(url, el) { 
             const track = document.getElementById('carouselTrack'); 
             const dots = document.getElementById('carouselDots'); 
-            const origin = window.location.origin;
-            const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&origin=${origin}` : `${url}?enablejsapi=1&origin=${origin}`;
+            const finalUrl = url.includes('?') ? `${url}&enablejsapi=1` : `${url}?enablejsapi=1`;
             
             track.querySelectorAll('iframe').forEach(f => f.src = "");
             track.innerHTML = `<div class="carousel-slide"><iframe src="${finalUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
@@ -921,6 +925,7 @@
             const res = await fetch(`https://api.themoviedb.org/3/tv/${window.currentMediaId}/season/${s}?api_key=${API_KEY}`); 
             const d = await res.json(); 
             const episodes = d.episodes || [];
+            
             document.getElementById('episodeGrid').innerHTML = episodes.map((e, index) => {
                 const epNum = e.episode_number;
                 return `
