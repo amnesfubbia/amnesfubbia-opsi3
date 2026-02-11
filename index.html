@@ -249,7 +249,7 @@
                 <div class="stats">
                     <div class="stat-item" id="stat-movie" onclick="setFilter('type', 'movie', this)"><span class="stat-val">25.4rb</span><span class="stat-label">movie</span></div>
                     <div class="stat-item" id="stat-tv" onclick="setFilter('type', 'tv', this)"><span class="stat-val">8.2rb</span><span class="stat-label">tv</span></div>
-                    <div class="stat-item" id="stat-short" onclick="setFilter('type', 'short', this)"><span class="stat-val">1.5rb</span><span class="stat-label">short</span></div>
+                    <div class="stat-item" id="stat-anime" onclick="setAnimeFilter(this)"><span class="stat-val">12.5rb</span><span class="stat-label">anime</span></div>
                 </div>
             </div>
 
@@ -582,6 +582,10 @@
         async function openComingSoon() {
             const grid = document.getElementById('searchGrid');
             const overlay = document.getElementById('searchOverlay');
+            
+            // Perbaikan: Sembunyikan header input pencarian saat menampilkan jadwal rilis
+            document.querySelector('.search-header').style.display = 'none';
+            
             overlay.style.display = 'block';
             grid.innerHTML = '<div class="col-span-3 text-center py-10 text-zinc-500">Memuat jadwal rilis...</div>';
             document.body.style.overflow = 'hidden';
@@ -632,8 +636,9 @@
                 {n: 'Disney', com: '2|6125|3166|34213', img: 'Disney.png', t: 'movie', s: true},
                 {n: 'Pixar', com: '3', img: 'Pixar.png', t: 'movie', s: true},
                 {n: 'Dreamworks', com: '521|778', img: 'Dreamwork.png', t: 'movie', s: true},
-                {n: 'Pixar', com: '10342', img: 'Ghibli.png', t: 'movie', s: true},
-                {n: 'Anime', g: 16, img: 'Anime.png', t: 'movie', c: 'JP', s: true},
+                {n: 'Ghibli', com: '10342', img: 'Ghibli.png', t: 'movie', s: true},
+                // PINDAHKAN SHORT KE SINI
+                {n: 'Short', img: 'Short.png', t: 'short', s: true},
                 {n: 'Indonesia', c: 'ID', img: 'Indonesia.png', t: 'movie', s: false},
                 {n: 'Korea', c: 'KR', img: 'Korea.png', t: 'movie', s: false},
                 {n: 'India', c: 'IN', img: 'Indonesia.png', t: 'movie', s: false},
@@ -731,10 +736,32 @@
             }); 
         }
 
-        function openSearch() { document.getElementById('searchOverlay').style.display = 'block'; document.getElementById('searchInp').focus(); document.body.style.overflow='hidden'; history.pushState({view: 'search'}, ""); }
-        function closeSearch() { document.getElementById('searchOverlay').style.display = 'none'; document.body.style.overflow='auto'; searchQuery=''; currentCastId=''; document.getElementById('smartSearchDropdown').style.display = 'none'; }
+        function openSearch() { 
+            // Pastikan header pencarian muncul kembali jika sebelumnya disembunyikan oleh openComingSoon
+            document.querySelector('.search-header').style.display = 'flex';
+            document.getElementById('searchGrid').innerHTML = ''; // Bersihkan list jadwal jika ada
+            document.getElementById('searchOverlay').style.display = 'block'; 
+            document.getElementById('searchInp').focus(); 
+            document.body.style.overflow='hidden'; 
+            history.pushState({view: 'search'}, ""); 
+        }
+
+        function closeSearch() { 
+            document.getElementById('searchOverlay').style.display = 'none'; 
+            document.body.style.overflow='auto'; 
+            searchQuery=''; 
+            currentCastId=''; 
+            document.getElementById('searchInp').value = '';
+            document.getElementById('smartSearchDropdown').style.display = 'none'; 
+        }
         
-        function searchAction() { currentLibMode = false; currentCastId = ''; searchQuery = document.getElementById('searchInp').value; document.getElementById('smartSearchDropdown').style.display = 'none'; loadFeed(true); }
+        function searchAction() { 
+            currentLibMode = false; 
+            currentCastId = ''; 
+            searchQuery = document.getElementById('searchInp').value; 
+            document.getElementById('smartSearchDropdown').style.display = 'none'; 
+            loadFeed(true); 
+        }
 
         function toggleFilterBar() { const b = document.getElementById('filterBar'); b.style.display = b.style.display === 'block' ? 'none' : 'block'; }
         
@@ -754,6 +781,22 @@
             document.querySelectorAll('.stat-item').forEach(s => s.classList.remove('active-stat'));
             el.classList.add('active-stat');
             loadFeed(true); 
+        }
+
+        // FUNGSI BARU UNTUK ANIME FILTER
+        function setAnimeFilter(el) {
+            currentLibMode = false; 
+            currentCastId = ''; 
+            searchQuery = ''; 
+            currentType = 'movie'; 
+            currentGenre = '16';   // ID Genre Animasi
+            currentCountry = 'JP'; // Negara Jepang
+            currentCompany = '';
+            currentSchedule = 'trending';
+            
+            document.querySelectorAll('.stat-item').forEach(s => s.classList.remove('active-stat'));
+            el.classList.add('active-stat');
+            loadFeed(true);
         }
 
         function setYear(y) { 
