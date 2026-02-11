@@ -355,6 +355,21 @@
                 <div class="dl-grid">
                     <button id="btnDownload1" class="dl-link-btn" onclick="window.open(`https://dl.vidsrc.vip/${window.currentMediaType}/${window.currentMediaId}`)">Download</button>
                 </div>
+
+                <div class="flex justify-around items-center mt-8 py-4 border-t border-zinc-900">
+                    <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 cursor-pointer" onclick="closeModal(); backToHome()">
+                        <i class="fa-solid fa-house text-lg"></i>
+                        <span class="text-[9px] font-bold uppercase tracking-widest">Home</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 cursor-pointer" onclick="closeModal(); openSearch()">
+                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                        <span class="text-[9px] font-bold uppercase tracking-widest">Search</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 cursor-pointer" onclick="switchTab('bookmarks', document.getElementById('tabBookmark'))">
+                        <i class="fa-solid fa-bookmark text-lg"></i>
+                        <span class="text-[9px] font-bold uppercase tracking-widest">Archive</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -897,8 +912,10 @@
         
         function closeModal() { 
             const track = document.getElementById('carouselTrack'); 
-            track.querySelectorAll('iframe').forEach(f => f.src = ""); 
-            track.innerHTML = ''; 
+            if(track) {
+                track.querySelectorAll('iframe').forEach(f => f.src = ""); 
+                track.innerHTML = ''; 
+            }
             document.getElementById('movieModal').style.display = 'none'; 
             document.body.style.overflow = 'auto'; 
             if(document.body.classList.contains('landscape-active')) closeLandscapeSilently();
@@ -956,7 +973,29 @@
 
         function updateLibButtons(id) { const isL = JSON.parse(localStorage.getItem('likes') || '[]').some(x=>x.id==id); const isB = JSON.parse(localStorage.getItem('bookmarks') || '[]').some(x=>x.id==id); document.getElementById('btnLikeModal').className = isL ? 'fa-solid fa-heart text-red-500 interaction-icon' : 'fa-regular fa-heart interaction-icon'; document.getElementById('btnBookModal').className = isB ? 'fa-solid fa-bookmark text-white interaction-icon' : 'fa-regular fa-bookmark interaction-icon'; document.getElementById('btnLikeModal').onclick = () => toggleLib('likes'); document.getElementById('btnBookModal').onclick = () => toggleLib('bookmarks'); }
         function toggleLib(k) { let items = JSON.parse(localStorage.getItem(k) || '[]'); const idx = items.findIndex(x => x.id == window.currentMediaId); idx > -1 ? items.splice(idx,1) : items.push({id: window.currentMediaId, type: window.currentMediaType}); localStorage.setItem(k, JSON.stringify(items)); updateLibButtons(window.currentMediaId); }
-        async function switchTab(mode, el) { document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active')); el.classList.add('active'); const grid = document.getElementById('feedGrid'); grid.innerHTML = ''; if(mode === 'likes' || mode === 'bookmarks') { currentLibMode = true; showLibrary(mode); } else { currentLibMode = false; currentCastId = ''; searchQuery = ''; currentType='multi'; currentSchedule='trending'; currentCompany=''; loadFeed(true); } }
+        
+        async function switchTab(mode, el) { 
+            closeModal();
+            closeSearch();
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active')); 
+            if(el) el.classList.add('active'); 
+
+            if(mode === 'bookmarks') {
+                updateActiveNav(document.querySelector('.bottom-nav .fa-bookmark'));
+            } else if (mode === 'grid') {
+                updateActiveNav(document.getElementById('homeBtnNav'));
+            }
+
+            const grid = document.getElementById('feedGrid'); 
+            grid.innerHTML = ''; 
+            if(mode === 'likes' || mode === 'bookmarks') { 
+                currentLibMode = true; 
+                showLibrary(mode); 
+            } else { 
+                currentLibMode = false; currentCastId = ''; searchQuery = ''; currentType='multi'; currentSchedule='trending'; currentCompany=''; loadFeed(true); 
+            } 
+        }
+
         async function showLibrary(k) { const items = JSON.parse(localStorage.getItem(k) || '[]'); const grid = document.getElementById('feedGrid'); grid.innerHTML = ''; if (!items.length) { grid.innerHTML = '<div class="col-span-3 text-center py-20 text-zinc-500 text-xs">Belum ada konten disimpan</div>'; return; } const promises = items.map(i => fetch(`https://api.themoviedb.org/3/${i.type}/${i.id}?api_key=${API_KEY}&language=id-ID`).then(r => r.json())); const results = await Promise.all(promises); renderGrid(results.filter(m => m.id), grid); }
         window.onscroll = () => { if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000 && !loading && !searchQuery && !currentLibMode) { page++; loadFeed(false); } };
     </script>
