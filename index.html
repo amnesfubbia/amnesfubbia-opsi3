@@ -850,8 +850,8 @@
                 }); 
                 document.getElementById('swipeOverlay').style.display = vids.length > 1 ? 'block' : 'none'; 
             } else { 
-                // JIKA TRAILER KOSONG, LANGSUNG MUAT SERVER 1
-                track.innerHTML = `<div class="carousel-slide"><iframe src="https://vidsrc.me/embed/${type}?tmdb=${id}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
+                const fallbackUrl = `https://vidsrc.me/embed/${type}?tmdb=${id}`;
+                track.innerHTML = `<div class="carousel-slide"><iframe src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
                 document.getElementById('swipeOverlay').style.display = 'none'; 
             }
 
