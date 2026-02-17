@@ -914,17 +914,17 @@
                 <button class="server-btn" onclick="playVid('https://player.autoembed.cc/embed/${type}/${id}${seriesSuffix}', this)">Server 13</button>
                 <button class="server-btn" onclick="playVid('https://www.nontongo.win/embed/${type}/${id}${seriesSuffix}', this)">Server 14</button>
                 <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidsrc.cc/v2/embed/${type}/${currentImdbId || id}', this)">Server 15</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://www.vicloud.top/embed/${id}', this)">111movie (Server 16)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://autoembed.to/${type}/tmdb/${id}', this)">warezcdn (Server 17)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidsrc.pro/embed/${type}/${id}', this)">superflix (Server 18)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://www.nontongo.win/embed/${type}/${id}', this)">vidup (Server 19)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://www.primewire.li/embed/${type}/${id}', this)">primewire (Server 20)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidnest.net/embed/${type}/${id}', this)">vidnest (Server 21)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://rive.icu/embed/${type}/${id}', this)">riveembed (Server 22)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidzee.to/embed/${type}/${id}', this)">vidzee (Server 23)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidnest.org/embed/${type}/${id}', this)">vidnest (Server 24)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://videasy.net/embed/${type}/${id}', this)">videasy (Server 25)</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidfast.co/embed/${type}/${id}', this)">vidfast (Server 26)</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://www.vicloud.top/embed/${type}/${id}', this)">Server 16</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://autoembed.to/${type}/tmdb/${id}', this)">Server 17</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidsrc.pro/embed/${type}/${id}', this)">Server 18</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidsrc.pro/embed/${type}/${id}${seriesSuffix}', this)">Server 19</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://www.primewire.li/embed/${type}/${id}', this)">Server 20</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidnest.net/embed/${type}/${id}', this)">Server 21</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://rive.icu/embed/${type}/${id}', this)">Server 22</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidzee.to/embed/${type}/${id}', this)">Server 23</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidnest.org/embed/${type}/${id}', this)">Server 24</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://videasy.net/embed/${type}/${id}', this)">Server 25</button>
+                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidfast.co/embed/${type}/${id}', this)">Server 26</button>
             `;
 
             if(type === 'tv') { document.getElementById('seriesControl').classList.remove('hidden'); document.getElementById('seasonSel').innerHTML = (dId.seasons||[]).filter(s=>s.season_number>0).map(s=>`<option value="${s.season_number}">Season ${s.season_number}</option>`).join(''); loadEpisodes(); } else { document.getElementById('seriesControl').classList.add('hidden'); }
