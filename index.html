@@ -187,15 +187,14 @@
         .ls-top { display: flex; justify-content: space-between; align-items: center; }
         .ls-btn { color: #fff; font-size: 28px; cursor: pointer; text-shadow: 0 0 15px rgba(0,0,0,0.9); transition: transform 0.1s; }
         .ls-btn:active { transform: scale(1.1); }
-        /* FIX: Lock layer z-index adjusted and pointer-events set correctly */
-        .ls-lock-screen { position: absolute; inset: 0; z-index: 11000; display: none; align-items: flex-start; justify-content: flex-end; padding: 30px; background: rgba(0,0,0,0); pointer-events: auto; }
+        .ls-lock-screen { position: absolute; inset: 0; z-index: 11000; display: none; align-items: flex-start; justify-content: flex-end; padding: 30px; background: rgba(0,0,0,0.01); pointer-events: auto; }
         
         /* Landscape Mode Overrides */
         .landscape-active #movieModal { overflow: hidden !important; }
         .landscape-active #modalScrollTop { height: 100vh; max-width: 100%; padding: 0; }
-        .landscape-active .carousel-slide { height: 100vh !important; width: 100vw !important; aspect-ratio: unset; }
-        .landscape-active #mainVideoArea { height: 100vh !important; width: 100vw !important; }
-        .landscape-active iframe { width: 100% !important; height: 100% !important; border: none; }
+        .landscape-active .carousel-slide { height: 100vh; width: 100vw; }
+        .landscape-active #mainVideoArea { height: 100vh !important; width: 100vw !important; aspect-ratio: auto !important; }
+        .landscape-active #mainVideoArea iframe { height: 100vh !important; width: 100vw !important; }
 
         /* --- NEW ACTOR PROFILE MODAL STYLE (Premium Instagram Aesthetic) --- */
         .actor-modal { display: none; position: fixed; inset: 0; z-index: 8500; background: #000; overflow-y: auto; }
@@ -246,7 +245,7 @@
     </div>
 
     <div id="landscapeOverlay" class="landscape-overlay" onclick="toggleLsUI()">
-        <div id="lsLockLayer" class="ls-lock-screen">
+        <div id="lsLockLayer" class="ls-lock-screen" style="display:none">
             <i class="fa-solid fa-lock ls-btn text-white opacity-40" onclick="event.stopPropagation(); unlockScreen()"></i>
         </div>
         <div class="ls-controls" id="lsUI">
@@ -536,30 +535,23 @@
             overlay.style.display = 'block';
             
             const videoArea = document.getElementById('mainVideoArea');
-            document.getElementById('landscapeOverlay').appendChild(videoArea);
+            overlay.appendChild(videoArea);
             
             showLsUI();
             history.pushState({view: 'landscape'}, "");
 
             try {
-                const docElm = document.documentElement;
-                if (docElm.requestFullscreen) {
-                    await docElm.requestFullscreen();
-                } else if (docElm.mozRequestFullScreen) {
-                    await docElm.mozRequestFullScreen();
-                } else if (docElm.webkitRequestFullScreen) {
-                    await docElm.webkitRequestFullScreen();
-                } else if (docElm.msRequestFullscreen) {
-                    await docElm.msRequestFullscreen();
+                if (document.documentElement.requestFullscreen) {
+                    await document.documentElement.requestFullscreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    await document.documentElement.webkitRequestFullscreen();
                 }
-
+                
                 if (screen.orientation && screen.orientation.lock) {
-                    await screen.orientation.lock('landscape').catch(() => {
-                        console.log("Orientation lock failed");
-                    });
+                    await screen.orientation.lock('landscape').catch(() => {});
                 }
             } catch (e) {
-                console.error("Fullscreen/Orientation error:", e);
+                console.log("Orientation lock failed, basic landscape used.");
             }
         }
 
@@ -572,13 +564,19 @@
             document.getElementById('landscapeOverlay').style.display = 'none';
             
             const videoArea = document.getElementById('mainVideoArea');
-            const castContainer = document.getElementById('castContainer');
-            if(castContainer) castContainer.after(videoArea);
+            const swipeOverlay = document.getElementById('swipeOverlay');
+            if(swipeOverlay) {
+                swipeOverlay.after(videoArea);
+            } else {
+                // Fallback jika dom berubah
+                const parent = document.getElementById('carouselDots').parentElement;
+                parent.insertBefore(videoArea, document.getElementById('carouselDots'));
+            }
 
-            if (document.exitFullscreen) {
-                if (document.fullscreenElement) document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
+                document.webkitExitFullscreen();
             }
 
             if (screen.orientation && screen.orientation.unlock) {
@@ -617,7 +615,7 @@
         }
 
         function unlockScreen() {
-            // FIX: Unlock tetap memanggil showLsUI agar tombol muncul kembali
+            document.getElementById('lsUI').classList.remove('visible');
             document.getElementById('lsLockLayer').style.display = 'none';
             showLsUI();
         }
@@ -1145,8 +1143,7 @@
             if(vidsToDisplay.length > 0) { 
                 vidsToDisplay.forEach((v, i) => { 
                     const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
-                    // FIX: Sandbox dimodifikasi agar "Disable sandbox" hilang
-                    track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"></iframe></div>`; 
+                    track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen"></iframe></div>`; 
                     if(vidsToDisplay.length > 1) {
                         dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; 
                     }
@@ -1154,8 +1151,7 @@
                 document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
             } else { 
                 const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`;
-                // FIX: Sandbox dimodifikasi agar player eksternal berjalan lancar
-                track.innerHTML = `<div class="carousel-slide"><iframe src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation"></iframe></div>`; 
+                track.innerHTML = `<div class="carousel-slide"><iframe src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
                 document.getElementById('swipeOverlay').style.display = 'none'; 
             }
 
@@ -1219,7 +1215,7 @@
                 if(!isTranslated) {
                     const oldText = btn.innerText; btn.innerText = "Menerjemahkan...";
                     try {
-                        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(globalFullDesc)}`);
+                        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(globalEnDesc)}`);
                         const data = await res.json();
                         globalFullDesc = data[0].map(x => x[0]).join('');
                         isTranslated = true; btn.innerText = "Lihat versi asli";
@@ -1253,8 +1249,7 @@
             const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&mute=0` : `${url}?enablejsapi=1&mute=0`;
             
             track.querySelectorAll('iframe').forEach(f => f.src = "");
-            // FIX: Sandbox dimodifikasi agar "Disable sandbox" hilang
-            track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${finalUrl}" class="w-full h-full" allowfullscreen allow="autoplay" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation"></iframe></div>`; 
+            track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${finalUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
             track.style.transform = 'translateX(0)'; currentIdx = 0; dots.innerHTML = ''; 
             document.getElementById('swipeOverlay').style.display = 'none'; highlightBtn(el); 
 
@@ -1273,9 +1268,8 @@
             
             document.getElementById('episodeGrid').innerHTML = episodes.map((e, index) => {
                 const epNum = e.episode_number;
-                const epUrl = `https://vidsrc.me/embed/tv?tmdb=${window.currentMediaId}&s=${s}&e=${epNum}`;
                 return `
-                <div class="pill text-[10px] flex flex-col items-center justify-center gap-1 min-h-[45px]" onclick="playVid('${epUrl}', this)">
+                <div class="pill text-[10px] flex flex-col items-center justify-center gap-1 min-h-[45px]" onclick="playVid('https://vidsrc.me/embed/tv?tmdb=${window.currentMediaId}&s=${s}&e=${epNum}', this)">
                     <span class="font-bold">${epNum}</span>
                 </div>`;
             }).join(''); 
