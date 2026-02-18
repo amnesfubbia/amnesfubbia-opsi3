@@ -556,6 +556,7 @@
         }
 
         function handleLsBack() {
+            // Kita panggil history.back() agar popstate terpanggil dan menjalankan closeLandscapeSilently()
             window.history.back();
         }
 
@@ -563,14 +564,14 @@
             document.body.classList.remove('landscape-active');
             document.getElementById('landscapeOverlay').style.display = 'none';
             
+            // KEMBALIKAN VIDEO AREA KE MODAL PORTRAIT SECARA PAKSA
             const videoArea = document.getElementById('mainVideoArea');
-            const swipeOverlay = document.getElementById('swipeOverlay');
-            if(swipeOverlay) {
-                swipeOverlay.after(videoArea);
-            } else {
-                // Fallback jika dom berubah
-                const parent = document.getElementById('carouselDots').parentElement;
-                parent.insertBefore(videoArea, document.getElementById('carouselDots'));
+            const modalHeader = document.querySelector('#movieModal .sticky');
+            const castContainer = document.getElementById('castContainer');
+            
+            if (modalHeader && videoArea && castContainer) {
+                // Video area harus diletakkan setelah castContainer
+                castContainer.after(videoArea);
             }
 
             if (document.exitFullscreen && document.fullscreenElement) {
@@ -696,6 +697,8 @@
             document.getElementById('actorModal').style.display = 'none';
             // Jika modal film masih terbuka di belakangnya, jangan kembalikan overflow ke auto
             if (document.getElementById('movieModal').style.display !== 'block') {
+                document.body.style.overflow = 'hidden';
+            } else {
                 document.body.style.overflow = 'auto';
             }
         }
