@@ -101,6 +101,7 @@
         .calendar-poster { flex: 0 0 85px; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; background: #111; border: 1px solid #222; }
         .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-title { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
+        .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8e8e8e; }
         .cal-genre-pill { padding: 2px 8px; background: #1c1c1c; border-radius: 100px; color: #ccc; font-size: 9px; font-weight: 600; }
         .cal-rating { color: #ffca28; font-weight: 700; font-size: 11px; }
@@ -110,6 +111,7 @@
         .date-strip { display: flex; overflow-x: auto; gap: 10px; padding: 15px; background: #000; border-bottom: 1px solid #111; }
         .date-chip { flex: 0 0 55px; height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; background: #111; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
         
+        /* MODIFIKASI: Hanya border putih saat aktif */
         .date-chip.active-date { background: #111; border-color: #fff; }
         .date-chip.active-date span { color: #fff !important; }
 
@@ -128,6 +130,7 @@
         .server-btn:active { background: #1c1c1c; }
         .server-btn.active-link { border: 2px solid #fff !important; background: rgba(255,255,255,0.1); }
         
+        /* Merapatkan jarak di area download dan server */
         .dl-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; margin-bottom: 2px; }
         .dl-link-btn { width: 100%; padding: 12px; border-radius: 12px; background: #000; color: #fff; font-size: 12px; font-weight: 800; text-transform: uppercase; text-align: center; border: 1px solid #333; cursor: pointer; }
         
@@ -143,6 +146,7 @@
         .cast-name { font-size: 9px; font-weight: 500; color: #fff; line-height: 1.2; display: block; margin-top: 4px; }
         
         .ig-post-content { padding: 0 15px; margin-top: 5px; }
+        /* Sticky Suka - dirapatkan lebarnya */
         .ig-likes-count { font-weight: 700; font-size: 13px; margin-bottom: 5px; display: inline-block; padding-right: 5px; }
         .ig-username { font-weight: 700; font-size: 13px; margin-right: 8px; }
         .ig-caption { font-size: 13px; line-height: 1.4; color: #efefef; }
@@ -150,6 +154,7 @@
         .toggle-btn { display: block; color: #a8a8a8; cursor: pointer; font-size: 13px; margin-top: 4px; font-weight: 500; }
         #mTranslateBtn { font-size: 11px; color: #fff; font-weight: 700; cursor: pointer; display: inline-block; }
         
+        /* Merapatkan hashtag dengan caption/selengkapnya */
         .ig-hashtags { color: #e0f1ff; display: block; margin-top: 4px; font-size: 13px; line-height: 1.4; }
         .ig-date { color: #a8a8a8; font-size: 11px; text-transform: uppercase; }
         
@@ -157,14 +162,17 @@
         .bottom-nav i { color: #a8a8a8; transition: color 0.3s; }
         .bottom-nav i.active-nav { color: #fff; }
 
+        /* SIDEBAR / ABOUT MENU - UPDATED WITH GLASSMORPHISM */
         #sideMenu { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 9500; display: none; padding: 40px 25px; overflow-y: auto; }
         .side-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; }
         .about-title { font-size: 22px; font-weight: 900; margin-bottom: 20px; border-left: 4px solid #fff; padding-left: 12px; }
         .about-content { font-size: 14px; line-height: 1.6; color: #ccc; }
+        /* Glass Card Style for Features */
         .about-feature { margin-top: 20px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
         .about-footer { margin-top: 40px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 20px; font-size: 12px; color: #666; }
         .feature-icon { font-size: 18px; color: #fff; width: 24px; text-align: center; }
 
+        /* --- NEW LANDSCAPE CONTROLS --- */
         .landscape-overlay {
             display: none; position: fixed; inset: 0; z-index: 9900; background: #000;
         }
@@ -181,11 +189,13 @@
         .ls-btn:active { transform: scale(1.1); }
         .ls-lock-screen { position: absolute; inset: 0; z-index: 11000; display: none; align-items: flex-start; justify-content: flex-end; padding: 30px; background: rgba(0,0,0,0.01); pointer-events: auto; }
         
+        /* Landscape Mode Overrides */
         .landscape-active #movieModal { overflow: hidden !important; }
         .landscape-active #modalScrollTop { height: 100vh; max-width: 100%; padding: 0; }
         .landscape-active .carousel-slide { height: 100vh; }
         .landscape-active #mainVideoArea { height: 100vh !important; }
 
+        /* --- NEW ACTOR PROFILE MODAL STYLE (Premium Instagram Aesthetic) --- */
         .actor-modal { display: none; position: fixed; inset: 0; z-index: 8500; background: #000; overflow-y: auto; }
         
         .actor-header-premium {
@@ -476,65 +486,41 @@
         let isLsPaused = false, isLsMuted = false, lsControlTimer;
         let currentImdbId = ""; 
 
-        // Optimasi API Call - Cache Map
-        const apiCache = new Map();
-
         window.onload = () => {
             setTimeout(() => {
                 document.getElementById('splashScreen').style.display = 'none';
                 document.getElementById('mainProfile').style.display = 'block';
-                // Initialize state for back button handling
-                history.replaceState({view: 'home'}, "");
             }, 2500);
 
             initFilters(); initHighlights(); loadFeed(); setupSwipe(); initSmartSearch(); 
             window.addEventListener('scroll', () => { 
-                const btn = document.getElementById('backToTop');
-                if(btn) btn.style.display = window.scrollY > 500 ? 'flex' : 'none'; 
+                document.getElementById('backToTop').style.display = window.scrollY > 500 ? 'flex' : 'none'; 
             }); 
         };
 
-        // GLOBAL FETCH WRAPPER (Anti-Redundansi)
-        async function globalFetch(url, options = {}) {
-            if (apiCache.has(url)) return apiCache.get(url);
-            try {
-                const res = await fetch(url, options);
-                if (!res.ok) throw new Error('Fetch failed');
-                const data = await res.json();
-                apiCache.set(url, data);
-                return data;
-            } catch (e) {
-                console.error("Fetch Error:", e);
-                throw e;
-            }
-        }
-
-        /* --- HP BACK BUTTON SYSTEM (ENHANCED ACCESSIBILITY) --- */
+        /* --- HP BACK BUTTON SYSTEM (REWORKED FOR ACCESSIBILITY) --- */
         window.addEventListener('popstate', function(event) {
-            const lsOverlay = document.getElementById('landscapeOverlay');
-            const actorM = document.getElementById('actorModal');
-            const movieM = document.getElementById('movieModal');
-            const searchO = document.getElementById('searchOverlay');
-            const sideM = document.getElementById('sideMenu');
-
-            if (lsOverlay.style.display === 'block') {
+            // Tutup Landscape dulu jika aktif
+            if (document.getElementById('landscapeOverlay').style.display === 'block') {
                 closeLandscapeSilently();
-            } else if (actorM.style.display === 'block') {
-                closeActorModal();
-            } else if (movieM.style.display === 'block') {
-                closeModal();
-            } else if (searchO.style.display === 'block') {
-                closeSearch();
-            } else if (sideM.style.display === 'block') {
-                toggleSideMenu();
+            } 
+            // Tutup Modal Aktor jika aktif
+            else if (document.getElementById('actorModal').style.display === 'block') {
+                closeActorModal(true);
+            } 
+            // Tutup Modal Film jika aktif
+            else if (document.getElementById('movieModal').style.display === 'block') {
+                closeModal(true);
+            } 
+            // Tutup Search jika aktif
+            else if (document.getElementById('searchOverlay').style.display === 'block') {
+                closeSearch(true);
+            } 
+            // Tutup Side Menu jika aktif
+            else if (document.getElementById('sideMenu').style.display === 'block') {
+                toggleSideMenu(true);
             }
         });
-
-        function pushView(viewName) {
-            if (!history.state || history.state.view !== viewName) {
-                history.pushState({view: viewName}, "");
-            }
-        }
 
         /* --- LANDSCAPE CONTROLS LOGIC --- */
         async function enterLandscape() {
@@ -549,7 +535,7 @@
             document.getElementById('landscapeOverlay').appendChild(videoArea);
             
             showLsUI();
-            pushView('landscape');
+            history.pushState({view: 'landscape'}, "");
 
             try {
                 if (document.documentElement.requestFullscreen) {
@@ -613,20 +599,32 @@
             showLsUI();
         }
 
-        /* --- PROFIL AKTOR MENDETAIL --- */
+        /* --- API CACHE SYSTEM (PREVENT REDUNDANCY) --- */
+        async function fetchWithCache(url) {
+            const cached = sessionStorage.getItem(url);
+            if (cached) return JSON.parse(cached);
+            const res = await fetch(url);
+            const data = await res.json();
+            sessionStorage.setItem(url, JSON.stringify(data));
+            return data;
+        }
+
+        /* --- ACTOR PROFILE LOGIC --- */
         async function openActorProfile(actorId) {
             const track = document.getElementById('carouselTrack');
-            if(track) track.querySelectorAll('iframe').forEach(f => f.src = "");
+            if(track) {
+                track.querySelectorAll('iframe').forEach(f => f.src = "");
+            }
 
             const actorModal = document.getElementById('actorModal');
             actorModal.style.display = 'block';
             document.body.style.overflow = 'hidden';
             
-            pushView('actor');
+            history.pushState({view: 'actor'}, "");
 
             try {
-                const details = await globalFetch(`https://api.themoviedb.org/3/person/${actorId}?api_key=${API_KEY}&language=id-ID`);
-                const credits = await globalFetch(`https://api.themoviedb.org/3/person/${actorId}/combined_credits?api_key=${API_KEY}&language=id-ID`);
+                const details = await fetchWithCache(`https://api.themoviedb.org/3/person/${actorId}?api_key=${API_KEY}&language=id-ID`);
+                const credits = await fetchWithCache(`https://api.themoviedb.org/3/person/${actorId}/combined_credits?api_key=${API_KEY}&language=id-ID`);
 
                 document.getElementById('actorPic').src = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : 'amnesfubbia.png';
                 document.getElementById('actorName').innerText = details.name;
@@ -635,7 +633,8 @@
                 let age = '0';
                 if(details.birthday) {
                     const birthDate = new Date(details.birthday);
-                    age = Math.floor((Date.now() - birthDate.getTime()) / 31557600000);
+                    const diff = Date.now() - birthDate.getTime();
+                    age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
                 }
 
                 document.getElementById('statKarya').innerText = (credits.cast || []).length;
@@ -647,11 +646,13 @@
 
                 const filmGrid = document.getElementById('actorFilmGrid');
                 filmGrid.innerHTML = "";
-                (credits.cast || []).sort((a,b) => b.popularity - a.popularity).forEach(m => {
+                const sortedFilms = (credits.cast || []).sort((a,b) => b.popularity - a.popularity);
+                
+                sortedFilms.forEach(m => {
                     const mType = m.media_type || 'movie';
                     const card = document.createElement('div');
                     card.className = 'post-card';
-                    card.onclick = () => openModal(m.id, mType);
+                    card.onclick = () => { openModal(m.id, mType); };
                     card.innerHTML = `
                         <div class="badge-rating">★ ${(m.vote_average||0).toFixed(1)}</div>
                         <div class="badge-type">${mType === 'tv' ? 'tv' : 'movie'}</div>
@@ -659,44 +660,39 @@
                     `;
                     filmGrid.appendChild(card);
                 });
-            } catch (e) {}
+
+            } catch (e) { console.error(e); }
         }
 
-        function closeActorModal() {
+        function closeActorModal(isPopState = false) {
             document.getElementById('actorModal').style.display = 'none';
+            if (!isPopState && window.history.state?.view === 'actor') window.history.back();
             if (document.getElementById('movieModal').style.display !== 'block') {
                 document.body.style.overflow = 'auto';
             }
         }
 
-        /* --- CORE LOGIC --- */
         function updateActiveNav(el) { 
             document.querySelectorAll('.bottom-nav i').forEach(i => i.classList.remove('active-nav')); 
             if(el) el.classList.add('active-nav'); 
         }
 
-        function toggleSideMenu() {
+        function toggleSideMenu(isPopState = false) {
             const menu = document.getElementById('sideMenu');
             const isVisible = menu.style.display === 'block';
             menu.style.display = isVisible ? 'none' : 'block';
             document.body.style.overflow = isVisible ? 'auto' : 'hidden';
-            if (!isVisible) pushView('menu');
+            if (!isVisible && !isPopState) history.pushState({view: 'menu'}, "");
+            if (isVisible && !isPopState && window.history.state?.view === 'menu') window.history.back();
         }
 
         function backToHome() {
             closeModal(); closeSearch(); closeD(); closeActorModal();
             currentGenre = ''; currentYear = ''; currentCountry = ''; currentSchedule = 'trending'; 
             currentType = 'multi'; searchQuery = ''; currentCastId = ''; currentCompany = '';
-            
             document.querySelectorAll('.highlight-item').forEach(i => i.classList.remove('active-hl'));
-            document.querySelectorAll('.pill').forEach(p => { p.classList.remove('active-pill'); if(p.id.includes('Btn') || p.id.includes('btn')) p.innerHTML = p.innerText + ' <i class="fa-solid fa-caret-down"></i>'; });
-            document.querySelectorAll('.btn-ig').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.stat-item').forEach(s => s.classList.remove('active-stat'));
-            
             document.getElementById('filterBar').style.display = 'none';
             document.getElementById('tabGrid').classList.add('active');
-            document.getElementById('tabLikes').classList.remove('active');
-            document.getElementById('tabBookmark').classList.remove('active');
             updateActiveNav(document.getElementById('homeBtnNav'));
             currentLibMode = false;
             loadFeed(true);
@@ -713,15 +709,19 @@
                 if(q.length < 2) { drop.style.display = 'none'; return; } 
                 timeout = setTimeout(async () => { 
                     try { 
-                        const data = await globalFetch(`https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(q)}&api_key=${API_KEY}&language=id-ID`); 
+                        const data = await fetchWithCache(`https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(q)}&api_key=${API_KEY}&language=id-ID`); 
                         const results = (data.results || []).slice(0, 5); 
                         if(results.length) { 
                             drop.innerHTML = results.map(m => {
                                 const mType = m.media_type || 'movie';
                                 const clickAction = mType === 'person' ? `openActorProfile(${m.id})` : `openModal(${m.id}, '${mType}')`;
-                                return `<div class="smart-item" onclick="${clickAction}; drop.style.display='none';">
-                                    <img src="https://image.tmdb.org/t/p/w92${m.poster_path || m.profile_path || ''}" onerror="this.src='https://via.placeholder.com/35x50?text=?'">
-                                    <div class="smart-info"><span class="smart-name">${m.title || m.name}</span><span class="smart-meta">${mType}</span></div>
+                                const imgPath = m.poster_path || m.profile_path || '';
+                                return `<div class="smart-item" onclick="${clickAction}; document.getElementById('smartSearchDropdown').style.display='none';">
+                                    <img src="https://image.tmdb.org/t/p/w92${imgPath}" onerror="this.src='https://via.placeholder.com/35x50?text=?'">
+                                    <div class="smart-info">
+                                        <span class="smart-name">${m.title || m.name}</span>
+                                        <span class="smart-meta">${mType === 'person' ? 'Pemeran' : mType}</span>
+                                    </div>
                                 </div>`;
                             }).join(''); 
                             drop.style.display = 'block'; 
@@ -739,40 +739,42 @@
             overlay.style.display = 'block';
             calendarHeader.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
-            pushView('search');
-            
+            history.pushState({view: 'search'}, "");
             let dateStripHTML = '<div class="date-strip no-scrollbar">';
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
             for(let i=0; i<14; i++) {
                 let d = new Date(); d.setDate(d.getDate() + i);
-                dateStripHTML += `<div class="date-chip ${i===0?'active-date':''}" onclick="filterByDate('${d.toISOString().split('T')[0]}', this)"><span class="d-month">${months[d.getMonth()]}</span><span class="d-day">${d.getDate()}</span></div>`;
+                let active = i === 0 ? 'active-date' : '';
+                dateStripHTML += `<div class="date-chip ${active}" onclick="filterByDate('${d.toISOString().split('T')[0]}', this)"><span class="d-month">${months[d.getMonth()]}</span><span class="d-day">${d.getDate()}</span></div>`;
             }
-            calendarHeader.innerHTML = dateStripHTML + '</div>';
+            dateStripHTML += '</div>';
+            calendarHeader.innerHTML = dateStripHTML;
             grid.innerHTML = '<div id="calendarList" class="col-span-3"></div>';
             filterByDate(new Date().toISOString().split('T')[0]);
         }
 
         async function filterByDate(dateStr, el) {
-            if(el) { document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active-date')); el.classList.add('active-date'); }
+            if(el) {
+                document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active-date'));
+                el.classList.add('active-date');
+            }
             const list = document.getElementById('calendarList');
             list.innerHTML = '<div class="text-center py-10 text-zinc-500 text-xs">Mencari tayangan...</div>';
-
             try {
-                const data = await globalFetch(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=id-ID&sort_by=popularity.desc&primary_release_date.gte=${dateStr}&primary_release_date.lte=${dateStr}`);
+                const data = await fetchWithCache(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=id-ID&sort_by=popularity.desc&primary_release_date.gte=${dateStr}&primary_release_date.lte=${dateStr}`);
                 if(data.results.length === 0) { list.innerHTML = '<div class="text-center py-20 text-zinc-600 text-xs">Tidak ada jadwal rilis.</div>'; return; }
                 list.innerHTML = '';
-                const gData = await globalFetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${API_KEY}&language=id-ID`);
-                const genreMap = {}; gData.genres.forEach(g => genreMap[g.id] = g.name);
-
                 data.results.forEach(m => {
-                    const genres = m.genre_ids.slice(0, 2).map(id => `<span class="cal-genre-pill">${genreMap[id]}</span>`).join('');
                     const item = document.createElement('div');
                     item.className = 'calendar-item active:bg-zinc-900';
                     item.onclick = () => openModal(m.id, 'movie');
-                    item.innerHTML = `<div class="calendar-poster"><img src="https://image.tmdb.org/t/p/w185${m.poster_path}" onerror="this.src='https://via.placeholder.com/185x278?text=No+Poster'" class="w-full h-full object-cover"></div><div class="calendar-info"><div class="cal-title">${m.title}</div><div class="cal-meta"><span class="cal-rating">★ ${m.vote_average.toFixed(1)}</span><span class="text-zinc-600">•</span><span>${m.release_date.split('-')[0]}</span></div><div class="flex gap-1 mt-1">${genres}</div></div><i class="fa-solid fa-chevron-right text-zinc-800 text-xs"></i>`;
+                    item.innerHTML = `
+                        <div class="calendar-poster"><img src="https://image.tmdb.org/t/p/w185${m.poster_path}" onerror="this.src='https://via.placeholder.com/185x278?text=No+Poster'" class="w-full h-full object-cover"></div>
+                        <div class="calendar-info"><div class="cal-title">${m.title}</div><div class="cal-meta"><span class="cal-rating">★ ${m.vote_average.toFixed(1)}</span><span class="text-zinc-600">•</span><span>${m.release_date.split('-')[0]}</span></div></div>
+                        <i class="fa-solid fa-chevron-right text-zinc-800 text-xs"></i>`;
                     list.appendChild(item);
                 });
-            } catch (e) { list.innerHTML = '<div class="text-center py-10">Gagal memuat data.</div>'; }
+            } catch (e) { list.innerHTML = '<div class="text-center py-10">Gagal memuat.</div>'; }
         }
 
         function initHighlights() { 
@@ -796,7 +798,8 @@
                     div.classList.add('active-hl');
                     currentLibMode = false; currentCastId = ''; searchQuery = ''; currentCountry = h.c || ''; currentGenre = h.g || ''; currentCompany = h.com || ''; currentSchedule = 'trending'; currentType = h.t; currentYear = ''; loadFeed(true); 
                 }; 
-                div.innerHTML = `<div class="${h.s ? 'highlight-circle logo-small' : 'highlight-circle'}"><img src="${h.img}" onerror="this.src='https://via.placeholder.com/100?text=${h.n}'"></div><div class="highlight-text">${h.n}</div>`; 
+                const circleClass = h.s ? 'highlight-circle logo-small' : 'highlight-circle';
+                div.innerHTML = `<div class="${circleClass}"><img src="${h.img}" onerror="this.src='https://via.placeholder.com/100?text=${h.n}'"></div><div class="highlight-text">${h.n}</div>`; 
                 cont.appendChild(div); 
             }); 
         }
@@ -818,11 +821,11 @@
             gD.innerHTML = genreHTML; 
         }
 
-        function toggleFilter(e, id) { e.stopPropagation(); document.querySelectorAll('.filter-dropdown').forEach(el => el.style.display = 'none'); document.getElementById(id).style.display = 'block'; document.getElementById('filterOverlay').style.display = 'block'; document.body.style.overflow = 'hidden'; }
+        function toggleFilter(e, id) { e.stopPropagation(); const d = document.getElementById(id); const overlay = document.getElementById('filterOverlay'); document.querySelectorAll('.filter-dropdown').forEach(el => el.style.display = 'none'); d.style.display = 'block'; d.scrollTop = 0; overlay.style.display = 'block'; document.body.style.overflow = 'hidden'; }
         function closeD() { document.querySelectorAll('.filter-dropdown').forEach(d => d.style.display = 'none'); document.getElementById('filterOverlay').style.display = 'none'; document.body.style.overflow = 'auto'; }
 
         async function loadFeed(isNew = true) {
-            if(loading && isNew && abortController) abortController.abort();
+            if(loading && isNew) { if(abortController) abortController.abort(); }
             if(loading && !isNew) return;
             loading = true; abortController = new AbortController();
             const grid = document.getElementById('searchOverlay').style.display === 'block' ? document.getElementById('searchGrid') : document.getElementById('feedGrid');
@@ -838,18 +841,24 @@
                 if(currentGenre) url += `&with_genres=${currentGenre}`;
                 if(currentCompany) url += `&with_companies=${currentCompany}`;
                 if(currentType === 'short') url += `&with_runtime.lte=45&with_runtime.gte=1`;
-                if(currentSchedule !== 'trending') {
-                    const today = new Date().toISOString().split('T')[0];
-                    if(currentSchedule === 'now_playing') url += `&primary_release_date.lte=${today}`;
-                    else url += `&primary_release_date.gte=${today}`;
+                if(currentSchedule === 'now_playing' || currentSchedule === 'upcoming') { 
+                    const today = new Date().toISOString().split('T')[0]; 
+                    if(currentSchedule === 'now_playing') { 
+                        const prev = new Date(Date.now() - 60*24*60*60*1000).toISOString().split('T')[0]; 
+                        url += `&primary_release_date.gte=${prev}&primary_release_date.lte=${today}`; 
+                    } else { url += `&primary_release_date.gte=${today}`; } 
                 }
-                if(currentYear) url += currentType === 'tv' ? `&first_air_date_year=${currentYear}` : `&primary_release_year=${currentYear}`;
+                if(currentYear) {
+                    if(endpoint === 'discover/tv') url += `&first_air_date_year=${currentYear}`;
+                    else url += `&primary_release_year=${currentYear}`;
+                }
             }
             try { 
-                const data = await globalFetch(url, { signal: abortController.signal }); 
+                const data = await fetchWithCache(url); 
                 let items = data.results || data.cast || []; 
-                if(items.length === 0 && isNew) grid.innerHTML = `<div class="col-span-3 text-center py-20 text-zinc-600 text-xs">Konten tidak ditemukan.</div>`; 
-                else renderGrid(items, grid);
+                if(currentCastId) items.sort((a,b) => b.popularity - a.popularity);
+                if(items.length === 0 && isNew) { grid.innerHTML = `<div class="col-span-3 text-center py-20 text-zinc-600 text-xs">Konten tidak ditemukan.</div>`; } 
+                else { renderGrid(items, grid); }
             } catch(e) { if(e.name !== 'AbortError') console.error(e); }
             loading = false;
         }
@@ -860,51 +869,46 @@
                 let mType = m.media_type || (currentType === 'tv' ? 'tv' : 'movie');
                 const card = document.createElement('div'); 
                 card.className = 'post-card'; 
-                card.onclick = () => openModal(m.id, mType); 
-                card.innerHTML = `<div class="badge-rating">★ ${(m.vote_average||0).toFixed(1)}</div><div class="badge-type">${currentType==='short'?'SHORT':mType}</div><img src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0">`; 
+                card.onclick = function() { openModal(m.id, mType); }; 
+                card.innerHTML = `<div class="badge-rating">★ ${(m.vote_average||0).toFixed(1)}</div><div class="badge-type">${currentType==='short'?'SHORT':(mType==='tv'?'tv':'movie')}</div><img src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0">`; 
                 grid.appendChild(card); 
             }); 
         }
 
         function openSearch() { 
             closeModal(); closeD(); closeActorModal();
-            if(document.getElementById('sideMenu').style.display === 'block') toggleSideMenu();
-            document.getElementById('searchGrid').innerHTML = ''; 
             document.getElementById('searchOverlay').style.display = 'block'; 
             document.getElementById('searchInp').focus(); 
             document.body.style.overflow='hidden'; 
             updateActiveNav(document.getElementById('searchBtnNav'));
-            pushView('search');
+            history.pushState({view: 'search'}, ""); 
         }
 
-        function closeSearch() { 
+        function closeSearch(isPopState = false) { 
             document.getElementById('searchOverlay').style.display = 'none'; 
             document.getElementById('calendarHeader').classList.add('hidden');
             document.body.style.overflow='auto'; 
-            searchQuery=''; currentCastId=''; 
-            document.getElementById('searchInp').value = '';
+            if(!isPopState && window.history.state?.view === 'search') window.history.back();
             updateActiveNav(document.getElementById('homeBtnNav'));
         }
         
         function searchAction() { 
             currentLibMode = false; currentCastId = ''; 
-            searchQuery = document.getElementById('searchInp').value.trim(); 
+            searchQuery = document.getElementById('searchInp').value; 
             document.getElementById('calendarHeader').classList.add('hidden');
             document.getElementById('smartSearchDropdown').style.display = 'none'; 
             loadFeed(true); 
         }
 
         function toggleFilterBar() { const b = document.getElementById('filterBar'); b.style.display = b.style.display === 'block' ? 'none' : 'block'; }
-        
         function setSchedule(v, el) { 
             currentLibMode = false; currentCastId = ''; searchQuery = ''; 
             const isActive = el.classList.contains('active');
             document.querySelectorAll('.btn-ig').forEach(b=>b.classList.remove('active')); 
-            if(isActive) currentSchedule = 'trending'; else { el.classList.add('active'); currentSchedule = v; }
-            if(currentType === 'multi') currentType = 'movie';
+            if(isActive) { currentSchedule = 'trending'; } 
+            else { el.classList.add('active'); currentSchedule = v; }
             loadFeed(true); 
         }
-
         function setFilter(k, v, el) { 
             currentLibMode = false; currentCastId = ''; searchQuery = ''; 
             currentType = v; 
@@ -912,109 +916,107 @@
             el.classList.add('active-stat');
             loadFeed(true); 
         }
-
-        function setYear(y) { currentYear = y; document.getElementById('yearBtn').innerHTML = (y || 'Tahun') + ' <i class="fa-solid fa-caret-down"></i>'; closeD(); loadFeed(true); }
-        function setCountry(c, n) { currentCountry = c; document.getElementById('btnCountry').innerHTML = n + ' <i class="fa-solid fa-caret-down"></i>'; closeD(); loadFeed(true); }
-        function setGenre(g, n) { currentGenre = g; document.getElementById('btnGenre').innerHTML = n + ' <i class="fa-solid fa-caret-down"></i>'; closeD(); loadFeed(true); }
+        function setYear(y) { 
+            currentYear = y; const btn = document.getElementById('yearBtn');
+            btn.innerHTML = (y || 'Tahun') + ' <i class="fa-solid fa-caret-down"></i>'; 
+            y ? btn.classList.add('active-pill') : btn.classList.remove('active-pill');
+            closeD(); loadFeed(true); 
+        }
+        function setCountry(c, n) { 
+            currentCountry = c; const btn = document.getElementById('btnCountry');
+            btn.innerHTML = n + ' <i class="fa-solid fa-caret-down"></i>'; 
+            c ? btn.classList.add('active-pill') : btn.classList.remove('active-pill');
+            closeD(); loadFeed(true); 
+        }
+        function setGenre(g, n) { 
+            currentGenre = g; const btn = document.getElementById('btnGenre');
+            btn.innerHTML = n + ' <i class="fa-solid fa-caret-down"></i>'; 
+            g ? btn.classList.add('active-pill') : btn.classList.remove('active-pill');
+            closeD(); loadFeed(true); 
+        }
 
         async function openModal(id, type) {
-            if (document.getElementById('actorModal').style.display === 'block') closeActorModal();
+            const actorModal = document.getElementById('actorModal');
+            if (actorModal.style.display === 'block') actorModal.style.display = 'none';
             window.currentMediaId = id; window.currentMediaType = type;
-            const movieM = document.getElementById('movieModal');
-            movieM.style.display = 'block'; movieM.scrollTop = 0;
+            const seriesSuffix = (type === 'tv') ? '/1/1' : ''; 
+            document.getElementById('movieModal').style.display = 'block'; 
+            document.getElementById('movieModal').scrollTop = 0;
             document.body.style.overflow = 'hidden'; 
-            currentIdx = 0; isTranslated = false;
-            pushView('modal');
-
-            try {
-                const [dId, dEn, dCast, dExt] = await Promise.all([
-                    globalFetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=id-ID&append_to_response=videos`),
-                    globalFetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=en-US`),
-                    globalFetch(`https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${API_KEY}`),
-                    globalFetch(`https://api.themoviedb.org/3/${type}/${id}/external_ids?api_key=${API_KEY}`)
-                ]);
-                
-                currentImdbId = dExt.imdb_id || ""; 
-                originalIndoDesc = dId.overview || "";
-                globalEnDesc = dEn.overview || "";
-                globalFullDesc = originalIndoDesc || globalEnDesc || "Sinopsis tidak tersedia.";
-                
-                document.getElementById('mTranslateBtn').classList.toggle('hidden', !globalEnDesc);
-                document.getElementById('mTitle').innerText = dId.title || dId.name;
-                document.getElementById('mLikeDisplay').innerText = `${Math.floor((dId.vote_average || 0) * 1234).toLocaleString('id-ID')} suka`;
-
-                const track = document.getElementById('carouselTrack');
-                const dots = document.getElementById('carouselDots');
-                const vids = (dId.videos?.results || []).filter(v => v.site === 'YouTube').slice(0, 5);
-                track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
-
-                if(vids.length) {
-                    vids.forEach((v, i) => {
-                        track.innerHTML += `<div class="carousel-slide"><iframe src="https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}" class="w-full h-full" allow="autoplay; fullscreen"></iframe></div>`;
-                        dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===0?'bg-blue-500':'bg-zinc-700'}"></div>`;
-                    });
-                    document.getElementById('swipeOverlay').style.display = vids.length > 1 ? 'block' : 'none';
-                } else {
-                    track.innerHTML = `<div class="carousel-slide"><iframe src="https://vidlink.pro/${type}/${id}" class="w-full h-full" allowfullscreen></iframe></div>`;
-                    document.getElementById('swipeOverlay').style.display = 'none';
-                }
-
-                document.getElementById('castContainer').innerHTML = (dCast.cast || []).slice(0, 10).map(c => `
-                    <div class="cast-item" onclick="openActorProfile(${c.id})">
-                        <div class="cast-img-border"><div class="inner-border"><img src="https://image.tmdb.org/t/p/w185${c.profile_path}" onerror="this.src='https://via.placeholder.com/100?text=?'"></div></div>
-                        <span class="cast-name">${c.name}</span>
-                    </div>`).join('');
-
-                renderSynopsis();
-                updateLibButtons(id);
-                
-                const servers = [
-                    ['Server 1', `https://player.videasy.net/${type}/${id}`],
-                    ['Server 2', `https://vidlink.pro/${type}/${id}`],
-                    ['Server 3', `https://vidsrc.cc/v2/embed/${type}/${currentImdbId || id}`]
-                ];
-                document.getElementById('serverList').innerHTML = servers.map(s => `<button class="server-btn" onclick="playVid('${s[1]}', this)">${s[0]}</button>`).join('');
-
-                if(type === 'tv') { document.getElementById('seriesControl').classList.remove('hidden'); document.getElementById('seasonSel').innerHTML = (dId.seasons||[]).map(s=>`<option value="${s.season_number}">Season ${s.season_number}</option>`).join(''); loadEpisodes(); } else document.getElementById('seriesControl').classList.add('hidden');
-
-            } catch (e) {}
+            history.pushState({view: 'modal'}, "");
+            const [dId, dEn, dCast, dExt] = await Promise.all([
+                fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=id-ID&append_to_response=videos`),
+                fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=en-US`),
+                fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${API_KEY}`),
+                fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}/external_ids?api_key=${API_KEY}`)
+            ]);
+            currentImdbId = dExt.imdb_id || ""; originalIndoDesc = dId.overview || ""; globalEnDesc = dEn.overview || "";
+            const translateBtn = document.getElementById('mTranslateBtn');
+            if (originalIndoDesc.trim() !== "") { globalFullDesc = originalIndoDesc; translateBtn.innerText = "Lihat versi asli"; translateBtn.classList.remove('hidden'); } 
+            else { globalFullDesc = globalEnDesc || "Sinopsis belum tersedia."; translateBtn.innerText = "Lihat terjemahan"; if(globalEnDesc) translateBtn.classList.remove('hidden'); }
+            const allVideos = (dId.videos?.results || []).filter(v => v.type === 'Trailer' && v.site === 'YouTube');
+            const track = document.getElementById('carouselTrack'), dots = document.getElementById('carouselDots');
+            track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
+            if(allVideos.length > 0) { 
+                allVideos.slice(0, 5).forEach((v, i) => { 
+                    const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0`;
+                    track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe></div>`; 
+                    if(allVideos.length > 1) dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===0?'bg-blue-500':'bg-zinc-700'}"></div>`; 
+                }); 
+                document.getElementById('swipeOverlay').style.display = allVideos.length > 1 ? 'block' : 'none'; 
+            } else { 
+                track.innerHTML = `<div class="carousel-slide"><iframe src="https://vidlink.pro/${type}/${id}${seriesSuffix}" class="w-full h-full" allowfullscreen sandbox="allow-scripts allow-same-origin"></iframe></div>`; 
+                document.getElementById('swipeOverlay').style.display = 'none'; 
+            }
+            document.getElementById('castContainer').innerHTML = (dCast.cast || []).slice(0, 10).map(c => `<div class="cast-item" onclick="openActorProfile(${c.id})"><div class="cast-img-border"><div class="inner-border"><img src="https://image.tmdb.org/t/p/w185${c.profile_path}" onerror="this.src='amnesfubbia.png'"></div></div><span class="cast-name">${c.name}</span></div>`).join('');
+            document.getElementById('mTitle').innerText = dId.title || dId.name;
+            document.getElementById('mLikeDisplay').innerText = `${Math.floor((dId.vote_average || 0) * 1234).toLocaleString('id-ID')} suka`;
+            isExpanded = false; renderSynopsis();
+            document.getElementById('mHashtags').innerHTML = `<br> #${(dId.title||dId.name||"").replace(/\s/g, '')} #${type} #Amnesfubbia`;
+            document.getElementById('serverList').innerHTML = `<button class="server-btn" onclick="playVid('https://vidlink.pro/${type}/${id}${seriesSuffix}', this)">Server 1</button><button class="server-btn" onclick="playVid('https://vidsrc.cc/v2/embed/${type}/${currentImdbId || id}', this)">Server 2</button><button class="server-btn" onclick="playVid('https://vidsrc.xyz/embed/${type}/${id}', this)">Server 3</button>`;
+            if(type === 'tv') { document.getElementById('seriesControl').classList.remove('hidden'); document.getElementById('seasonSel').innerHTML = (dId.seasons||[]).map(s=>`<option value="${s.season_number}">Season ${s.season_number}</option>`).join(''); loadEpisodes(); } else { document.getElementById('seriesControl').classList.add('hidden'); }
+            updateLibButtons(id);
         }
 
         async function handleTranslate() {
-            if (isTranslated) { globalFullDesc = originalIndoDesc || globalEnDesc; isTranslated = false; }
-            else {
-                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(globalEnDesc)}`);
-                const data = await res.json();
-                globalFullDesc = data[0].map(x => x[0]).join('');
-                isTranslated = true;
+            const btn = document.getElementById('mTranslateBtn');
+            if (originalIndoDesc && globalEnDesc) {
+                globalFullDesc = (globalFullDesc === originalIndoDesc) ? globalEnDesc : originalIndoDesc;
+            } else if (!originalIndoDesc && globalEnDesc) {
+                if(!isTranslated) {
+                    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(globalEnDesc)}`);
+                    const data = await res.json();
+                    globalFullDesc = data[0].map(x => x[0]).join('');
+                    isTranslated = true; btn.innerText = "Lihat versi asli";
+                } else { globalFullDesc = globalEnDesc; isTranslated = false; btn.innerText = "Lihat terjemahan"; }
             }
             renderSynopsis();
         }
         
-        function closeModal() { 
+        function closeModal(isPopState = false) { 
             const track = document.getElementById('carouselTrack'); 
-            if(track) track.querySelectorAll('iframe').forEach(f => f.src = ""); 
+            if(track) track.innerHTML = ''; 
             document.getElementById('movieModal').style.display = 'none'; 
             document.body.style.overflow = 'auto'; 
+            if(!isPopState && window.history.state?.view === 'modal') window.history.back();
             if(document.body.classList.contains('landscape-active')) closeLandscapeSilently();
+            window.currentMediaId = null; 
         }
 
-        function renderSynopsis() { const descEl = document.getElementById('mDesc'), btn = document.getElementById('mToggleBtn'); descEl.innerText = isExpanded ? globalFullDesc : globalFullDesc.substring(0, 90) + "..."; btn.classList.toggle('hidden', globalFullDesc.length <= 90); btn.innerText = isExpanded ? "ringkas" : "selengkapnya"; }
+        function renderSynopsis() { const descEl = document.getElementById('mDesc'), toggleBtn = document.getElementById('mToggleBtn'); if (globalFullDesc.length > 90) { toggleBtn.classList.remove('hidden'); descEl.innerText = isExpanded ? globalFullDesc : globalFullDesc.substring(0, 90) + "..."; toggleBtn.innerText = isExpanded ? "ringkas" : "selengkapnya"; } else { descEl.innerText = globalFullDesc; toggleBtn.classList.add('hidden'); } }
         function handleToggleDesc() { isExpanded = !isExpanded; renderSynopsis(); }
         
         function playVid(url, el) { 
-            const track = document.getElementById('carouselTrack'); 
-            track.innerHTML = `<div class="carousel-slide"><iframe src="${url}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
-            document.getElementById('carouselDots').innerHTML = ''; 
-            document.getElementById('swipeOverlay').style.display = 'none'; 
+            const track = document.getElementById('carouselTrack'), dots = document.getElementById('carouselDots'); 
+            track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${url}" class="w-full h-full" allowfullscreen sandbox="allow-scripts allow-same-origin"></iframe></div>`; 
+            dots.innerHTML = ''; document.getElementById('swipeOverlay').style.display = 'none'; 
             document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active-link')); el.classList.add('active-link'); 
         }
         
         async function loadEpisodes() { 
             const s = document.getElementById('seasonSel').value; 
-            const data = await globalFetch(`https://api.themoviedb.org/3/tv/${window.currentMediaId}/season/${s}?api_key=${API_KEY}`); 
-            document.getElementById('episodeGrid').innerHTML = (data.episodes || []).map(e => `
-                <div class="pill font-bold" onclick="playVid('https://vidlink.pro/tv/${window.currentMediaId}/${s}/${e.episode_number}', this)">${e.episode_number}</div>`).join(''); 
+            const data = await fetchWithCache(`https://api.themoviedb.org/3/tv/${window.currentMediaId}/season/${s}?api_key=${API_KEY}`); 
+            document.getElementById('episodeGrid').innerHTML = (data.episodes || []).map(e => `<div class="pill" onclick="playVid('https://vidlink.pro/tv/${window.currentMediaId}/${s}/${e.episode_number}', this)">${e.episode_number}</div>`).join(''); 
         }
         
         function setupSwipe() { 
@@ -1027,39 +1029,27 @@
                     if(diff > 0 && currentIdx < slides.length - 1) currentIdx++; 
                     else if(diff < 0 && currentIdx > 0) currentIdx--; 
                     document.getElementById('carouselTrack').style.transform = `translateX(-${currentIdx * 100}%)`; 
-                    document.querySelectorAll('.dot').forEach((d, i) => d.className = `dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}`); 
+                    document.querySelectorAll('.dot').forEach((d, i) => { d.className = `dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}`; }); 
                 } 
             }); 
         }
 
-        function updateLibButtons(id) { 
-            const isL = JSON.parse(localStorage.getItem('likes') || '[]').some(x=>x.id==id); 
-            const isB = JSON.parse(localStorage.getItem('bookmarks') || '[]').some(x=>x.id==id); 
-            const lb = document.getElementById('btnLikeModal'), bb = document.getElementById('btnBookModal');
-            lb.className = isL ? 'fa-solid fa-heart text-red-500 interaction-icon' : 'fa-regular fa-heart interaction-icon'; 
-            bb.className = isB ? 'fa-solid fa-bookmark text-white interaction-icon' : 'fa-regular fa-bookmark interaction-icon'; 
-            lb.onclick = () => toggleLib('likes'); bb.onclick = () => toggleLib('bookmarks'); 
-        }
+        function updateLibButtons(id) { const isL = JSON.parse(localStorage.getItem('likes') || '[]').some(x=>x.id==id); const isB = JSON.parse(localStorage.getItem('bookmarks') || '[]').some(x=>x.id==id); document.getElementById('btnLikeModal').className = isL ? 'fa-solid fa-heart text-red-500 interaction-icon' : 'fa-regular fa-heart interaction-icon'; document.getElementById('btnBookModal').className = isB ? 'fa-solid fa-bookmark text-white interaction-icon' : 'fa-regular fa-bookmark interaction-icon'; document.getElementById('btnLikeModal').onclick = () => toggleLib('likes'); document.getElementById('btnBookModal').onclick = () => toggleLib('bookmarks'); }
         function toggleLib(k) { let items = JSON.parse(localStorage.getItem(k) || '[]'); const idx = items.findIndex(x => x.id == window.currentMediaId); idx > -1 ? items.splice(idx,1) : items.push({id: window.currentMediaId, type: window.currentMediaType}); localStorage.setItem(k, JSON.stringify(items)); updateLibButtons(window.currentMediaId); }
-        
         async function switchTab(mode, el) { 
             closeModal(); closeSearch(); closeActorModal();
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active')); 
             if(el) el.classList.add('active'); 
-            updateActiveNav(mode === 'bookmarks' ? document.getElementById('bookmarkBtnNav') : document.getElementById('homeBtnNav'));
             const grid = document.getElementById('feedGrid'); grid.innerHTML = ''; 
             if(mode === 'likes' || mode === 'bookmarks') { currentLibMode = true; showLibrary(mode); } 
-            else { currentLibMode = false; currentType='multi'; loadFeed(true); } 
+            else { currentLibMode = false; currentCastId = ''; searchQuery = ''; loadFeed(true); } 
         }
-
         async function showLibrary(k) { 
             const items = JSON.parse(localStorage.getItem(k) || '[]'); 
-            const grid = document.getElementById('feedGrid'); 
-            if (!items.length) { grid.innerHTML = '<div class="col-span-3 text-center py-20 text-zinc-500 text-xs">Kosong</div>'; return; } 
-            const results = await Promise.all(items.map(i => globalFetch(`https://api.themoviedb.org/3/${i.type}/${i.id}?api_key=${API_KEY}&language=id-ID`))); 
-            renderGrid(results.filter(m => m.id), grid); 
+            if (!items.length) { document.getElementById('feedGrid').innerHTML = '<div class="col-span-3 text-center py-20 text-zinc-500 text-xs">Kosong</div>'; return; }
+            const results = await Promise.all(items.map(i => fetchWithCache(`https://api.themoviedb.org/3/${i.type}/${i.id}?api_key=${API_KEY}&language=id-ID`)));
+            renderGrid(results, document.getElementById('feedGrid'));
         }
-        
         window.onscroll = () => { if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000 && !loading && !searchQuery && !currentLibMode) { page++; loadFeed(false); } };
     </script>
 </body>
