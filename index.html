@@ -187,7 +187,8 @@
         .ls-top { display: flex; justify-content: space-between; align-items: center; }
         .ls-btn { color: #fff; font-size: 28px; cursor: pointer; text-shadow: 0 0 15px rgba(0,0,0,0.9); transition: transform 0.1s; }
         .ls-btn:active { transform: scale(1.1); }
-        .ls-lock-screen { position: absolute; inset: 0; z-index: 11000; display: none; align-items: flex-start; justify-content: flex-end; padding: 30px; background: rgba(0,0,0,0.01); pointer-events: auto; }
+        /* FIX: Lock layer z-index adjusted and pointer-events set correctly */
+        .ls-lock-screen { position: absolute; inset: 0; z-index: 11000; display: none; align-items: flex-start; justify-content: flex-end; padding: 30px; background: rgba(0,0,0,0); pointer-events: auto; }
         
         /* Landscape Mode Overrides */
         .landscape-active #movieModal { overflow: hidden !important; }
@@ -245,7 +246,7 @@
     </div>
 
     <div id="landscapeOverlay" class="landscape-overlay" onclick="toggleLsUI()">
-        <div id="lsLockLayer" class="ls-lock-screen" style="display:none">
+        <div id="lsLockLayer" class="ls-lock-screen">
             <i class="fa-solid fa-lock ls-btn text-white opacity-40" onclick="event.stopPropagation(); unlockScreen()"></i>
         </div>
         <div class="ls-controls" id="lsUI">
@@ -616,7 +617,7 @@
         }
 
         function unlockScreen() {
-            document.getElementById('lsUI').classList.remove('visible');
+            // FIX: Unlock tetap memanggil showLsUI agar tombol muncul kembali
             document.getElementById('lsLockLayer').style.display = 'none';
             showLsUI();
         }
@@ -1144,7 +1145,7 @@
             if(vidsToDisplay.length > 0) { 
                 vidsToDisplay.forEach((v, i) => { 
                     const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
-                    // UPDATED SANDBOX: Melonggar agar pesan "disable sandbox" hilang
+                    // FIX: Sandbox dimodifikasi agar "Disable sandbox" hilang
                     track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"></iframe></div>`; 
                     if(vidsToDisplay.length > 1) {
                         dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; 
@@ -1153,7 +1154,7 @@
                 document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
             } else { 
                 const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`;
-                // UPDATED SANDBOX & URL: Menambahkan parameter agar iklan terminimalisir tanpa memicu deteksi sandbox
+                // FIX: Sandbox dimodifikasi agar player eksternal berjalan lancar
                 track.innerHTML = `<div class="carousel-slide"><iframe src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation"></iframe></div>`; 
                 document.getElementById('swipeOverlay').style.display = 'none'; 
             }
@@ -1252,7 +1253,7 @@
             const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&mute=0` : `${url}?enablejsapi=1&mute=0`;
             
             track.querySelectorAll('iframe').forEach(f => f.src = "");
-            // UPDATED SANDBOX: Melonggar agar video bisa diputar namun tetap menahan pop-up iklan yang paling parah
+            // FIX: Sandbox dimodifikasi agar "Disable sandbox" hilang
             track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${finalUrl}" class="w-full h-full" allowfullscreen allow="autoplay" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation"></iframe></div>`; 
             track.style.transform = 'translateX(0)'; currentIdx = 0; dots.innerHTML = ''; 
             document.getElementById('swipeOverlay').style.display = 'none'; highlightBtn(el); 
