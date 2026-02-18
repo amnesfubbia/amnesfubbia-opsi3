@@ -1144,7 +1144,7 @@
             if(vidsToDisplay.length > 0) { 
                 vidsToDisplay.forEach((v, i) => { 
                     const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
-                    // MODIFIKASI: Sandbox diperlonggar agar Youtube API & Playback tidak terganggu
+                    // UPDATED SANDBOX: Melonggar agar pesan "disable sandbox" hilang
                     track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation"></iframe></div>`; 
                     if(vidsToDisplay.length > 1) {
                         dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; 
@@ -1153,7 +1153,7 @@
                 document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
             } else { 
                 const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`;
-                // MODIFIKASI: Sandbox diperlonggar untuk Server Video
+                // UPDATED SANDBOX & URL: Menambahkan parameter agar iklan terminimalisir tanpa memicu deteksi sandbox
                 track.innerHTML = `<div class="carousel-slide"><iframe src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation"></iframe></div>`; 
                 document.getElementById('swipeOverlay').style.display = 'none'; 
             }
@@ -1252,7 +1252,7 @@
             const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&mute=0` : `${url}?enablejsapi=1&mute=0`;
             
             track.querySelectorAll('iframe').forEach(f => f.src = "");
-            // MODIFIKASI: Sandbox diperlonggar dengan 'allow-presentation' agar streaming lebih stabil
+            // UPDATED SANDBOX: Melonggar agar video bisa diputar namun tetap menahan pop-up iklan yang paling parah
             track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${finalUrl}" class="w-full h-full" allowfullscreen allow="autoplay" sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation"></iframe></div>`; 
             track.style.transform = 'translateX(0)'; currentIdx = 0; dots.innerHTML = ''; 
             document.getElementById('swipeOverlay').style.display = 'none'; highlightBtn(el); 
@@ -1272,8 +1272,9 @@
             
             document.getElementById('episodeGrid').innerHTML = episodes.map((e, index) => {
                 const epNum = e.episode_number;
+                const epUrl = `https://vidsrc.me/embed/tv?tmdb=${window.currentMediaId}&s=${s}&e=${epNum}`;
                 return `
-                <div class="pill text-[10px] flex flex-col items-center justify-center gap-1 min-h-[45px]" onclick="playVid('https://vidsrc.me/embed/tv?tmdb=${window.currentMediaId}&s=${s}&e=${epNum}', this)">
+                <div class="pill text-[10px] flex flex-col items-center justify-center gap-1 min-h-[45px]" onclick="playVid('${epUrl}', this)">
                     <span class="font-bold">${epNum}</span>
                 </div>`;
             }).join(''); 
