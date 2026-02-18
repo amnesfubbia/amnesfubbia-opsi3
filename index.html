@@ -639,6 +639,17 @@
                 track.querySelectorAll('iframe').forEach(f => f.src = "");
             }
 
+            // RISET KONTEN MODAL SEBELUM DITAMPILKAN (MENCEGAH DELAY GAMBAR LAMA)
+            document.getElementById('actorPic').src = "";
+            document.getElementById('actorName').innerText = "Memuat...";
+            document.getElementById('actorHeaderTitle').innerText = "";
+            document.getElementById('actorFilmGrid').innerHTML = "";
+            document.getElementById('statKarya').innerText = "0";
+            document.getElementById('statPop').innerText = "0";
+            document.getElementById('statUsia').innerText = "0";
+            document.getElementById('actorOrigin').innerHTML = "";
+            document.getElementById('actorBirth').innerText = "";
+
             const actorModal = document.getElementById('actorModal');
             actorModal.style.display = 'block';
             document.body.style.overflow = 'hidden';
