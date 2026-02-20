@@ -531,9 +531,7 @@
 
         /* --- LANDSCAPE CONTROLS LOGIC --- */
         async function enterLandscape() {
-            // STOP trailer sebelum pindah agar suara tidak tumpang tindih
-            stopTrailerAudio();
-
+            // JANGAN stopTrailerAudio() di sini agar streaming tidak reset
             const overlay = document.getElementById('landscapeOverlay');
             const lsTitle = document.getElementById('lsTitle');
             
@@ -541,11 +539,10 @@
             document.body.classList.add('landscape-active');
             overlay.style.display = 'block';
             
+            // CUKUP pindahkan elemen saja tanpa memanggil refreshVideoOnly()
             const videoArea = document.getElementById('mainVideoArea');
-            document.getElementById('landscapeOverlay').appendChild(videoArea);
+            overlay.appendChild(videoArea);
             
-            // Reload video yang aktif di landscape agar jalan kembali
-            refreshVideoOnly();
             showLsUI();
             
             if (!window.history.state || window.history.state.view !== 'landscape') {
@@ -567,18 +564,13 @@
         }
 
         function closeLandscapeSilently() {
-            // Stop audio saat keluar dari landscape
-            stopTrailerAudio();
-
             document.body.classList.remove('landscape-active');
             document.getElementById('landscapeOverlay').style.display = 'none';
             
+            // Kembalikan videoArea ke tempat asalnya tanpa mereset konten iframe
             const videoArea = document.getElementById('mainVideoArea');
             const castContainer = document.getElementById('castContainer');
             if(castContainer) castContainer.after(videoArea);
-
-            // Reload video untuk mode portrait
-            refreshVideoOnly();
 
             if (document.exitFullscreen && document.fullscreenElement) {
                 document.exitFullscreen();
