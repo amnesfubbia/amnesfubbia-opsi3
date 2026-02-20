@@ -101,7 +101,6 @@
         .calendar-poster { flex: 0 0 85px; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; background: #111; border: 1px solid #222; }
         .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-title { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
-        .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8e8e8e; }
         .cal-genre-pill { padding: 2px 8px; background: #1c1c1c; border-radius: 100px; color: #ccc; font-size: 9px; font-weight: 600; }
         .cal-rating { color: #ffca28; font-weight: 700; font-size: 11px; }
@@ -123,7 +122,11 @@
         .modal-player { display: none; position: fixed; inset: 0; z-index: 8000; background: #000; overflow-y: auto; }
         .carousel-track { display: flex; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; }
         .carousel-slide { min-width: 100%; aspect-ratio: 16/9; position: relative; background: #000; }
-        .swipe-overlay { position: absolute; inset: 0; z-index: 10; background: transparent; }
+        
+        /* FIX: Agar Iframe bisa di klik */
+        .swipe-overlay { position: absolute; inset: 0; z-index: 10; background: transparent; pointer-events: none; }
+        .carousel-track iframe { position: relative; z-index: 5; }
+
         .interaction-icon { font-size: 24px; cursor: pointer; color: #fff; transition: transform 0.1s; }
         .interaction-icon:active { transform: scale(1.2); }
         .server-btn { width: 100%; padding: 12px 5px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; border: 1px solid #1c1c1c; text-align: center; cursor: pointer; background: #0a0a0a; color: #fff; transition: all 0.2s; }
@@ -487,7 +490,7 @@
         let currentImdbId = ""; 
 
         window.onload = () => {
-            // FIX: Tambahkan State Awal untuk Back Button
+            // State awal Home
             history.replaceState({view: 'home'}, "");
 
             setTimeout(() => {
@@ -501,11 +504,10 @@
             }); 
         };
 
-        /* --- HP BACK BUTTON SYSTEM (FIXED) --- */
+        /* --- HP BACK BUTTON SYSTEM (FIXED & STEP BY STEP) --- */
         window.addEventListener('popstate', function(event) {
             const state = event.state;
             
-            // Periksa semua elemen UI yang terbuka
             const isLandscapeOpen = document.getElementById('landscapeOverlay').style.display === 'block';
             const isActorOpen = document.getElementById('actorModal').style.display === 'block';
             const isMovieOpen = document.getElementById('movieModal').style.display === 'block';
@@ -523,7 +525,7 @@
             } else if (isMenuOpen) {
                 toggleSideMenu();
             } else {
-                // Jika semua tertutup dan user tekan back di home, biarkan browser keluar/back asli
+                // Jika sudah di home dan tidak ada modal, browser akan menangani back (keluar aplikasi)
             }
         });
 
@@ -541,7 +543,6 @@
             
             showLsUI();
             
-            // Push state hanya jika belum ada state landscape
             if (!window.history.state || window.history.state.view !== 'landscape') {
                 history.pushState({view: 'landscape'}, "");
             }
@@ -550,7 +551,6 @@
                 if (document.documentElement.requestFullscreen) {
                     await document.documentElement.requestFullscreen();
                 }
-                // Paksa orientasi jika didukung mobile browser
                 if (screen.orientation && screen.orientation.lock) {
                     await screen.orientation.lock('landscape').catch(() => {});
                 }
@@ -619,13 +619,11 @@
             return data;
         }
 
-        /* --- FITUR: PROFIL AKTOR MENDETAIL (Updated Instagram Style) --- */
+        /* --- FITUR: PROFIL AKTOR MENDETAIL --- */
         async function openActorProfile(actorId) {
-            const track = document.getElementById('carouselTrack');
-            if(track) {
-                track.querySelectorAll('iframe').forEach(f => f.src = "");
-            }
-
+            // STOP TRAILER AUDIO agar tidak bocor
+            stopTrailerAudio();
+            
             const actorModal = document.getElementById('actorModal');
             actorModal.style.display = 'block';
             document.body.style.overflow = 'hidden';
@@ -680,19 +678,52 @@
 
         function closeActorModal() {
             document.getElementById('actorModal').style.display = 'none';
-            if (document.getElementById('movieModal').style.display !== 'block') {
+            // Jika modal trailer masih ada di belakangnya, refresh videonya saja
+            if (document.getElementById('movieModal').style.display === 'block') {
+                refreshVideoOnly();
+            } else {
                 document.body.style.overflow = 'auto';
             }
         }
 
-        /* --- FITUR: PENCARIAN STUDIO/NETWORK --- */
-        function searchByStudio(studioId, studioName) {
-            closeModal();
-            currentCompany = studioId;
-            currentType = 'movie'; 
-            document.getElementById('btnGenre').innerHTML = studioName + ' <i class="fa-solid fa-caret-down"></i>';
-            document.getElementById('btnGenre').classList.add('active-pill');
-            loadFeed(true);
+        function stopTrailerAudio() {
+            const track = document.getElementById('carouselTrack');
+            if (track) {
+                track.querySelectorAll('iframe').forEach(f => {
+                    // Kosongkan src agar audio berhenti total
+                    const currentSrc = f.src;
+                    f.src = ""; 
+                    f.dataset.oldSrc = currentSrc; // Simpan untuk reload nanti
+                });
+            }
+        }
+
+        async function refreshVideoOnly() {
+            const id = window.currentMediaId;
+            const type = window.currentMediaType;
+            if(!id) return;
+
+            const dId = await fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=id-ID&append_to_response=videos&include_video_language=en,id,hi,th,ko,ja,null`);
+            const allVideos = (dId.videos?.results || []).filter(v => (v.type === 'Trailer' || v.type === 'Teaser') && v.official === true && v.site === 'YouTube');
+            const track = document.getElementById('carouselTrack');
+            const dots = document.getElementById('carouselDots');
+            track.innerHTML = ''; dots.innerHTML = '';
+            
+            let vidsToDisplay = allVideos.sort((a, b) => (a.type === 'Trailer' ? -1 : 1)).slice(0, 5);
+            if(vidsToDisplay.length > 0) { 
+                vidsToDisplay.forEach((v, i) => { 
+                    const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===currentIdx?1:0}&rel=0&modestbranding=1&mute=0`;
+                    track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen"></iframe></div>`; 
+                    if(vidsToDisplay.length > 1) {
+                        dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`;
+                    }
+                }); 
+                document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
+                document.getElementById('carouselTrack').style.transform = `translateX(-${currentIdx * 100}%)`;
+            } else {
+                const seriesSuffix = (type === 'tv') ? '/1/1' : '';
+                track.innerHTML = `<div class="carousel-slide"><iframe src="https://vidlink.pro/${type}/${id}${seriesSuffix}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
+            }
         }
 
         /* --- CORE LOGIC --- */
@@ -1258,17 +1289,20 @@
         }
         
         function setupSwipe() { 
-            const overlay = document.getElementById('swipeOverlay'); 
-            overlay.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true}); 
-            overlay.addEventListener('touchend', e => { 
+            // Swipe tetap aktif tapi tidak menghalangi klik ke iframe
+            const trackCont = document.getElementById('mainVideoArea'); 
+            trackCont.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true}); 
+            trackCont.addEventListener('touchend', e => { 
                 let diff = startX - e.changedTouches[0].clientX; 
                 const slides = document.querySelectorAll('.carousel-slide'); 
-                if(Math.abs(diff) > 50 && slides.length > 1) { 
+                if(Math.abs(diff) > 70 && slides.length > 1) { 
                     let oldIdx = currentIdx; 
                     if(diff > 0 && currentIdx < slides.length - 1) currentIdx++; 
                     else if(diff < 0 && currentIdx > 0) currentIdx--; 
+                    
                     document.getElementById('carouselTrack').style.transform = `translateX(-${currentIdx * 100}%)`; 
                     document.querySelectorAll('.dot').forEach((d, i) => { d.className = `dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}`; }); 
+                    
                     const oldVid = document.getElementById(`vid-${oldIdx}`), newVid = document.getElementById(`vid-${currentIdx}`);
                     if(oldVid) try{oldVid.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');}catch(e){}
                     if(newVid) try{newVid.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');}catch(e){}
