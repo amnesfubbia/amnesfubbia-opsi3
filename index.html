@@ -101,7 +101,6 @@
         .calendar-poster { flex: 0 0 85px; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; background: #111; border: 1px solid #222; }
         .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-title { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
-        .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8e8e8e; }
         .cal-genre-pill { padding: 2px 8px; background: #1c1c1c; border-radius: 100px; color: #ccc; font-size: 9px; font-weight: 600; }
         .cal-rating { color: #ffca28; font-weight: 700; font-size: 11px; }
@@ -501,8 +500,6 @@
 
         /* --- HP BACK BUTTON SYSTEM (FIXED) --- */
         window.addEventListener('popstate', function(event) {
-            const state = event.state;
-            
             // Tutup Landscape dulu jika aktif
             if (document.getElementById('landscapeOverlay').style.display === 'block') {
                 closeLandscapeSilently();
@@ -669,7 +666,7 @@
                     card.innerHTML = `
                         <div class="badge-rating">★ ${(m.vote_average||0).toFixed(1)}</div>
                         <div class="badge-type">${mType === 'tv' ? 'tv' : 'movie'}</div>
-                        <img src="https://image.tmdb.org/t/p/w185${m.poster_path}" onerror="this.src='https://via.placeholder.com/185x278?text=No+Poster'" class="w-full h-full object-cover">
+                        <img src="https://image.tmdb.org/t/p/w185${m.poster_path}" onerror="this.src='https://via.placeholder.com/185x278?text=No+Poster'" class="w-full h-full object-cover" loading="lazy">
                     `;
                     filmGrid.appendChild(card);
                 });
@@ -841,7 +838,7 @@
                     item.onclick = () => openModal(m.id, 'movie');
                     item.innerHTML = `
                         <div class="calendar-poster">
-                            <img src="https://image.tmdb.org/t/p/w185${m.poster_path}" onerror="this.src='https://via.placeholder.com/185x278?text=No+Poster'" class="w-full h-full object-cover">
+                            <img src="https://image.tmdb.org/t/p/w185${m.poster_path}" onerror="this.src='https://via.placeholder.com/185x278?text=No+Poster'" class="w-full h-full object-cover" loading="lazy">
                         </div>
                         <div class="calendar-info">
                             <div class="cal-title">${m.title}</div>
