@@ -123,8 +123,8 @@
         .carousel-track { display: flex; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; }
         .carousel-slide { min-width: 100%; aspect-ratio: 16/9; position: relative; background: #000; }
         
-        /* FIX: Agar Iframe bisa di klik */
-        .swipe-overlay { position: absolute; inset: 0; z-index: 10; background: transparent; pointer-events: none; }
+        /* FIX: Agar Iframe bisa di klik DAN swipe tetap jalan */
+        .swipe-overlay { position: absolute; inset: 0; z-index: 10; background: transparent; pointer-events: auto; }
         .carousel-track iframe { position: relative; z-index: 5; }
 
         .interaction-icon { font-size: 24px; cursor: pointer; color: #fff; transition: transform 0.1s; }
@@ -531,6 +531,9 @@
 
         /* --- LANDSCAPE CONTROLS LOGIC --- */
         async function enterLandscape() {
+            // STOP trailer sebelum pindah agar suara tidak tumpang tindih
+            stopTrailerAudio();
+
             const overlay = document.getElementById('landscapeOverlay');
             const lsTitle = document.getElementById('lsTitle');
             
@@ -541,6 +544,8 @@
             const videoArea = document.getElementById('mainVideoArea');
             document.getElementById('landscapeOverlay').appendChild(videoArea);
             
+            // Reload video yang aktif di landscape agar jalan kembali
+            refreshVideoOnly();
             showLsUI();
             
             if (!window.history.state || window.history.state.view !== 'landscape') {
@@ -562,12 +567,18 @@
         }
 
         function closeLandscapeSilently() {
+            // Stop audio saat keluar dari landscape
+            stopTrailerAudio();
+
             document.body.classList.remove('landscape-active');
             document.getElementById('landscapeOverlay').style.display = 'none';
             
             const videoArea = document.getElementById('mainVideoArea');
             const castContainer = document.getElementById('castContainer');
             if(castContainer) castContainer.after(videoArea);
+
+            // Reload video untuk mode portrait
+            refreshVideoOnly();
 
             if (document.exitFullscreen && document.fullscreenElement) {
                 document.exitFullscreen();
@@ -690,10 +701,16 @@
             const track = document.getElementById('carouselTrack');
             if (track) {
                 track.querySelectorAll('iframe').forEach(f => {
-                    // Kosongkan src agar audio berhenti total
+                    // Coba pause lewat YouTube API jika itu youtube
+                    if(f.src.includes('youtube.com')) {
+                        try {
+                            f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                        } catch(e) {}
+                    }
+                    // Untuk semua server, kita paksa ganti SRC jadi kosong untuk hentikan audio seketika
                     const currentSrc = f.src;
                     f.src = ""; 
-                    f.dataset.oldSrc = currentSrc; // Simpan untuk reload nanti
+                    f.dataset.oldSrc = currentSrc;
                 });
             }
         }
@@ -1261,7 +1278,9 @@
             const dots = document.getElementById('carouselDots'); 
             const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&mute=0` : `${url}?enablejsapi=1&mute=0`;
             
+            // Hentikan video lama
             track.querySelectorAll('iframe').forEach(f => f.src = "");
+            
             track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${finalUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
             track.style.transform = 'translateX(0)'; currentIdx = 0; dots.innerHTML = ''; 
             document.getElementById('swipeOverlay').style.display = 'none'; highlightBtn(el); 
@@ -1289,23 +1308,51 @@
         }
         
         function setupSwipe() { 
-            // Swipe tetap aktif tapi tidak menghalangi klik ke iframe
             const trackCont = document.getElementById('mainVideoArea'); 
-            trackCont.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true}); 
-            trackCont.addEventListener('touchend', e => { 
+            const overlay = document.getElementById('swipeOverlay');
+
+            overlay.addEventListener('touchstart', e => { 
+                startX = e.touches[0].clientX; 
+            }, {passive:true}); 
+
+            overlay.addEventListener('touchend', e => { 
                 let diff = startX - e.changedTouches[0].clientX; 
                 const slides = document.querySelectorAll('.carousel-slide'); 
+                
+                if (Math.abs(diff) < 10) {
+                    overlay.style.pointerEvents = 'none'; 
+                    setTimeout(() => { overlay.style.pointerEvents = 'auto'; }, 100); 
+                    return;
+                }
+
                 if(Math.abs(diff) > 70 && slides.length > 1) { 
                     let oldIdx = currentIdx; 
                     if(diff > 0 && currentIdx < slides.length - 1) currentIdx++; 
                     else if(diff < 0 && currentIdx > 0) currentIdx--; 
                     
                     document.getElementById('carouselTrack').style.transform = `translateX(-${currentIdx * 100}%)`; 
-                    document.querySelectorAll('.dot').forEach((d, i) => { d.className = `dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}`; }); 
+                    document.querySelectorAll('.dot').forEach((d, i) => { 
+                        d.className = `dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}`; 
+                    }); 
                     
-                    const oldVid = document.getElementById(`vid-${oldIdx}`), newVid = document.getElementById(`vid-${currentIdx}`);
-                    if(oldVid) try{oldVid.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');}catch(e){}
-                    if(newVid) try{newVid.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');}catch(e){}
+                    // --- OTOMATIS BERHENTI KETIKA BERGANTI SLIDE ---
+                    const iframes = document.querySelectorAll('.carousel-track iframe');
+                    iframes.forEach((f, idx) => {
+                        if(idx !== currentIdx) {
+                            // Matikan audio slide lain
+                            if(f.src.includes('youtube.com')) {
+                                f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                            } else {
+                                // Untuk server lain, reset src agar suara berhenti total
+                                const s = f.src; f.src = ""; f.src = s;
+                            }
+                        } else {
+                            // Play slide yang baru aktif
+                            if(f.src.includes('youtube.com')) {
+                                f.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                            }
+                        }
+                    });
                 } 
             }); 
         }
