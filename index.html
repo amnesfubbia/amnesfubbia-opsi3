@@ -930,7 +930,15 @@
                 if(currentCountry) url += `&with_origin_country=${currentCountry}`;
                 if(currentGenre) url += `&with_genres=${currentGenre}`;
                 if(currentCompany) url += `&with_companies=${currentCompany}`;
-                if(currentType === 'short') url += `&with_runtime.lte=45&with_runtime.gte=1`;
+                
+                // LOGIKA SHORT DIPERKETAT
+                if(currentType === 'short') {
+                    // Hanya izinkan durasi 1 - 20 menit (Sangat ketat)
+                    url += `&with_runtime.lte=20&with_runtime.gte=1`;
+                    // Opsional: Batasi vote count agar film bioskop durasi pendek tidak masuk jika ada
+                    url += `&vote_count.lte=5000`; 
+                }
+
                 if(currentSchedule === 'now_playing' || currentSchedule === 'upcoming') { 
                     const today = new Date().toISOString().split('T')[0]; 
                     if(currentSchedule === 'now_playing') { 
