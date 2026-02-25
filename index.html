@@ -1099,7 +1099,7 @@
                 if(globalEnDesc) translateBtn.classList.remove('hidden');
             }
             
-            // --- LOGIKA TRAILER BARU (Youtube -> Dailymotion -> Fallback) ---
+            // --- LOGIKA TRAILER BARU (Youtube -> Dailymotion Trailer -> Dailymotion Film -> Fallback) ---
             const allVideos = (dId.videos?.results || []).filter(v => 
                 (v.type === 'Trailer' || v.type === 'Teaser') && 
                 v.official === true &&
@@ -1109,8 +1109,8 @@
             const dots = document.getElementById('carouselDots');
             track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
             
-            // 1. Cek YouTube
             if(allVideos.length > 0) { 
+                // 1. YouTube Berhasil
                 let vidsToDisplay = allVideos.sort((a, b) => (a.type === 'Trailer' ? -1 : 1)).slice(0, 5);
                 vidsToDisplay.forEach((v, i) => { 
                     const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
@@ -1122,12 +1122,14 @@
                 document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
             } 
             else { 
-                // 2. Jika YouTube Gak Ada, Cek Dailymotion
+                // 2 & 3. Dailymotion (Trailer atau Full Film)
                 const titleQuery = dId.title || dId.name;
                 const releaseYear = (dId.release_date || dId.first_air_date || "").split('-')[0];
                 const studioName = (dId.production_companies && dId.production_companies.length > 0) ? dId.production_companies[0].name : "";
-                const strictQuery = encodeURIComponent(`${titleQuery} ${releaseYear} ${studioName} Official Trailer`);
-                const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id,title,created_time&search=${strictQuery}&limit=1`;
+                
+                // Coba Trailer Dailymotion Dulu
+                const dmTrailerQuery = encodeURIComponent(`${titleQuery} ${releaseYear} ${studioName} Trailer`);
+                const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id,title,created_time&search=${dmTrailerQuery}&limit=1`;
                 
                 try {
                     const dmRes = await fetch(dmSearchUrl);
@@ -1135,28 +1137,25 @@
                     
                     if(dmData.list && dmData.list.length > 0) {
                         const dmVideo = dmData.list[0];
-                        const dmTitleLower = dmVideo.title.toLowerCase();
-                        const targetTitleLower = titleQuery.toLowerCase();
-                        const dmYear = new Date(dmVideo.created_time * 1000).getFullYear().toString();
+                        track.innerHTML = `<div class="carousel-slide"><iframe src="https://www.dailymotion.com/embed/video/${dmVideo.id}?autoplay=1&mute=0" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
+                    } else {
+                        // Jika Trailer Dailymotion Gak Ada, Langsung cari Filmnya di Dailymotion
+                        const dmFilmQuery = encodeURIComponent(`${titleQuery} ${releaseYear} Full Movie`);
+                        const dmFilmRes = await fetch(`https://api.dailymotion.com/videos?fields=id,title&search=${dmFilmQuery}&limit=1`);
+                        const dmFilmData = await dmFilmRes.json();
                         
-                        // Validasi sederhana agar trailer yang ditemukan relevan
-                        if(dmTitleLower.includes(targetTitleLower) && (dmTitleLower.includes(releaseYear) || dmYear.includes(releaseYear))) {
-                            track.innerHTML = `<div class="carousel-slide"><iframe src="https://www.dailymotion.com/embed/video/${dmVideo.id}?autoplay=1&mute=0" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
+                        if(dmFilmData.list && dmFilmData.list.length > 0) {
+                            track.innerHTML = `<div class="carousel-slide"><iframe src="https://www.dailymotion.com/embed/video/${dmFilmData.list[0].id}?autoplay=1&mute=0" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
                         } else {
-                            // 3. Jika Dailymotion Tidak Valid/Gak Ada, Fallback Server
+                            // 4. Fallback Server (Videasy) jika Dailymotion total tidak ada hasil
                             const fallbackUrl = `https://player.videasy.net/${type}/${id}`;
                             track.innerHTML = `<div class="carousel-slide"><iframe src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
                         }
-                    } else {
-                        // 3. Fallback Server (Videasy)
-                        const fallbackUrl = `https://player.videasy.net/${type}/${id}`;
-                        track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
                     }
                     document.getElementById('swipeOverlay').style.display = 'none';
                 } catch(e) {
-                    // Fallback jika fetch Dailymotion gagal
                     const fallbackUrl = `https://player.videasy.net/${type}/${id}`;
-                    track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
+                    track.innerHTML = `<div class="carousel-slide"><iframe src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
                     document.getElementById('swipeOverlay').style.display = 'none';
                 }
             }
