@@ -928,7 +928,8 @@
                 if(currentCompany) url += `&with_companies=${currentCompany}`;
                 
                 if(currentType === 'short') {
-                    url += `&with_runtime.lte=20&with_runtime.gte=1&without_genres=99,10770`; 
+                    // Perbaikan: Menambah filter agar benar-benar movie fiksi pendek (Short Film)
+                    url += `&with_runtime.lte=40&with_runtime.gte=1&without_genres=99,10770,10767,10763`; 
                 }
 
                 if(currentSchedule === 'now_playing' || currentSchedule === 'upcoming') { 
@@ -1118,7 +1119,8 @@
                 v.official === true &&
                 v.site === 'YouTube' && 
                 !v.name.toLowerCase().includes('shorts') &&
-                !v.name.toLowerCase().includes('news') &&
+                !v.name.toLowerCase().includes('reaction') &&
+                !v.name.toLowerCase().includes('review') &&
                 !v.name.toLowerCase().includes('press') &&
                 !v.name.toLowerCase().includes('interview')
             );
@@ -1139,7 +1141,10 @@
             } else { 
                 const titleQuery = dId.title || dId.name;
                 const releaseYear = (dId.release_date || dId.first_air_date || "").split('-')[0];
-                const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id&search=${encodeURIComponent(titleQuery + ' ' + releaseYear + ' Official Trailer')}&limit=1`;
+                const studio = dId.production_companies && dId.production_companies.length > 0 ? dId.production_companies[0].name : "";
+                
+                // Perbaikan: Query Dailymotion lebih ketat dengan studio dan kata "Official"
+                const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id,title&search=${encodeURIComponent(titleQuery + ' ' + studio + ' Official Trailer ' + releaseYear)}&limit=1`;
                 
                 try {
                     const dmRes = await fetch(dmSearchUrl);
