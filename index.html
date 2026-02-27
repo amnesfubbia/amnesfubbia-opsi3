@@ -928,7 +928,7 @@
                 if(currentCompany) url += `&with_companies=${currentCompany}`;
                 
                 if(currentType === 'short') {
-                    // Pengetatan durasi: minimal 1 menit, maksimal 20 menit, mengecualikan genre berita & dokumenter
+                    // Update: Filter durasi ketat & mengecualikan genre berita/dokumen TV
                     url += `&with_runtime.lte=20&with_runtime.gte=1&without_genres=99,10770`; 
                 }
 
@@ -1114,7 +1114,7 @@
                 if(globalEnDesc) translateBtn.classList.remove('hidden');
             }
             
-            // PRIORITAS YOUTUBE: Filter trailer/teaser resmi YouTube secara ketat
+            // Logika YouTube: Filter ketat untuk official trailer
             const allVideos = (dId.videos?.results || []).filter(v => 
                 (v.type === 'Trailer' || v.type === 'Teaser') && 
                 v.official === true &&
@@ -1122,15 +1122,13 @@
                 !v.name.toLowerCase().includes('shorts') &&
                 !v.name.toLowerCase().includes('news') &&
                 !v.name.toLowerCase().includes('press') &&
-                !v.name.toLowerCase().includes('interview') &&
-                !v.name.toLowerCase().includes('event')
+                !v.name.toLowerCase().includes('interview')
             );
 
             const dots = document.getElementById('carouselDots');
             track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
             
             if(allVideos.length > 0) { 
-                // Jika YouTube ditemukan, gunakan YouTube
                 let vidsToDisplay = allVideos.sort((a, b) => (a.type === 'Trailer' ? -1 : 1)).slice(0, 5);
                 vidsToDisplay.forEach((v, i) => { 
                     const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0&widgetid=1`;
@@ -1139,9 +1137,10 @@
                         dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; 
                     }
                 }); 
+                // Fix z-index: Swipe overlay hanya aktif jika ada video slide
                 document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
             } else { 
-                // FALLBACK: Hanya panggil Dailymotion jika YouTube kosong
+                // Fallback Dailymotion
                 const titleQuery = dId.title || dId.name;
                 const releaseYear = (dId.release_date || dId.first_air_date || "").split('-')[0];
                 const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id&search=${encodeURIComponent(titleQuery + ' ' + releaseYear + ' Official Trailer')}&limit=1`;
@@ -1155,7 +1154,7 @@
                         track.innerHTML = `<div class="carousel-slide"><iframe src="https://www.dailymotion.com/embed/video/${dmId}?autoplay=1&mute=0" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
                         document.getElementById('swipeOverlay').style.display = 'none';
                     } else {
-                        // Terakhir gunakan player eksternal jika semua gagal
+                        // Terakhir gunakan external player jika Dailymotion nihil
                         const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`;
                         track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
                         document.getElementById('swipeOverlay').style.display = 'none';
