@@ -1145,7 +1145,7 @@
                 const titleQuery = dId.title || dId.name;
                 const releaseYear = (dId.release_date || dId.first_air_date || "").split('-')[0];
                 
-                // LOGIKA BARU: Pencarian Dailymotion yang Lebih Akurat
+                // LOGIKA BARU: Pencarian Dailymotion yang Lebih Akurat dengan Filter Tahun & Nama
                 const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id,title&search=${encodeURIComponent(titleQuery + ' ' + releaseYear + ' Official Trailer')}&limit=3`;
                 
                 try {
@@ -1154,11 +1154,11 @@
                     
                     let foundVideo = null;
                     if(dmData.list && dmData.list.length > 0) {
-                        // Validasi judul agar tidak melenceng jauh (Contoh Bilby vs Bilby Brothers)
+                        // Validasi judul agar tidak melenceng jauh
                         foundVideo = dmData.list.find(v => {
                             const vTitle = v.title.toLowerCase();
                             const qTitle = titleQuery.toLowerCase();
-                            // Harus mengandung judul asli DAN (Trailer atau Tahun)
+                            // Harus mengandung judul asli DAN (Trailer atau Tahun rilis yang sesuai)
                             return vTitle.includes(qTitle) && (vTitle.includes('trailer') || vTitle.includes(releaseYear));
                         });
                         
