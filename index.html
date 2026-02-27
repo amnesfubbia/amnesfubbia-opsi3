@@ -928,7 +928,6 @@
                 if(currentCompany) url += `&with_companies=${currentCompany}`;
                 
                 if(currentType === 'short') {
-                    // Update: Filter durasi ketat & mengecualikan genre berita/dokumen TV
                     url += `&with_runtime.lte=20&with_runtime.gte=1&without_genres=99,10770`; 
                 }
 
@@ -1114,7 +1113,6 @@
                 if(globalEnDesc) translateBtn.classList.remove('hidden');
             }
             
-            // Logika YouTube: Filter ketat untuk official trailer
             const allVideos = (dId.videos?.results || []).filter(v => 
                 (v.type === 'Trailer' || v.type === 'Teaser') && 
                 v.official === true &&
@@ -1137,10 +1135,8 @@
                         dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; 
                     }
                 }); 
-                // Fix z-index: Swipe overlay hanya aktif jika ada video slide
                 document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
             } else { 
-                // Fallback Dailymotion
                 const titleQuery = dId.title || dId.name;
                 const releaseYear = (dId.release_date || dId.first_air_date || "").split('-')[0];
                 const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id&search=${encodeURIComponent(titleQuery + ' ' + releaseYear + ' Official Trailer')}&limit=1`;
@@ -1154,7 +1150,6 @@
                         track.innerHTML = `<div class="carousel-slide"><iframe src="https://www.dailymotion.com/embed/video/${dmId}?autoplay=1&mute=0" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
                         document.getElementById('swipeOverlay').style.display = 'none';
                     } else {
-                        // Terakhir gunakan external player jika Dailymotion nihil
                         const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`;
                         track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
                         document.getElementById('swipeOverlay').style.display = 'none';
