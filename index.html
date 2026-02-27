@@ -1142,33 +1142,33 @@
                 }); 
                 document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
             } else { 
+                // LOGIKA PERBAIKAN AKURASI SEARCH TRAILER PADA DAILYMOTION
                 const titleQuery = dId.title || dId.name;
                 const releaseYear = (dId.release_date || dId.first_air_date || "").split('-')[0];
                 
-                // LOGIKA: Pencarian Dailymotion dengan filter judul dan tahun rilis yang akurat
-                const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id,title&search=${encodeURIComponent(titleQuery + ' ' + releaseYear + ' Official Trailer')}&limit=5`;
+                // Pencarian difilter dengan judul + tahun + keyword 'Official Trailer'
+                const dmSearchUrl = `https://api.dailymotion.com/videos?fields=id,title,verified,owner.screenname&search=${encodeURIComponent(titleQuery + ' ' + releaseYear + ' Official Trailer')}&sort=relevance&limit=5`;
                 
                 try {
                     const dmRes = await fetch(dmSearchUrl);
                     const dmData = await dmRes.json();
                     
-                    let foundVideo = null;
+                    let foundVideoId = null;
                     if(dmData.list && dmData.list.length > 0) {
-                        foundVideo = dmData.list.find(v => {
-                            const vTitle = v.title.toLowerCase();
-                            const qTitle = titleQuery.toLowerCase();
-                            // Wajib mengandung judul asli film agar akurat
-                            return vTitle.includes(qTitle);
+                        // Prioritaskan akun Verified atau yang judulnya mengandung judul asli film secara presisi
+                        const bestMatch = dmData.list.find(v => {
+                            const lowTitle = v.title.toLowerCase();
+                            const lowTarget = titleQuery.toLowerCase();
+                            // Harus mengandung judul film dan kata trailer
+                            return lowTitle.includes(lowTarget) && lowTitle.includes('trailer');
                         });
                         
-                        // Jika pencarian dengan judul asli tidak ketemu yang spesifik, gunakan hasil pertama
-                        if(!foundVideo) foundVideo = dmData.list[0];
+                        foundVideoId = bestMatch ? bestMatch.id : dmData.list[0].id;
                     }
 
-                    if(foundVideo) {
-                        track.innerHTML = `<div class="carousel-slide"><iframe src="https://www.dailymotion.com/embed/video/${foundVideo.id}?autoplay=1&mute=0" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
+                    if(foundVideoId) {
+                        track.innerHTML = `<div class="carousel-slide"><iframe src="https://www.dailymotion.com/embed/video/${foundVideoId}?autoplay=1&mute=0" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
                     } else {
-                        // Jika tidak ada trailer sama sekali, langsung buka filmnya (Server Player)
                         const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`;
                         track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
                     }
