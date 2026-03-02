@@ -1155,7 +1155,7 @@
                     
                     let foundVideoId = null;
                     if(dmData.list && dmData.list.length > 0) {
-                        // Prioritaskan akun Verified atau yang judulnya mengandung judul asli film secara presisi
+                        // Prioritaskan akun yang judulnya mengandung judul asli film secara presisi
                         const bestMatch = dmData.list.find(v => {
                             const lowTitle = v.title.toLowerCase();
                             const lowTarget = titleQuery.toLowerCase();
