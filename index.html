@@ -101,6 +101,7 @@
         .calendar-poster { flex: 0 0 85px; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; background: #111; border: 1px solid #222; }
         .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-title { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
+        .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8e8e8e; }
         .cal-genre-pill { padding: 2px 8px; background: #1c1c1c; border-radius: 100px; color: #ccc; font-size: 9px; font-weight: 600; }
         .cal-rating { color: #ffca28; font-weight: 700; font-size: 11px; }
@@ -230,6 +231,10 @@
         .actor-section-title { 
             padding: 12px; font-size: 13px; font-weight: 700; color: #fff; 
             border-top: 1px solid #1c1c1c; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        /* Tambahan style tombol trailer */
+        .btn-trailer {
+            background: #262626; border: 1px solid #333; border-radius: 6px; padding: 4px 10px; font-size: 10px; font-weight: 800; color: #fff; text-transform: uppercase; cursor: pointer;
         }
     </style>
 </head>
@@ -389,9 +394,10 @@
                 </div>
 
                 <div class="px-4 py-3 flex justify-between items-center bg-black">
-                    <div class="flex gap-4">
+                    <div class="flex gap-4 items-center">
                         <i id="btnLikeModal" class="interaction-icon"></i>
                         <i class="fa-solid fa-expand interaction-icon" onclick="enterLandscape()"></i>
+                        <button class="btn-trailer" onclick="reloadTrailers()">Trailer</button>
                     </div>
                     <i id="btnBookModal" class="interaction-icon"></i>
                 </div>
@@ -490,6 +496,7 @@
         let currentImdbId = ""; 
         let lastTrailerSources = []; 
         let currentDailymotionId = ""; // Menyimpan ID Dailymotion
+        let currentTrailersData = []; // Menyimpan data trailer sementara
 
         window.onload = () => {
             setTimeout(() => {
@@ -718,7 +725,7 @@
                             }).join(''); 
                             drop.style.display = 'block'; 
                         } else { drop.style.display = 'none'; } 
-                    } catch(e){} 
+                    } catch((e){} 
                 }, 300); 
             }); 
             document.addEventListener('click', (e) => { if(!e.target.closest('.search-input-box')) drop.style.display = 'none'; }); 
@@ -987,30 +994,12 @@
             const translateBtn = document.getElementById('mTranslateBtn');
             if (originalIndoDesc.trim() !== "") { globalFullDesc = originalIndoDesc; translateBtn.innerText = "Lihat versi asli"; translateBtn.classList.remove('hidden'); } else { globalFullDesc = globalEnDesc || "Sinopsis belum tersedia."; translateBtn.innerText = "Lihat terjemahan"; if(globalEnDesc) translateBtn.classList.remove('hidden'); }
             
-            const dots = document.getElementById('carouselDots');
-            track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
-
-            const handleTrailerError = async () => {
-                const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`; 
-                track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
-                document.getElementById('swipeOverlay').style.display = 'none';
-            };
-
             const allVideos = (dId.videos?.results || [])
                 .filter(v => v.site === 'YouTube' && v.official === true && (v.type === 'Trailer' || v.type === 'Teaser'))
                 .sort((a, b) => (a.type === 'Trailer' ? -1 : 1));
-
-            if(allVideos.length > 0) { 
-                let vidsToDisplay = allVideos.slice(0, 5);
-                vidsToDisplay.forEach((v, i) => { 
-                    const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
-                    track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen" onerror="handleTrailerError()"></iframe></div>`; 
-                    if(vidsToDisplay.length > 1) { dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; }
-                }); 
-                document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
-            } else { 
-                await handleTrailerError();
-            }
+            
+            currentTrailersData = allVideos;
+            await renderTrailersToCarousel(allVideos, type, id, seriesSuffix);
 
             try {
                 const qName = dId.title || dId.name;
@@ -1054,18 +1043,49 @@
                 <button class="server-btn" onclick="playVid('https://www.2embed.cc/embed/${id}', this)">Server 12</button>
                 <button class="server-btn" onclick="playVid('https://vidsrc.xyz/embed/${type}/${id}${seriesSuffix}', this)">Server 13</button>
                 <button class="server-btn" onclick="playVid('https://vidsrc.me/embed/${type}?tmdb=${id}', this)">Server 14</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidsrc.net/embed/${type}/${id}${seriesSuffix}', this)">Server 15</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidsrc.icu/embed/${type}/${id}${seriesSuffix}', this)">Server 16</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://vidnest.fun/movie/${id}', this)">Server 17</button>
+                <button class="server-btn" onclick="playVid('https://vidsrc.net/embed/${type}/${id}${seriesSuffix}', this)">Server 15</button>
+                <button class="server-btn" onclick="playVid('https://vidsrc.icu/embed/${type}/${id}${seriesSuffix}', this)">Server 16</button>
+                <button class="server-btn" onclick="playVid('https://vidnest.fun/movie/${id}', this)">Server 17</button>
                 <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://player.autoembed.cc/embed/${type}/${id}${seriesSuffix}', this)">Server 18</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://warezcdn.site/filme/${id}', this)">Server 19</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://embed.smashystream.com/playere.php?tmdb=${id}', this)">Server 20</button>
-                <button class="server-btn" style="background:#1a1a1a; border-color:#333;" onclick="playVid('https://www.dailymotion.com/embed/video/${currentDailymotionId}', this, true)">Server 21</button>
-                <button class="server-btn" onclick="playVid('https://ok.ru/videoembed/[ID]', this, true)">Server 22</button>
-                <button class="server-btn" onclick="playVid('https://ok.ru/videoembed/[ID]', this, true)">Server 23</button>
+                <button class="server-btn" onclick="playVid('https://warezcdn.site/filme/${id}', this)">Server 19</button>
+                <button class="server-btn" onclick="playVid('https://embed.smashystream.com/playere.php?tmdb=${id}', this)">Server 20</button>
+                <button class="server-btn" onclick="playVid('https://www.dailymotion.com/embed/video/${currentDailymotionId}', this, true)">Server 21</button>
             `;
             if(type === 'tv') { document.getElementById('seriesControl').classList.remove('hidden'); document.getElementById('seasonSel').innerHTML = (dId.seasons||[]).filter(s=>s.season_number>0).map(s=>`<option value="${s.season_number}">Season ${s.season_number}</option>`).join(''); loadEpisodes(); } else { document.getElementById('seriesControl').classList.add('hidden'); }
             updateLibButtons(id);
+        }
+
+        async function renderTrailersToCarousel(videos, type, id, seriesSuffix) {
+            const track = document.getElementById('carouselTrack');
+            const dots = document.getElementById('carouselDots');
+            track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
+            currentIdx = 0;
+
+            const handleTrailerError = async () => {
+                const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`; 
+                track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
+                document.getElementById('swipeOverlay').style.display = 'none';
+            };
+
+            if(videos && videos.length > 0) { 
+                let vidsToDisplay = videos.slice(0, 5);
+                vidsToDisplay.forEach((v, i) => { 
+                    const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
+                    track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen" onerror="handleTrailerError()"></iframe></div>`; 
+                    if(vidsToDisplay.length > 1) { dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; }
+                }); 
+                document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
+            } else { 
+                await handleTrailerError();
+            }
+        }
+
+        function reloadTrailers() {
+            const type = window.currentMediaType;
+            const id = window.currentMediaId;
+            const seriesSuffix = (type === 'tv') ? '/1/1' : '';
+            document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active-link'));
+            renderTrailersToCarousel(currentTrailersData, type, id, seriesSuffix);
         }
 
         async function handleTranslate() {
@@ -1085,15 +1105,17 @@
         function renderSynopsis() { const descEl = document.getElementById('mDesc'), toggleBtn = document.getElementById('mToggleBtn'); if (globalFullDesc.length > 90) { toggleBtn.classList.remove('hidden'); descEl.innerText = isExpanded ? globalFullDesc : globalFullDesc.substring(0, 90) + "..."; toggleBtn.innerText = isExpanded ? "ringkas" : "selengkapnya"; } else { descEl.innerText = globalFullDesc; toggleBtn.classList.add('hidden'); } }
         function handleToggleDesc() { isExpanded = !isExpanded; renderSynopsis(); }
         
-        function playVid(url, el, isSpecial = false) { 
+        function playVid(url, el, isDailymotion = false) { 
             const track = document.getElementById('carouselTrack'); 
             const dots = document.getElementById('carouselDots'); 
             
-            // Logika baru agar link VK dan Dailymotion tidak ditambahi parameter YouTube yang bikin error
-            let finalUrl = url;
-            if (!isSpecial) {
-                finalUrl = url.includes('?') ? `${url}&enablejsapi=1&autoplay=1&mute=0` : `${url}?enablejsapi=1&autoplay=1&mute=0`;
+            if(isDailymotion && !currentDailymotionId) {
+                const srv1 = document.getElementById('srv1');
+                if(srv1) srv1.click();
+                return;
             }
+
+            const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&autoplay=1&mute=0` : `${url}?enablejsapi=1&autoplay=1&mute=0`;
             
             track.querySelectorAll('iframe').forEach(f => f.src = "");
             track.innerHTML = `<div class="carousel-slide">
@@ -1106,7 +1128,7 @@
             document.getElementById('swipeOverlay').style.display = 'none'; 
             highlightBtn(el); 
 
-            if(isSpecial && url.includes('dailymotion')) {
+            if(isDailymotion) {
                 setTimeout(() => {
                     const frame = document.getElementById('player-frame');
                     if(!frame || frame.src.includes('undefined')) {
