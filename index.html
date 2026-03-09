@@ -841,7 +841,6 @@
                 url = `https://api.themoviedb.org/3/${endpoint}?api_key=${API_KEY}&language=id-ID&page=${page}&include_adult=false&sort_by=popularity.desc`;
                 if(currentCountry) url += `&with_origin_country=${currentCountry}`;
                 if(currentGenre) url += `&with_genres=${currentGenre}`;
-                if(currentGenre) url += `&with_genres=${currentGenre}`;
                 if(currentCompany) url += `&with_companies=${currentCompany}`;
                 if(currentType === 'short') { url += `&with_runtime.lte=20&with_runtime.gte=1&vote_count.lte=5000`; }
                 if(currentSchedule === 'now_playing' || currentSchedule === 'upcoming') { 
@@ -1095,15 +1094,7 @@
                 return;
             }
 
-            // PERBAIKAN UNTUK VIMEO (SERVER 22)
-            let finalUrl = "";
-            if (url.includes("player.vimeo.com")) {
-                // Gunakan parameter khusus vimeo, tanpa YouTube API
-                finalUrl = `${url}?autoplay=1&muted=0`;
-            } else {
-                // Link server lain tetap gunakan parameter standar
-                finalUrl = url.includes('?') ? `${url}&enablejsapi=1&autoplay=1&mute=0` : `${url}?enablejsapi=1&autoplay=1&mute=0`;
-            }
+            const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&autoplay=1&mute=0` : `${url}?enablejsapi=1&autoplay=1&mute=0`;
             
             track.querySelectorAll('iframe').forEach(f => f.src = "");
             track.innerHTML = `<div class="carousel-slide">
