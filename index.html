@@ -232,9 +232,23 @@
             padding: 12px; font-size: 13px; font-weight: 700; color: #fff; 
             border-top: 1px solid #1c1c1c; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        /* Tambahan style tombol trailer */
-        .btn-trailer {
-            background: #262626; border: 1px solid #333; border-radius: 6px; padding: 4px 10px; font-size: 10px; font-weight: 800; color: #fff; text-transform: uppercase; cursor: pointer;
+
+        /* NEW STYLE: Tombol Reload Trailer */
+        .btn-trailer-reload {
+            background: #262626;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #fff;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-trailer-reload:active {
+            transform: scale(0.95);
+            background: #333;
         }
     </style>
 </head>
@@ -396,8 +410,8 @@
                 <div class="px-4 py-3 flex justify-between items-center bg-black">
                     <div class="flex gap-4 items-center">
                         <i id="btnLikeModal" class="interaction-icon"></i>
+                        <button class="btn-trailer-reload" onclick="reloadTrailers()">Trailer</button>
                         <i class="fa-solid fa-expand interaction-icon" onclick="enterLandscape()"></i>
-                        <button class="btn-trailer" onclick="reloadTrailers()">Trailer</button>
                     </div>
                     <i id="btnBookModal" class="interaction-icon"></i>
                 </div>
@@ -496,7 +510,6 @@
         let currentImdbId = ""; 
         let lastTrailerSources = []; 
         let currentDailymotionId = ""; // Menyimpan ID Dailymotion
-        let currentTrailersData = []; // Menyimpan data trailer sementara
 
         window.onload = () => {
             setTimeout(() => {
@@ -575,11 +588,6 @@
             lsControlTimer = setTimeout(() => {
                 if(document.getElementById('lsLockLayer').style.display !== 'flex') { ui.classList.remove('visible'); }
             }, 3000);
-        }
-
-        function lockScreen() {
-            document.getElementById('lsUI').classList.remove('visible');
-            document.getElementById('lsLockLayer').style.display = 'flex';
         }
 
         function unlockScreen() {
@@ -725,7 +733,7 @@
                             }).join(''); 
                             drop.style.display = 'block'; 
                         } else { drop.style.display = 'none'; } 
-                    } catch((e){} 
+                    } catch(e){} 
                 }, 300); 
             }); 
             document.addEventListener('click', (e) => { if(!e.target.closest('.search-input-box')) drop.style.display = 'none'; }); 
@@ -994,12 +1002,30 @@
             const translateBtn = document.getElementById('mTranslateBtn');
             if (originalIndoDesc.trim() !== "") { globalFullDesc = originalIndoDesc; translateBtn.innerText = "Lihat versi asli"; translateBtn.classList.remove('hidden'); } else { globalFullDesc = globalEnDesc || "Sinopsis belum tersedia."; translateBtn.innerText = "Lihat terjemahan"; if(globalEnDesc) translateBtn.classList.remove('hidden'); }
             
+            const dots = document.getElementById('carouselDots');
+            track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
+
+            const handleTrailerError = async () => {
+                const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`; 
+                track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
+                document.getElementById('swipeOverlay').style.display = 'none';
+            };
+
             const allVideos = (dId.videos?.results || [])
                 .filter(v => v.site === 'YouTube' && v.official === true && (v.type === 'Trailer' || v.type === 'Teaser'))
                 .sort((a, b) => (a.type === 'Trailer' ? -1 : 1));
-            
-            currentTrailersData = allVideos;
-            await renderTrailersToCarousel(allVideos, type, id, seriesSuffix);
+
+            if(allVideos.length > 0) { 
+                let vidsToDisplay = allVideos.slice(0, 5);
+                vidsToDisplay.forEach((v, i) => { 
+                    const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
+                    track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen" onerror="handleTrailerError()"></iframe></div>`; 
+                    if(vidsToDisplay.length > 1) { dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; }
+                }); 
+                document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
+            } else { 
+                await handleTrailerError();
+            }
 
             try {
                 const qName = dId.title || dId.name;
@@ -1055,37 +1081,49 @@
             updateLibButtons(id);
         }
 
-        async function renderTrailersToCarousel(videos, type, id, seriesSuffix) {
+        async function reloadTrailers() {
+            const id = window.currentMediaId;
+            const type = window.currentMediaType;
+            if(!id) return;
+
             const track = document.getElementById('carouselTrack');
             const dots = document.getElementById('carouselDots');
-            track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
+            
+            // Bersihkan player lama
+            track.querySelectorAll('iframe').forEach(f => f.src = "");
+            track.innerHTML = '';
+            dots.innerHTML = '';
+            track.style.transform = 'translateX(0)';
             currentIdx = 0;
 
-            const handleTrailerError = async () => {
-                const fallbackUrl = `https://vidlink.pro/${type}/${id}${seriesSuffix}`; 
-                track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${fallbackUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
-                document.getElementById('swipeOverlay').style.display = 'none';
-            };
+            // Ambil data video baru
+            try {
+                const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${API_KEY}&include_video_language=en,id,hi,th,ko,ja,ru,null`);
+                const data = await res.json();
+                
+                const allVideos = (data.results || [])
+                    .filter(v => v.site === 'YouTube' && v.official === true && (v.type === 'Trailer' || v.type === 'Teaser'))
+                    .sort((a, b) => (a.type === 'Trailer' ? -1 : 1));
 
-            if(videos && videos.length > 0) { 
-                let vidsToDisplay = videos.slice(0, 5);
-                vidsToDisplay.forEach((v, i) => { 
-                    const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
-                    track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen" onerror="handleTrailerError()"></iframe></div>`; 
-                    if(vidsToDisplay.length > 1) { dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; }
-                }); 
-                document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none'; 
-            } else { 
-                await handleTrailerError();
-            }
-        }
-
-        function reloadTrailers() {
-            const type = window.currentMediaType;
-            const id = window.currentMediaId;
-            const seriesSuffix = (type === 'tv') ? '/1/1' : '';
-            document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active-link'));
-            renderTrailersToCarousel(currentTrailersData, type, id, seriesSuffix);
+                if(allVideos.length > 0) {
+                    let vidsToDisplay = allVideos.slice(0, 5);
+                    vidsToDisplay.forEach((v, i) => {
+                        const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
+                        track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen"></iframe></div>`;
+                        if(vidsToDisplay.length > 1) {
+                            dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`;
+                        }
+                    });
+                    document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none';
+                } else {
+                    const seriesSuffix = (type === 'tv') ? '/1/1' : '';
+                    track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="https://vidlink.pro/${type}/${id}${seriesSuffix}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
+                    document.getElementById('swipeOverlay').style.display = 'none';
+                }
+                
+                // Reset highlight tombol server
+                document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active-link'));
+            } catch(e) { console.error("Error reloading trailers", e); }
         }
 
         async function handleTranslate() {
