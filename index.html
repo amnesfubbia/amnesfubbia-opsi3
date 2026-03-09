@@ -101,7 +101,6 @@
         .calendar-poster { flex: 0 0 85px; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; background: #111; border: 1px solid #222; }
         .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-title { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
-        .calendar-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
         .cal-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8e8e8e; }
         .cal-genre-pill { padding: 2px 8px; background: #1c1c1c; border-radius: 100px; color: #ccc; font-size: 9px; font-weight: 600; }
         .cal-rating { color: #ffca28; font-weight: 700; font-size: 11px; }
@@ -150,7 +149,6 @@
         .cast-name { font-size: 9px; font-weight: 500; color: #fff; line-height: 1.2; display: block; margin-top: 4px; }
         
         .ig-post-content { padding: 0 15px; margin-top: 5px; }
-        /* Sticky Suka - dirapatkan lebarnya */
         .ig-likes-count { font-weight: 700; font-size: 13px; margin-bottom: 5px; display: inline-block; padding-right: 5px; }
         .ig-username { font-weight: 700; font-size: 13px; margin-right: 8px; }
         .ig-caption { font-size: 13px; line-height: 1.4; color: #efefef; }
@@ -158,7 +156,6 @@
         .toggle-btn { display: block; color: #a8a8a8; cursor: pointer; font-size: 13px; margin-top: 4px; font-weight: 500; }
         #mTranslateBtn { font-size: 11px; color: #fff; font-weight: 700; cursor: pointer; display: inline-block; }
         
-        /* Merapatkan hashtag dengan caption/selengkapnya */
         .ig-hashtags { color: #e0f1ff; display: block; margin-top: 4px; font-size: 13px; line-height: 1.4; }
         .ig-date { color: #a8a8a8; font-size: 11px; text-transform: uppercase; }
         
@@ -166,12 +163,11 @@
         .bottom-nav i { color: #a8a8a8; transition: color 0.3s; }
         .bottom-nav i.active-nav { color: #fff; }
 
-        /* SIDEBAR / ABOUT MENU - UPDATED WITH GLASSMORPHISM */
+        /* SIDEBAR / ABOUT MENU */
         #sideMenu { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 9500; display: none; padding: 40px 25px; overflow-y: auto; }
         .side-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; }
         .about-title { font-size: 22px; font-weight: 900; margin-bottom: 20px; border-left: 4px solid #fff; padding-left: 12px; }
         .about-content { font-size: 14px; line-height: 1.6; color: #ccc; }
-        /* Glass Card Style for Features */
         .about-feature { margin-top: 20px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
         .about-footer { margin-top: 40px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 20px; font-size: 12px; color: #666; }
         .feature-icon { font-size: 18px; color: #fff; width: 24px; text-align: center; }
@@ -193,13 +189,12 @@
         .ls-btn:active { transform: scale(1.1); }
         .ls-lock-screen { position: absolute; inset: 0; z-index: 11000; display: none; align-items: flex-start; justify-content: flex-end; padding: 30px; background: rgba(0,0,0,0.01); pointer-events: auto; }
         
-        /* Landscape Mode Overrides */
         .landscape-active #movieModal { overflow: hidden !important; }
         .landscape-active #modalScrollTop { height: 100vh; max-width: 100%; padding: 0; }
         .landscape-active .carousel-slide { height: 100vh; }
         .landscape-active #mainVideoArea { height: 100vh !important; }
 
-        /* --- NEW ACTOR PROFILE MODAL STYLE (Premium Instagram Aesthetic) --- */
+        /* --- ACTOR PROFILE MODAL --- */
         .actor-modal { display: none; position: fixed; inset: 0; z-index: 8500; background: #000; overflow-y: auto; }
         
         .actor-header-premium {
@@ -231,24 +226,6 @@
         .actor-section-title { 
             padding: 12px; font-size: 13px; font-weight: 700; color: #fff; 
             border-top: 1px solid #1c1c1c; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-
-        /* NEW STYLE: Tombol Reload Trailer */
-        .btn-trailer-reload {
-            background: #262626;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #fff;
-            border: 1px solid #333;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-trailer-reload:active {
-            transform: scale(0.95);
-            background: #333;
         }
     </style>
 </head>
@@ -408,10 +385,10 @@
                 </div>
 
                 <div class="px-4 py-3 flex justify-between items-center bg-black">
-                    <div class="flex gap-4 items-center">
+                    <div class="flex gap-4">
                         <i id="btnLikeModal" class="interaction-icon"></i>
-                        <button class="btn-trailer-reload" onclick="reloadTrailers()">Trailer</button>
                         <i class="fa-solid fa-expand interaction-icon" onclick="enterLandscape()"></i>
+                        <i class="fa-solid fa-play interaction-icon" onclick="scrollToTrailers()" title="Trailer"></i>
                     </div>
                     <i id="btnBookModal" class="interaction-icon"></i>
                 </div>
@@ -440,7 +417,7 @@
                 <div id="seriesControl" class="hidden mt-4 p-4 bg-zinc-950 rounded-2xl border border-zinc-900">
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Episode List</h4>
-                        <select id="seasonSel" class="bg-zinc-900 text-white text-[10px] px-2 py-1 rounded border border-zinc-700 Karena-none" onchange="loadEpisodes()"></select>
+                        <select id="seasonSel" class="bg-zinc-900 text-white text-[10px] px-2 py-1 rounded border border-zinc-700 appearance-none" onchange="loadEpisodes()"></select>
                     </div>
                     <div id="episodeGrid" class="grid grid-cols-5 gap-2"></div>
                 </div>
@@ -509,7 +486,7 @@
         let isLsPaused = false, isLsMuted = false, lsControlTimer;
         let currentImdbId = ""; 
         let lastTrailerSources = []; 
-        let currentDailymotionId = ""; // Menyimpan ID Dailymotion
+        let currentDailymotionId = "";
 
         window.onload = () => {
             setTimeout(() => {
@@ -569,8 +546,14 @@
             document.body.classList.remove('landscape-active');
             document.getElementById('landscapeOverlay').style.display = 'none';
             const videoArea = document.getElementById('mainVideoArea');
-            const castContainer = document.getElementById('castContainer');
-            if(castContainer && videoArea) { castContainer.after(videoArea); }
+            const targetContainer = document.getElementById('seriesControl');
+            // Gunakan referensi yang lebih statis (sebelum area sinopsis)
+            if(targetContainer && videoArea) { 
+                targetContainer.before(videoArea); 
+            } else {
+                const modalInner = document.querySelector('.sticky.top-0');
+                if(modalInner && videoArea) modalInner.appendChild(videoArea);
+            }
             if (document.exitFullscreen && document.fullscreenElement) { document.exitFullscreen(); }
             if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
         }
@@ -588,6 +571,11 @@
             lsControlTimer = setTimeout(() => {
                 if(document.getElementById('lsLockLayer').style.display !== 'flex') { ui.classList.remove('visible'); }
             }, 3000);
+        }
+
+        function lockScreen() {
+            document.getElementById('lsUI').classList.remove('visible');
+            document.getElementById('lsLockLayer').style.display = 'flex';
         }
 
         function unlockScreen() {
@@ -745,6 +733,8 @@
             const calendarHeader = document.getElementById('calendarHeader');
             overlay.style.display = 'block';
             calendarHeader.classList.remove('hidden');
+            // FIX: Bersihkan grid sebelum memuat kalender baru
+            grid.innerHTML = ''; 
             document.body.style.overflow = 'hidden';
             if (!window.history.state || window.history.state.view !== 'search') {
                 history.pushState({view: 'search'}, "");
@@ -783,6 +773,11 @@
                     list.appendChild(item);
                 });
             } catch (e) { list.innerHTML = '<div class="text-center py-10">Gagal memuat data.</div>'; }
+        }
+
+        function scrollToTrailers() {
+            const videoArea = document.getElementById('mainVideoArea');
+            if(videoArea) videoArea.scrollIntoView({behavior: 'smooth'});
         }
 
         function searchByCast(castId) { 
@@ -1079,51 +1074,6 @@
             `;
             if(type === 'tv') { document.getElementById('seriesControl').classList.remove('hidden'); document.getElementById('seasonSel').innerHTML = (dId.seasons||[]).filter(s=>s.season_number>0).map(s=>`<option value="${s.season_number}">Season ${s.season_number}</option>`).join(''); loadEpisodes(); } else { document.getElementById('seriesControl').classList.add('hidden'); }
             updateLibButtons(id);
-        }
-
-        async function reloadTrailers() {
-            const id = window.currentMediaId;
-            const type = window.currentMediaType;
-            if(!id) return;
-
-            const track = document.getElementById('carouselTrack');
-            const dots = document.getElementById('carouselDots');
-            
-            // Bersihkan player lama
-            track.querySelectorAll('iframe').forEach(f => f.src = "");
-            track.innerHTML = '';
-            dots.innerHTML = '';
-            track.style.transform = 'translateX(0)';
-            currentIdx = 0;
-
-            // Ambil data video baru
-            try {
-                const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${API_KEY}&include_video_language=en,id,hi,th,ko,ja,ru,null`);
-                const data = await res.json();
-                
-                const allVideos = (data.results || [])
-                    .filter(v => v.site === 'YouTube' && v.official === true && (v.type === 'Trailer' || v.type === 'Teaser'))
-                    .sort((a, b) => (a.type === 'Trailer' ? -1 : 1));
-
-                if(allVideos.length > 0) {
-                    let vidsToDisplay = allVideos.slice(0, 5);
-                    vidsToDisplay.forEach((v, i) => {
-                        const embedUrl = `https://www.youtube.com/embed/${v.key}?enablejsapi=1&autoplay=${i===0?1:0}&rel=0&modestbranding=1&mute=0`;
-                        track.innerHTML += `<div class="carousel-slide"><iframe id="vid-${i}" src="${embedUrl}" class="w-full h-full" allow="autoplay; fullscreen"></iframe></div>`;
-                        if(vidsToDisplay.length > 1) {
-                            dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`;
-                        }
-                    });
-                    document.getElementById('swipeOverlay').style.display = vidsToDisplay.length > 1 ? 'block' : 'none';
-                } else {
-                    const seriesSuffix = (type === 'tv') ? '/1/1' : '';
-                    track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="https://vidlink.pro/${type}/${id}${seriesSuffix}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`;
-                    document.getElementById('swipeOverlay').style.display = 'none';
-                }
-                
-                // Reset highlight tombol server
-                document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active-link'));
-            } catch(e) { console.error("Error reloading trailers", e); }
         }
 
         async function handleTranslate() {
