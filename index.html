@@ -1105,6 +1105,9 @@
             const track = document.getElementById('carouselTrack');
             const dots = document.getElementById('carouselDots');
             
+            // BUG FIX: Hentikan audio soundtrack yang mungkin sedang berjalan
+            stopOtherAudios();
+            
             track.querySelectorAll('iframe').forEach(f => { f.src = ""; f.remove(); });
             track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
             currentIdx = 0;
