@@ -566,7 +566,7 @@
             overlay.style.display = 'block';
             document.body.style.overflow = 'hidden';
 
-            // TAMBAHAN: Agar tombol back menutup soundtrack saja
+            // TAMBAHAN: Sinkronisasi Tombol Back agar menutup modal soundtrack
             if (!window.history.state || window.history.state.view !== 'soundtrack') {
                 history.pushState({view: 'soundtrack'}, "");
             }
