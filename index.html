@@ -566,6 +566,11 @@
             overlay.style.display = 'block';
             document.body.style.overflow = 'hidden';
 
+            // TAMBAHAN: Agar tombol back menutup soundtrack saja
+            if (!window.history.state || window.history.state.view !== 'soundtrack') {
+                history.pushState({view: 'soundtrack'}, "");
+            }
+
             try {
                 const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title + " soundtrack")}&entity=song&limit=15`);
                 const data = await res.json();
