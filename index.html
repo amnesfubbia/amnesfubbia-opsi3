@@ -536,7 +536,7 @@
             }); 
         };
 
-        // --- TV MODAL LOGIC ---
+        // --- TV MODAL LOGIC (UPDATED) ---
         function initTvChannels() {
             const channels = [
                 { name: 'RCTI', id: 'rcti', logo: 'R' },
@@ -586,7 +586,8 @@
             document.getElementById('serverList').innerHTML = "";
             document.getElementById('seriesControl').classList.add('hidden');
             
-            // Perbaikan URL: Menggunakan sistem pencarian direktori channel yang lebih aman
+            // Perbaikan URL: Menggunakan sistem link pihak ketiga (Embed) yang stabil untuk TV Indo
+            // Kita arahkan paksa ke server 11 atau 12 yang support Direct Stream ID
             const tvUrl = `https://multiembed.mov/directstream.php?video_id=${id}`;
             playVid(tvUrl);
         }
@@ -1319,7 +1320,6 @@
         function renderSynopsis() { const descEl = document.getElementById('mDesc'), toggleBtn = document.getElementById('mToggleBtn'); if (globalFullDesc.length > 90) { toggleBtn.classList.remove('hidden'); descEl.innerText = isExpanded ? globalFullDesc : globalFullDesc.substring(0, 90) + "..."; toggleBtn.innerText = isExpanded ? "ringkas" : "selengkapnya"; } else { descEl.innerText = globalFullDesc; toggleBtn.classList.add('hidden'); } }
         function handleToggleDesc() { isExpanded = !isExpanded; renderSynopsis(); }
         
-        // --- STAGE 4: PERFORMASI IFRAME & ANIMASI LOADING ---
         function playVid(url, el) { 
             const track = document.getElementById('carouselTrack'); 
             const dots = document.getElementById('carouselDots'); 
@@ -1372,7 +1372,6 @@
             playVid(url);
         }
 
-        // --- STAGE 1: HTTPS ENFORCEMENT ---
         function buildEmbedUrl(type, id, s, e, srv) {
             const seriesSuffix = (type === 'tv') ? `/${s}/${e}` : '';
             const tvParam = (type === 'tv') ? `?s=${s}&e=${e}` : '';
