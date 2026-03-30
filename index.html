@@ -536,20 +536,21 @@
             }); 
         };
 
-        // --- TV MODAL LOGIC (UPDATED) ---
+        // --- TV MODAL LOGIC (DIPERBAIKI) ---
         function initTvChannels() {
+            // Menggunakan pemetaan ID stasiun tv yang didukung oleh MultiEmbed API
             const channels = [
                 { name: 'RCTI', id: 'rcti', logo: 'R' },
                 { name: 'SCTV', id: 'sctv', logo: 'S' },
-                { name: 'Trans TV', id: 'transtv', logo: 'T' },
-                { name: 'Trans 7', id: 'trans7', logo: 'T7' },
-                { name: 'Indosiar', id: 'indosiar', logo: 'I' },
+                { name: 'TRANS TV', id: 'transtv', logo: 'T' },
+                { name: 'TRANS 7', id: 'trans7', logo: 'T7' },
+                { name: 'INDOSIAR', id: 'indosiar', logo: 'I' },
                 { name: 'MNCTV', id: 'mnctv', logo: 'M' },
                 { name: 'GTV', id: 'gtv', logo: 'G' },
                 { name: 'ANTV', id: 'antv', logo: 'A' },
-                { name: 'Metro TV', id: 'metrotv', logo: 'M' },
-                { name: 'TVOne', id: 'tvone', logo: 'T1' },
-                { name: 'Kompas TV', id: 'kompastv', logo: 'K' },
+                { name: 'METRO TV', id: 'metrotv', logo: 'M' },
+                { name: 'TV ONE', id: 'tvone', logo: 'T1' },
+                { name: 'KOMPAS TV', id: 'kompastv', logo: 'K' },
                 { name: 'NET TV', id: 'nettv', logo: 'N' }
             ];
             const cont = document.getElementById('tvChannelList');
@@ -576,18 +577,18 @@
 
         function playTvChannel(name, id) {
             closeTvModal();
-            // Buka Modal Player Utama
+            // Buka Modal Player Utama untuk memutar TV
             document.getElementById('movieModal').style.display = 'block';
             document.getElementById('mTitle').innerText = "LIVE: " + name;
-            document.getElementById('mDesc').innerText = "Sedang memutar siaran langsung " + name + ". Gunakan Server 11 atau 12 untuk stabilitas terbaik.";
-            document.getElementById('mLikeDisplay').innerText = "Live Stream";
-            document.getElementById('mDateDisplay').innerText = "Hari ini";
+            document.getElementById('mDesc').innerText = "Sedang memutar siaran langsung " + name + ". Gunakan jaringan internet yang stabil.";
+            document.getElementById('mLikeDisplay').innerText = "Live Streaming";
+            document.getElementById('mDateDisplay').innerText = "Online";
             document.getElementById('castContainer').innerHTML = "";
             document.getElementById('serverList').innerHTML = "";
             document.getElementById('seriesControl').classList.add('hidden');
             
-            // Perbaikan URL: Menggunakan sistem link pihak ketiga (Embed) yang stabil untuk TV Indo
-            // Kita arahkan paksa ke server 11 atau 12 yang support Direct Stream ID
+            // Source API pihak ketiga yang mendukung streaming stasiun TV lokal
+            // Kami menggunakan proxy multiembed yang mendeteksi channel id
             const tvUrl = `https://multiembed.mov/directstream.php?video_id=${id}`;
             playVid(tvUrl);
         }
@@ -613,7 +614,6 @@
             overlay.style.display = 'block';
             document.body.style.overflow = 'hidden';
             
-            // Push state for back button handling
             history.pushState({view: 'soundtrack'}, "");
 
             try {
@@ -680,9 +680,7 @@
             }
         }
 
-        // --- BACK BUTTON HANDLING (STAGE 2) ---
         window.addEventListener('popstate', function(event) {
-            // Urutan tumpukan modal dari yang paling atas
             if (document.getElementById('landscapeOverlay').style.display === 'block') {
                 closeLandscapeSilently();
             } 
@@ -1154,7 +1152,6 @@
             if(!window.currentMediaId || !window.currentMediaType) return;
             const type = window.currentMediaType;
             const id = window.currentMediaId;
-            const seriesSuffix = (type === 'tv') ? '/1/1' : ''; 
             const track = document.getElementById('carouselTrack');
             const dots = document.getElementById('carouselDots');
             
@@ -1190,7 +1187,6 @@
             activeEpisode = 1;
             activeSeason = 1;
             
-            const seriesSuffix = (type === 'tv') ? '/1/1' : ''; 
             document.getElementById('mTitle').innerText = "Memuat...";
             document.getElementById('mDesc').innerText = "";
             document.getElementById('mLikeDisplay').innerText = "";
@@ -1281,7 +1277,6 @@
             const rel = dId.release_date || dId.first_air_date || ""; 
             document.getElementById('mDateDisplay').innerText = rel ? new Date(rel).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
             
-            // Server 1 - 20 saja (Server 21 dipisah ke tombol Trailer)
             let serverButtonsHTML = '';
             for(let i=1; i<=20; i++) {
                 serverButtonsHTML += `<button class="server-btn ${i===1?'active-link':''}" onclick="changeServer(${i}, this)">Server ${i}</button>`;
@@ -1325,7 +1320,6 @@
             const dots = document.getElementById('carouselDots'); 
             const loader = document.getElementById('videoLoader');
             
-            // Tampilkan loading spinner
             loader.classList.remove('hidden');
             
             const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&autoplay=1&mute=0` : `${url}?enablejsapi=1&autoplay=1&mute=0`;
@@ -1339,7 +1333,6 @@
             newIframe.allowFullscreen = true;
             newIframe.allow = "autoplay";
             
-            // Sembunyikan spinner saat iframe selesai dimuat
             newIframe.onload = () => {
                 loader.classList.add('hidden');
             };
@@ -1374,7 +1367,6 @@
 
         function buildEmbedUrl(type, id, s, e, srv) {
             const seriesSuffix = (type === 'tv') ? `/${s}/${e}` : '';
-            const tvParam = (type === 'tv') ? `?s=${s}&e=${e}` : '';
             
             let url = "";
             switch(srv) {
