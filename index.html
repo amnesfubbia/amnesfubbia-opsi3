@@ -586,8 +586,8 @@
             document.getElementById('serverList').innerHTML = "";
             document.getElementById('seriesControl').classList.add('hidden');
             
-            // Link streaming menggunakan multi-embed yang umum untuk TV Indonesia
-            const tvUrl = `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=0`;
+            // Perbaikan URL: Menggunakan sistem pencarian direktori channel yang lebih aman
+            const tvUrl = `https://multiembed.mov/directstream.php?video_id=${id}`;
             playVid(tvUrl);
         }
 
@@ -1389,7 +1389,7 @@
                 case 8: url = `https://vidfast.pro/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
                 case 9: url = `https://moviesapi.club/${type}/${id}${seriesSuffix}`; break;
                 case 10: url = `https://vidsrc.cc/v2/embed/${type}/${id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
-                case 11: url = `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1${type==='tv'?`&s=${s}&e=${e}`:''}`; break;
+                case 11: url = `https://multiembed.mov/directstream.php?video_id=${id}${type==='tv'?`&s=${s}&e=${e}`:''}`; break;
                 case 12: url = `https://www.2embed.cc/embed${type==='tv'?'tv':''}/${id}${type==='tv'?`&s=${s}&e=${e}`:''}`; break;
                 case 13: url = `https://vidsrc.xyz/embed/${type}/${id}${seriesSuffix}`; break;
                 case 14: url = `https://vidsrc.me/embed/${type}?tmdb=${id}${seriesSuffix}`; break;
