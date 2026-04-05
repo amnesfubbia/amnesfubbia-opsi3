@@ -232,17 +232,23 @@
             border-top: 1px solid #1c1c1c; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
 
-        /* LIVE TV MODAL STYLES */
-        #liveTvModal, #tvPlayerModal { display: none; position: fixed; inset: 0; background: #000; z-index: 9600; overflow-y: auto; }
-        .channel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; }
-        .channel-card { background: #1c1c1c; border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; border: 1px solid #333; }
-        .channel-logo-placeholder { width: 100%; aspect-ratio: 1/1; background: #262626; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-size: 24px; color: #555; }
-        .channel-name { font-size: 10px; font-weight: 700; color: #fff; text-transform: uppercase; }
-        
-        .tv-player-header { padding: 15px; border-bottom: 1px solid #1c1c1c; display: flex; align-items: center; gap: 15px; }
-        .tv-channel-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 15px; }
-        .tv-mini-btn { background: #1c1c1c; border-radius: 8px; padding: 8px 4px; font-size: 8px; font-weight: 800; text-align: center; color: #fff; border: 1px solid #333; cursor: pointer; }
-        .tv-mini-btn.active-tv { border-color: #fff; background: #333; }
+        /* --- NEW LIVE TV STYLES --- */
+        .tv-modal { display: none; position: fixed; inset: 0; z-index: 9990; background: #000; overflow-y: auto; }
+        .tv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 15px; }
+        .tv-card { background: #1a1a1a; border-radius: 12px; padding: 15px 5px; text-align: center; border: 1px solid #333; cursor: pointer; transition: transform 0.1s; }
+        .tv-card:active { transform: scale(0.95); background: #262626; }
+        .tv-logo-placeholder { font-size: 18px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: -1px; }
+        .tv-name { font-size: 10px; font-weight: 600; color: #8e8e8e; margin-top: 5px; }
+
+        .tv-player-modal { display: none; position: fixed; inset: 0; z-index: 9995; background: #000; overflow-y: auto; }
+        .tv-header { padding: 15px; display: flex; align-items: center; border-bottom: 1px solid #1c1c1c; }
+        .tv-video-box { width: 100%; aspect-ratio: 16/9; background: #000; }
+        .tv-footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 15px; }
+        .tv-mini-btn { background: #111; border: 1px solid #333; padding: 8px 2px; border-radius: 8px; text-align: center; font-size: 9px; font-weight: 800; color: #fff; cursor: pointer; }
+        .tv-mini-btn.active-tv { border-color: #fff; background: #222; }
+
+        /* Tombol Soundtrack (DIUBAH: Hapus Bingkai) */
+        .btn-soundtrack { font-size: 13px; font-weight: 700; color: #fff; cursor: pointer; border: none; padding: 2px 0; background: transparent; }
     </style>
 </head>
 <body>
@@ -363,6 +369,25 @@
         <main id="feedGrid" class="movie-grid"></main>
     </div>
 
+    <div id="tvListModal" class="tv-modal">
+        <div class="sticky top-0 bg-black z-[100] border-b border-zinc-900 px-4 h-[54px] flex items-center">
+            <i class="fa-solid fa-chevron-left text-xl cursor-pointer" onclick="closeTvList()"></i>
+            <div class="flex-grow text-center text-[14px] font-bold">LIVE TV INDONESIA</div>
+        </div>
+        <div id="tvGrid" class="tv-grid"></div>
+    </div>
+
+    <div id="tvPlayerModal" class="tv-player-modal">
+        <div class="tv-header">
+            <i class="fa-solid fa-chevron-left text-xl cursor-pointer" onclick="closeTvPlayer()"></i>
+            <div id="activeTvName" class="flex-grow text-center text-[14px] font-bold"></div>
+        </div>
+        <div class="tv-video-box">
+            <iframe id="tvFrame" src="" class="w-full h-full" allowfullscreen allow="autoplay"></iframe>
+        </div>
+        <div id="tvFooterGrid" class="tv-footer-grid"></div>
+    </div>
+
     <div id="searchOverlay">
         <div class="search-header">
             <i class="fa-solid fa-arrow-left text-xl text-white" onclick="closeSearch()"></i>
@@ -406,14 +431,12 @@
                         <i class="fa-regular fa-comment interaction-icon" onclick="enterLandscape()"></i>
                         <i class="fa-regular fa-paper-plane interaction-icon -rotate-[20deg] text-[20px]" onclick="replayTrailer()"></i>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <span id="btnSoundtrack" class="text-[10px] font-black uppercase tracking-tighter cursor-pointer text-zinc-400" onclick="openSoundtrack()">Soundtrack</span>
-                        <i id="btnBookModal" class="interaction-icon"></i>
-                    </div>
+                    <i id="btnBookModal" class="interaction-icon"></i>
                 </div>
                 
                 <div class="px-4 bg-black pb-1 flex justify-between items-center">
                     <span id="mLikeDisplay" class="ig-likes-count"></span>
+                    <button class="btn-soundtrack" onclick="openSoundtrack()">Soundtrack</button>
                 </div>
             </div>
             
@@ -448,25 +471,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <div id="liveTvModal">
-        <div class="sticky top-0 bg-black z-[100] border-b border-zinc-900 px-4 h-[54px] flex items-center">
-            <i class="fa-solid fa-chevron-left text-xl cursor-pointer" onclick="closeLiveTv()"></i>
-            <div class="flex-grow text-center text-[14px] font-black uppercase tracking-tighter">Live TV Indonesia</div>
-        </div>
-        <div class="channel-grid" id="channelGrid"></div>
-    </div>
-
-    <div id="tvPlayerModal">
-        <div class="tv-player-header">
-            <i class="fa-solid fa-chevron-left text-xl cursor-pointer" onclick="closeTvPlayer()"></i>
-            <div class="flex-grow text-center text-[14px] font-black uppercase tracking-tighter" id="tvPlayerTitle">Channel Name</div>
-        </div>
-        <div id="tvVideoArea" class="aspect-video bg-black w-full">
-            <iframe id="tvIframe" src="" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
-        </div>
-        <div class="tv-channel-btns" id="tvMiniGrid"></div>
     </div>
 
     <div id="actorModal" class="actor-modal">
@@ -513,7 +517,7 @@
     <nav class="bottom-nav">
         <i class="fa-solid fa-house cursor-pointer text-xl active-nav" id="homeBtnNav" onclick="updateActiveNav(this); backToHome()"></i>
         <i class="fa-solid fa-magnifying-glass cursor-pointer text-xl" id="searchBtnNav" onclick="updateActiveNav(this); openSearch()"></i>
-        <i class="fa-solid fa-clapperboard cursor-pointer text-xl" id="reelBtnNav" onclick="updateActiveNav(this); openLiveTv()"></i>
+        <i class="fa-solid fa-clapperboard cursor-pointer text-xl" id="tvBtnNav" onclick="updateActiveNav(this); openTvList()"></i>
         <i class="fa-solid fa-bookmark cursor-pointer text-xl" id="bookmarkBtnNav" onclick="updateActiveNav(this); switchTab('bookmarks', document.getElementById('tabBookmark'))"></i>
     </nav>
 
@@ -532,23 +536,19 @@
         let activeEpisode = 1;
         let activeSeason = 1;
 
-        // CHANNEL TV DATA
-        const tvChannels = [
-            { name: "RCTI", url: "https://vipotv.site/embed/rcti", icon: "R" },
-            { name: "SCTV", url: "https://vipotv.site/embed/sctv", icon: "S" },
-            { name: "Indosiar", url: "https://vipotv.site/embed/indosiar", icon: "I" },
-            { name: "MNCTV", url: "https://vipotv.site/embed/mnctv", icon: "M" },
-            { name: "GTV", url: "https://vipotv.site/embed/gtv", icon: "G" },
-            { name: "Trans TV", url: "https://vipotv.site/embed/transtv", icon: "T" },
-            { name: "Trans 7", url: "https://vipotv.site/embed/trans7", icon: "T" },
-            { name: "ANTV", url: "https://vipotv.site/embed/antv", icon: "A" },
-            { name: "Metro TV", url: "https://vipotv.site/embed/metrotv", icon: "M" },
-            { name: "TVOne", url: "https://vipotv.site/embed/tvone", icon: "T" },
-            { name: "Kompas TV", url: "https://vipotv.site/embed/kompastv", icon: "K" },
-            { name: "Net TV", url: "https://vipotv.site/embed/nettv", icon: "N" },
-            { name: "RTV", url: "https://vipotv.site/embed/rtv", icon: "R" },
-            { name: "TVRI", url: "https://vipotv.site/embed/tvri", icon: "T" },
-            { name: "INews", url: "https://vipotv.site/embed/inews", icon: "I" }
+        // DATA LIVE TV
+        const CHANNELS = [
+            {n: 'RCTI', id: 'rcti'}, {n: 'GTV', id: 'gtv'}, {n: 'MNCTV', id: 'mnctv'},
+            {n: 'Indosiar', id: 'indosiar'}, {n: 'SCTV', id: 'sctv'}, {n: 'ANTV', id: 'antv'},
+            {n: 'TVOne', id: 'tvone'}, {n: 'KompasTV', id: 'kompastv'}, {n: 'MetroTV', id: 'metrotv'},
+            {n: 'RTV', id: 'rtv'}, {n: 'RCTV', id: 'rctv'}, {n: 'MagnaTV', id: 'magnatv'},
+            {n: 'NusantaraTV', id: 'nusantaratv'}, {n: 'BTV', id: 'btv'}, {n: 'GarudaTV', id: 'garudatv'},
+            {n: 'TVRI', id: 'tvri'}, {n: 'TV9', id: 'tv9'}, {n: 'UChannel', id: 'uchannel'},
+            {n: 'SurabayaTV', id: 'surabayatv'}, {n: 'JambiTV', id: 'jambitv'}, {n: 'BalikpapanTV', id: 'balikpapantv'},
+            {n: 'BanjarTV', id: 'banjartv'}, {n: 'BantenTV', id: 'bantentv'}, {n: 'BanyumasTV', id: 'banyumastv'},
+            {n: 'UGTV', id: 'ugtv'}, {n: 'JTV', id: 'jtv'}, {n: 'TATV', id: 'tattv'},
+            {n: 'SMTV', id: 'smtv'}, {n: 'PKTV', id: 'pktv'}, {n: 'MatrixTV', id: 'matrixtv'},
+            {n: 'PJTV', id: 'pjtv'}
         ];
 
         window.onload = () => {
@@ -557,64 +557,69 @@
                 document.getElementById('mainProfile').style.display = 'block';
             }, 2500);
 
-            initFilters(); initHighlights(); loadFeed(); setupSwipe(); initSmartSearch(); 
+            initFilters(); initHighlights(); loadFeed(); setupSwipe(); initSmartSearch(); initTvGrid();
             window.addEventListener('scroll', () => { 
                 document.getElementById('backToTop').style.display = window.scrollY > 500 ? 'flex' : 'none'; 
             }); 
         };
 
-        // LIVE TV FUNCTIONS
-        function openLiveTv() {
-            const modal = document.getElementById('liveTvModal');
-            const grid = document.getElementById('channelGrid');
-            grid.innerHTML = tvChannels.map((ch, idx) => `
-                <div class="channel-card" onclick="playTv(${idx})">
-                    <div class="channel-logo-placeholder">${ch.icon}</div>
-                    <div class="channel-name">${ch.name}</div>
+        // --- LIVE TV FUNCTIONS ---
+        function initTvGrid() {
+            const grid = document.getElementById('tvGrid');
+            const footer = document.getElementById('tvFooterGrid');
+            grid.innerHTML = CHANNELS.map(c => `
+                <div class="tv-card" onclick="playTv('${c.id}', '${c.n}')">
+                    <div class="tv-logo-placeholder">${c.n.substring(0,3)}</div>
+                    <div class="tv-name">${c.n}</div>
                 </div>
             `).join('');
-            modal.style.display = 'block';
+            
+            footer.innerHTML = CHANNELS.map(c => `
+                <div class="tv-mini-btn" id="mini-${c.id}" onclick="playTv('${c.id}', '${c.n}')">${c.n}</div>
+            `).join('');
+        }
+
+        function openTvList() {
+            closeModal(); closeSearch(); closeActorModal();
+            document.getElementById('tvListModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            if (!window.history.state || window.history.state.view !== 'livetv') {
-                history.pushState({view: 'livetv'}, "");
+            if (!window.history.state || window.history.state.view !== 'tvlist') {
+                history.pushState({view: 'tvlist'}, "");
             }
         }
 
-        function closeLiveTv() {
-            document.getElementById('liveTvModal').style.display = 'none';
+        function closeTvList() {
+            document.getElementById('tvListModal').style.display = 'none';
             document.body.style.overflow = 'auto';
             updateActiveNav(document.getElementById('homeBtnNav'));
         }
 
-        function playTv(idx) {
-            const player = document.getElementById('tvPlayerModal');
-            const iframe = document.getElementById('tvIframe');
-            const title = document.getElementById('tvPlayerTitle');
-            const miniGrid = document.getElementById('tvMiniGrid');
-
-            title.innerText = tvChannels[idx].name;
-            iframe.src = tvChannels[idx].url;
+        function playTv(id, name) {
+            document.getElementById('activeTvName').innerText = name;
+            const frame = document.getElementById('tvFrame');
+            frame.src = `https://vidsrc.cc/v2/embed/tv/${id}`; // Ganti dengan provider stream TV yang kamu miliki
             
-            miniGrid.innerHTML = tvChannels.map((ch, i) => `
-                <div class="tv-mini-btn ${i === idx ? 'active-tv' : ''}" onclick="playTv(${i})">
-                    ${ch.name}
-                </div>
-            `).join('');
+            document.querySelectorAll('.tv-mini-btn').forEach(b => b.classList.remove('active-tv'));
+            const mini = document.getElementById(`mini-${id}`);
+            if(mini) mini.classList.add('active-tv');
 
-            player.style.display = 'block';
+            document.getElementById('tvPlayerModal').style.display = 'block';
             if (!window.history.state || window.history.state.view !== 'tvplayer') {
                 history.pushState({view: 'tvplayer'}, "");
             }
         }
 
         function closeTvPlayer() {
+            document.getElementById('tvFrame').src = "";
             document.getElementById('tvPlayerModal').style.display = 'none';
-            document.getElementById('tvIframe').src = "";
         }
 
         function openSoundtrack() {
-            const title = document.getElementById('mTitle').innerText;
-            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title + ' soundtrack')}`, '_blank');
+            if(window.currentMediaId) {
+                const query = encodeURIComponent(document.getElementById('mTitle').innerText);
+                // MENGGUNAKAN API ITUNES
+                window.open(`https://itunes.apple.com/search?term=${query}&entity=song`, '_blank');
+            }
         }
 
         // --- PENANGANAN DOWNLOAD ---
@@ -632,8 +637,8 @@
             if (document.getElementById('tvPlayerModal').style.display === 'block') {
                 closeTvPlayer();
             }
-            else if (document.getElementById('liveTvModal').style.display === 'block') {
-                closeLiveTv();
+            else if (document.getElementById('tvListModal').style.display === 'block') {
+                closeTvList();
             }
             else if (document.getElementById('landscapeOverlay').style.display === 'block') {
                 closeLandscapeSilently();
@@ -811,7 +816,7 @@
 
         // --- BACK TO HOME: Langsung Lompat Kembali ---
         function backToHome() {
-            closeModal(); closeSearch(); closeD(); closeActorModal(); closeLiveTv(); closeTvPlayer();
+            closeModal(); closeSearch(); closeD(); closeActorModal(); closeTvList(); closeTvPlayer();
             currentGenre = ''; currentYear = ''; currentCountry = ''; currentSchedule = 'trending'; 
             currentType = 'multi'; searchQuery = ''; currentCastId = ''; currentCompany = '';
             document.querySelectorAll('.highlight-item').forEach(i => i.classList.remove('active-hl'));
@@ -1027,13 +1032,13 @@
         }
 
         function openSearch() { 
-            closeModal(); closeD(); closeActorModal(); if(document.getElementById('sideMenu').style.display === 'block') toggleSideMenu();
+            closeModal(); closeD(); closeActorModal(); closeTvList(); if(document.getElementById('sideMenu').style.display === 'block') toggleSideMenu();
             document.querySelector('.search-header').style.display = 'flex';
             document.getElementById('searchGrid').innerHTML = ''; 
             document.getElementById('searchOverlay').style.display = 'block'; 
             document.getElementById('searchInp').focus(); 
             document.body.style.overflow='hidden'; 
-            updateActiveNav(document.getElementById('homeBtnNav'));
+            updateActiveNav(document.getElementById('searchBtnNav'));
             if (!window.history.state || window.history.state.view !== 'search') { history.pushState({view: 'search'}, ""); }
         }
 
@@ -1289,50 +1294,37 @@
         function renderSynopsis() { const descEl = document.getElementById('mDesc'), toggleBtn = document.getElementById('mToggleBtn'); if (globalFullDesc.length > 90) { toggleBtn.classList.remove('hidden'); descEl.innerText = isExpanded ? globalFullDesc : globalFullDesc.substring(0, 90) + "..."; toggleBtn.innerText = isExpanded ? "ringkas" : "selengkapnya"; } else { descEl.innerText = globalFullDesc; toggleBtn.classList.add('hidden'); } }
         function handleToggleDesc() { isExpanded = !isExpanded; renderSynopsis(); }
         
-        // --- PERBAIKAN: Fungsi PlayVid yang lebih dinamis ---
         function playVid(url, el) { 
             const track = document.getElementById('carouselTrack'); 
             const dots = document.getElementById('carouselDots'); 
-            
             const finalUrl = url.includes('?') ? `${url}&enablejsapi=1&autoplay=1&mute=0` : `${url}?enablejsapi=1&autoplay=1&mute=0`;
-            
             track.querySelectorAll('iframe').forEach(f => { f.src = ""; f.remove(); });
-            track.innerHTML = `<div class="carousel-slide">
-                <iframe id="player-frame" src="${finalUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe>
-            </div>`; 
-            
+            track.innerHTML = `<div class="carousel-slide"><iframe id="player-frame" src="${finalUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe></div>`; 
             track.style.transform = 'translateX(0)'; 
             currentIdx = 0; 
             dots.innerHTML = ''; 
             document.getElementById('swipeOverlay').style.display = 'none'; 
         }
         
-        // --- PERBAIKAN: Fungsi ganti server tanpa reset episode ---
         function changeServer(srvIdx, el) {
             activeServerIdx = srvIdx;
             document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active-link'));
             el.classList.add('active-link');
-            
-            // Build URL berdasarkan server dan episode aktif
             const url = buildEmbedUrl(window.currentMediaType, window.currentMediaId, activeSeason, activeEpisode, activeServerIdx);
             playVid(url);
         }
 
-        // --- PERBAIKAN: Fungsi ganti episode tanpa reset server ---
         function changeEpisode(epNum, el) {
             activeEpisode = epNum;
             document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active-pill'));
             el.classList.add('active-pill');
-            
             const url = buildEmbedUrl(window.currentMediaType, window.currentMediaId, activeSeason, activeEpisode, activeServerIdx);
             playVid(url);
         }
 
-        // --- FUNGSI HELPER: Membangun URL Embed berdasarkan Server ---
         function buildEmbedUrl(type, id, s, e, srv) {
             const seriesSuffix = (type === 'tv') ? `/${s}/${e}` : '';
             const tvParam = (type === 'tv') ? `?s=${s}&e=${e}` : '';
-            
             switch(srv) {
                 case 1: return `https://vidrock.net/embed/${type}/${id}${seriesSuffix}`;
                 case 2: return `https://vidstorm.ru/embed/${type}/${id}${seriesSuffix}`;
@@ -1366,11 +1358,7 @@
             document.getElementById('episodeGrid').innerHTML = episodes.map((e) => { 
                 const epNum = e.episode_number; 
                 const isActive = (epNum == activeEpisode) ? 'active-pill' : '';
-                return `
-                    <div class="pill text-[10px] flex flex-col items-center justify-center gap-1 min-h-[45px] ep-btn ${isActive}" 
-                         onclick="changeEpisode(${epNum}, this)">
-                        <span class="font-bold">${epNum}</span>
-                    </div>`; 
+                return `<div class="pill text-[10px] flex flex-col items-center justify-center gap-1 min-h-[45px] ep-btn ${isActive}" onclick="changeEpisode(${epNum}, this)"><span class="font-bold">${epNum}</span></div>`; 
             }).join(''); 
         }
         
@@ -1391,7 +1379,8 @@
         function updateLibButtons(id) { const isL = JSON.parse(localStorage.getItem('likes') || '[]').some(x=>x.id==id); const isB = JSON.parse(localStorage.getItem('bookmarks') || '[]').some(x=>x.id==id); document.getElementById('btnLikeModal').className = isL ? 'fa-solid fa-heart text-red-500 interaction-icon' : 'fa-regular fa-heart interaction-icon'; document.getElementById('btnBookModal').className = isB ? 'fa-solid fa-bookmark text-white interaction-icon' : 'fa-regular fa-bookmark interaction-icon'; document.getElementById('btnLikeModal').onclick = () => toggleLib('likes'); document.getElementById('btnBookModal').onclick = () => toggleLib('bookmarks'); }
         function toggleLib(k) { let items = JSON.parse(localStorage.getItem(k) || '[]'); const idx = items.findIndex(x => x.id == window.currentMediaId); idx > -1 ? items.splice(idx,1) : items.push({id: window.currentMediaId, type: window.currentMediaType}); localStorage.setItem(k, JSON.stringify(items)); updateLibButtons(window.currentMediaId); }
         async function switchTab(mode, el) { 
-            closeModal(); closeSearch(); closeActorModal(); closeLiveTv(); closeTvPlayer(); document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active')); if(el) el.classList.add('active'); 
+            closeModal(); closeSearch(); closeActorModal(); closeTvList(); closeTvPlayer();
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active')); if(el) el.classList.add('active'); 
             if(mode === 'bookmarks') updateActiveNav(document.getElementById('bookmarkBtnNav')); else updateActiveNav(document.getElementById('homeBtnNav'));
             const grid = document.getElementById('feedGrid'); grid.innerHTML = ''; 
             if(mode === 'likes' || mode === 'bookmarks') { currentLibMode = true; showLibrary(mode); } else { currentLibMode = false; currentCastId = ''; searchQuery = ''; currentType='multi'; currentSchedule='trending'; currentCompany=''; loadFeed(true); } 
