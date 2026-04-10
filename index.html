@@ -9,7 +9,186 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+        /* ===== THEME VARIABLES ===== */
+        :root {
+            --bg: #000; --bg2: #0a0a0a; --bg3: #111; --bg4: #1a1a1a;
+            --border: #1c1c1c; --border2: #2a2a2a;
+            --text: #fff; --text2: #efefef; --text3: #8e8e8e; --text4: #555;
+            --card: #111; --card2: #1a1a1a;
+        }
+        body.light-theme {
+            --bg: #f2f2f7; --bg2: #fff; --bg3: #fff; --bg4: #f2f2f7;
+            --border: #e5e5ea; --border2: #d1d1d6;
+            --text: #000; --text2: #1c1c1e; --text3: #6c6c70; --text4: #aeaeb2;
+            --card: #fff; --card2: #f2f2f7;
+        }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
+
+        /* Light theme targeted overrides */
+        body.light-theme .modal-player,
+        body.light-theme #actorModal,
+        body.light-theme #tvModal,
+        body.light-theme #sideMenu,
+        body.light-theme #searchOverlay,
+        body.light-theme #soundtrackModal,
+        body.light-theme .filter-dropdown { background: var(--bg) !important; }
+
+        body.light-theme .profile-header,
+        body.light-theme .highlights-wrapper,
+        body.light-theme .tab-nav { background: var(--bg2) !important; }
+
+        body.light-theme .top-bar,
+        body.light-theme .bio,
+        body.light-theme .action-buttons { background: var(--bg2); }
+
+        body.light-theme .btn-ig { background: #e5e5ea !important; color: #000 !important; }
+        body.light-theme .btn-ig.active { background: #d1d1d6 !important; border-color: #aeaeb2 !important; }
+        body.light-theme .btn-icon-sq { background: #e5e5ea !important; color: #000 !important; }
+
+        body.light-theme .movie-grid,
+        body.light-theme #feedGrid { background: var(--bg); }
+
+        body.light-theme .post-card { background: #e5e5ea; }
+        body.light-theme .badge-rating { background: rgba(0,0,0,0.75) !important; color: #fff !important; }
+        body.light-theme .badge-type { background: rgba(0,0,0,0.6) !important; color: #fff !important; }
+
+        body.light-theme .ig-logo { color: #000; }
+        body.light-theme .stat-val { color: #000; }
+        body.light-theme .stat-label { color: #6c6c70; }
+        body.light-theme .bio-name { color: #000; }
+        body.light-theme .ig-caption { color: #1c1c1e; }
+        body.light-theme .ig-hashtags { color: #007aff; }
+        body.light-theme .ig-date { color: #8e8e93; }
+
+        body.light-theme .bottom-nav { background: rgba(242,242,247,0.95) !important; border-top-color: #e5e5ea !important; }
+        body.light-theme .bottom-nav i { color: #8e8e93; }
+        body.light-theme .bottom-nav i.active-nav { color: #000; }
+
+        body.light-theme .tab-item { color: #8e8e93; }
+        body.light-theme .tab-item.active { color: #000; border-bottom-color: #000; }
+        body.light-theme .tab-nav { border-top-color: #e5e5ea; }
+
+        body.light-theme .highlight-circle { border-color: #e5e5ea; background: #fff; }
+        body.light-theme .highlight-text { color: #000; }
+        body.light-theme .highlights-wrapper { border-bottom-color: #e5e5ea; }
+
+        body.light-theme .pill { border-color: #d1d1d6; color: #000; }
+        body.light-theme .pill.active-pill { border-color: #000; background: rgba(0,0,0,0.05); }
+
+        body.light-theme .search-header { background: var(--bg) !important; border-bottom-color: #e5e5ea; }
+        body.light-theme .search-input-box { background: #e5e5ea; }
+        body.light-theme .search-input-box input { color: #000 !important; }
+
+        body.light-theme #smartSearchDropdown { background: #fff; border-color: #e5e5ea; }
+        body.light-theme .smart-item { border-bottom-color: #f2f2f7; }
+        body.light-theme .smart-name { color: #000; }
+        body.light-theme .smart-meta { color: #8e8e93; }
+
+        body.light-theme .modal-player .sticky { background: rgba(255,255,255,0.95) !important; border-bottom-color: #e5e5ea !important; }
+        body.light-theme #mTitle { color: #000; }
+        body.light-theme .interaction-icon { color: #000; }
+        body.light-theme .ig-likes-count { color: #000; }
+        body.light-theme .ig-username { color: #000; }
+        body.light-theme .toggle-btn { color: #8e8e93; }
+        body.light-theme #mTranslateBtn { color: #007aff; }
+
+        body.light-theme .server-btn { background: #f2f2f7; color: #000; border-color: #e5e5ea; }
+        body.light-theme .server-btn.active-link { background: rgba(0,0,0,0.08) !important; border-color: #000 !important; }
+        body.light-theme .dl-link-btn { background: #fff; color: #000; border-color: #e5e5ea; }
+
+        body.light-theme .about-topbar { background: rgba(242,242,247,0.92) !important; border-bottom-color: #e5e5ea; }
+        body.light-theme .about-topbar-title { color: #000; }
+        body.light-theme .about-close-btn { color: #000; }
+        body.light-theme .about-app-name { color: #000; }
+        body.light-theme .about-app-tagline { color: #6c6c70; }
+        body.light-theme .about-version-badge { background: #e5e5ea; border-color: #d1d1d6; color: #6c6c70; }
+        body.light-theme .about-stat-card { background: #fff; border-color: #e5e5ea; }
+        body.light-theme .about-stat-num { color: #000; }
+        body.light-theme .about-stat-lbl { color: #6c6c70; }
+        body.light-theme .about-section-label { color: #8e8e93; }
+        body.light-theme .about-feature-row { background: #fff; border-bottom-color: #f2f2f7; }
+        body.light-theme .about-feat-title { color: #000; }
+        body.light-theme .about-feat-desc { color: #6c6c70; }
+        body.light-theme .about-info-row { background: #fff; }
+        body.light-theme .about-info-label { color: #000; }
+        body.light-theme .about-info-value { color: #6c6c70; }
+        body.light-theme .about-link-row { background: #fff; }
+        body.light-theme .about-link-label { color: #000; }
+        body.light-theme .about-credits-made { color: #8e8e93; }
+        body.light-theme .about-credits-by { color: #000; }
+        body.light-theme .about-credits-copy { color: #aeaeb2; }
+
+        body.light-theme .actor-topbar { background: rgba(242,242,247,0.92) !important; border-bottom-color: #e5e5ea; }
+        body.light-theme .actor-cover { background: #e5e5ea; }
+        body.light-theme .actor-cover-name { color: #000; }
+        body.light-theme .actor-stats-bar { border-bottom-color: #e5e5ea; }
+        body.light-theme .actor-stat-num { color: #000; }
+        body.light-theme .actor-stat-lbl { color: #6c6c70; }
+        body.light-theme .actor-stat-divider { background: #e5e5ea; }
+        body.light-theme .actor-btn-msg { background: #e5e5ea; color: #000; }
+        body.light-theme .actor-btn-sq { background: #e5e5ea; color: #000; }
+        body.light-theme .actor-bio-name { color: #000; }
+        body.light-theme .actor-bio-text { color: #1c1c1e; }
+        body.light-theme .actor-bio-meta { color: #8e8e93; }
+        body.light-theme .actor-highlights-wrapper { border-bottom-color: #e5e5ea; }
+        body.light-theme .actor-hl-circle { border-color: #e5e5ea; background: #fff; }
+        body.light-theme .actor-hl-label { color: #000; }
+        body.light-theme .actor-tab-nav { background: #fff; border-top-color: #e5e5ea; }
+        body.light-theme .actor-tab-item { color: #8e8e93; }
+        body.light-theme .actor-tab-item.active { color: #000; border-bottom-color: #000; }
+
+        body.light-theme .tv-topbar { background: rgba(242,242,247,0.92) !important; border-bottom-color: #e5e5ea; }
+        body.light-theme .tv-topbar-title { color: #000; }
+        body.light-theme .tv-search-box { background: #e5e5ea; border-color: #d1d1d6; }
+        body.light-theme .tv-search-box input { color: #000; }
+        body.light-theme .tv-category-label { color: #8e8e93; }
+        body.light-theme .tv-ch-card { background: #fff; border-color: #e5e5ea; }
+        body.light-theme .tv-ch-logo-box { background: #f2f2f7; color: #000; }
+        body.light-theme .tv-ch-name { color: #6c6c70; }
+        body.light-theme .tv-now-bar { background: #fff; border-bottom-color: #f2f2f7; }
+        body.light-theme .tv-now-show { color: #000; }
+        body.light-theme .tv-now-time { color: #8e8e93; }
+        body.light-theme .tv-now-next-show { color: #6c6c70; }
+        body.light-theme .tv-schedule-show { color: #000; }
+        body.light-theme .tv-schedule-genre { color: #8e8e93; }
+        body.light-theme .tv-schedule-row { border-bottom-color: #f2f2f7; }
+        body.light-theme .tv-schedule-row.past { opacity: 0.4; }
+        body.light-theme .tv-switcher-btn-new { background: #fff; border-color: #e5e5ea; }
+        body.light-theme .tv-switcher-name-new { color: #6c6c70; }
+        body.light-theme .tv-switcher-section-title { color: #8e8e93; }
+        body.light-theme .tv-switcher-logo-new { background: #f2f2f7; color: #000; }
+
+        body.light-theme .filter-item { color: #000; border-bottom-color: #f2f2f7; }
+        body.light-theme .sticky-reset { background: #f2f2f7 !important; color: #000 !important; border-bottom-color: #e5e5ea; }
+        body.light-theme .date-chip { background: #fff; }
+        body.light-theme .date-chip .d-day { color: #000; }
+        body.light-theme .date-chip .d-month { color: #8e8e93; }
+        body.light-theme .date-chip.active-date { border-color: #000; }
+        body.light-theme .calendar-item { border-bottom-color: #f2f2f7; }
+        body.light-theme .cal-title { color: #000; }
+        body.light-theme .cal-meta { color: #8e8e93; }
+        body.light-theme .cal-genre-pill { background: #f2f2f7; color: #6c6c70; }
+
+        body.light-theme .music-card { background: #fff; border-color: #f2f2f7; }
+        body.light-theme #soundtrackModal { background: #f2f2f7; border-top-color: #e5e5ea; }
+
+        body.light-theme #sideMenu { background: #f2f2f7; }
+        body.light-theme .about-hero { border-bottom-color: #e5e5ea; }
+        body.light-theme .about-stats-row { border-bottom-color: #e5e5ea; }
+        body.light-theme .about-hero-glow { background: radial-gradient(circle, rgba(0,122,255,0.1) 0%, transparent 70%); }
+
+        body.light-theme .seriesControl,
+        body.light-theme #seriesControl { background: #f2f2f7 !important; border-color: #e5e5ea !important; }
+        body.light-theme #seasonSel { background: #fff !important; color: #000 !important; border-color: #e5e5ea !important; }
+        body.light-theme .ep-btn { border-color: #e5e5ea !important; color: #000 !important; }
+
+        body.light-theme .about-info-row:not(:last-child) { border-bottom-color: #f2f2f7; }
+        body.light-theme .about-feature-row:not(:last-child) { border-bottom-color: #f2f2f7; }
+        body.light-theme .about-link-row:not(:last-child) { border-bottom-color: #f2f2f7; }
+
+        body.light-theme #themeToggle { background: #34c759 !important; }
+        body.light-theme #themeThumb { transform: translateX(18px); }
+        body.light-theme #themeLabel { color: #000 !important; }
         /* Fix Horizontal Scroll & Safari Smoothness */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -webkit-overflow-scrolling: touch; }
@@ -122,7 +301,8 @@
 
         .modal-player { display: none; position: fixed; inset: 0; z-index: 8000; background: #000; overflow-y: auto; }
         .carousel-track { display: flex; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; }
-        .carousel-slide { min-width: 100%; aspect-ratio: 16/9; position: relative; background: #000; }
+        .carousel-slide { min-width: 100%; aspect-ratio: 16/9; position: relative; background: #000; overflow: hidden; }
+        .carousel-slide iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
         .swipe-overlay { position: absolute; inset: 0; z-index: 10; background: transparent; }
         .interaction-icon { font-size: 24px; cursor: pointer; color: #fff; transition: transform 0.1s; }
         .interaction-icon:active { transform: scale(1.2); }
@@ -486,8 +666,7 @@
         /* Sticky top nav bar */
         .actor-topbar {
             position: sticky; top: 0; z-index: 200;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            background: #000;
             border-bottom: 1px solid #1a1a1a;
             display: flex; align-items: center; padding: 0 15px; height: 54px;
         }
@@ -501,7 +680,7 @@
 
         /* Cover / backdrop blur area */
         .actor-cover {
-            position: relative; height: 140px; overflow: hidden; background: #0a0a0a;
+            position: relative; height: 90px; overflow: hidden; background: #0a0a0a;
         }
         .actor-cover-blur {
             position: absolute; inset: -20px;
@@ -518,8 +697,8 @@
         .actor-profile-row {
             position: relative; z-index: 10;
             display: flex; align-items: flex-end; gap: 14px;
-            padding: 0 15px 14px;
-            margin-top: -54px;
+            padding: 0 15px 12px;
+            margin-top: -44px;
         }
 
         /* IG-style ring */
@@ -758,12 +937,22 @@
         }
         .tv-ch-card.active-ch .tv-ch-live-badge { display: block; }
 
-        /* TV Player - clip iframe */
-        .tv-mode #mainVideoArea { overflow: hidden; background: #000; }
-        .tv-mode .carousel-slide { overflow: hidden; position: relative; }
+        /* TV Player - full fit iframe, no clip hack */
+        .tv-mode #mainVideoArea { 
+            overflow: hidden; background: #000; 
+            aspect-ratio: 16/9; 
+            position: relative;
+        }
+        .tv-mode .carousel-slide { 
+            overflow: hidden; position: relative; 
+            aspect-ratio: 16/9; min-width: 100%;
+            background: #000;
+        }
         .tv-mode .carousel-slide iframe {
-            width: 100%; height: calc(100% + 120px);
-            margin-top: -60px; pointer-events: auto;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: auto; border: none;
+            background: #000;
         }
         .tv-mode #castContainer, .tv-mode #btnLikeModal, .tv-mode #btnBookModal,
         .tv-mode #mLikeDisplay, .tv-mode .fa-rotate-right,
@@ -887,6 +1076,24 @@
             font-size: 8px; font-weight: 900; color: #fff;
         }
         .tv-switcher-name-new { font-size: 8px; font-weight: 700; color: #ccc; }
+
+        /* TV Modal bottom nav */
+        .tv-bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #000; border-top: 1px solid #1c1c1c;
+            display: flex; justify-content: space-around;
+            padding: 10px 0 12px; z-index: 9700;
+        }
+        .tv-bottom-item {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 3px; cursor: pointer; color: #8e8e8e;
+            font-size: 10px; font-weight: 600; min-width: 60px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tv-bottom-item i { font-size: 20px; }
+        .tv-bottom-item:active { opacity: 0.6; }
+        .tv-bottom-active { color: #fff !important; }
+        .tv-bottom-active i { color: #fff !important; }
     </style>
 </head>
 <body>
@@ -961,10 +1168,7 @@
         <!-- Hero -->
         <div class="about-hero">
             <div class="about-hero-glow"></div>
-            <div class="about-app-icon">
-                <img src="amnesfubbia.png" alt="Logo">
-            </div>
-            <div class="about-app-name">amnesfubbia</div>
+            <div class="about-app-name" style="font-size:20px;">amnesfubbia</div>
             <div class="about-app-tagline">Platform katalog sinema digital.<br>Discover. Watch. Archive.</div>
             <div class="about-version-badge">Versi 2.0.0 · Build 2026</div>
         </div>
@@ -1083,10 +1287,6 @@
             <div class="about-info-row">
                 <span class="about-info-label">Bahasa</span>
                 <span class="about-info-value">Indonesia / Inggris</span>
-            </div>
-            <div class="about-info-row">
-                <span class="about-info-label">Konten Dewasa</span>
-                <span class="about-info-value">Dinonaktifkan</span>
             </div>
         </div>
 
@@ -1364,13 +1564,34 @@
             <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer;padding:6px" onclick="closeTvModal()"></i>
             <div class="tv-live-dot"></div>
             <div class="tv-topbar-title">Live TV Indonesia</div>
-            <i class="fa-solid fa-magnifying-glass" style="font-size:16px;color:#8e8e8e;cursor:pointer;padding:6px" onclick="document.getElementById('tvSearchInp').focus()"></i>
+            <i class="fa-solid fa-magnifying-glass" style="font-size:16px;color:#8e8e8e;cursor:pointer;padding:6px" onclick="focusTvSearch()"></i>
         </div>
-        <div class="tv-search-box">
+        <div class="tv-search-box" id="tvSearchBox" style="display:none">
             <i class="fa-solid fa-magnifying-glass text-zinc-500 text-xs"></i>
-            <input type="text" id="tvSearchInp" placeholder="Cari channel..." autocomplete="off" oninput="filterTvChannels(this.value)">
+            <input type="text" id="tvSearchInp" placeholder="Cari channel TV..." autocomplete="off" oninput="filterTvChannels(this.value)">
+            <i class="fa-solid fa-xmark" style="color:#8e8e8e;font-size:14px;cursor:pointer;padding:2px 0 2px 4px" onclick="closeTvSearch()"></i>
         </div>
-        <div id="tvChannelList"></div>
+        <div id="tvChannelList" style="padding-bottom:70px"></div>
+
+        <!-- Bottom nav khusus TV -->
+        <nav class="tv-bottom-nav">
+            <div class="tv-bottom-item" onclick="closeTvModal(); updateActiveNav(document.getElementById('homeBtnNav'))">
+                <i class="fa-solid fa-house"></i>
+                <span>Beranda</span>
+            </div>
+            <div class="tv-bottom-item tv-bottom-search" onclick="focusTvSearch()">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>Cari Channel</span>
+            </div>
+            <div class="tv-bottom-item tv-bottom-active">
+                <i class="fa-solid fa-clapperboard"></i>
+                <span>Live TV</span>
+            </div>
+            <div class="tv-bottom-item" onclick="closeTvModal(); updateActiveNav(document.getElementById('bookmarkBtnNav')); switchTab('bookmarks', document.getElementById('tabBookmark'))">
+                <i class="fa-solid fa-bookmark"></i>
+                <span>Bookmark</span>
+            </div>
+        </nav>
     </div>
 
     <nav class="bottom-nav">
@@ -1751,9 +1972,31 @@
         function initTvChannels() { renderTvList(''); }
         function filterTvChannels(q) { renderTvList(q); }
 
+        function focusTvSearch() {
+            const box = document.getElementById('tvSearchBox');
+            const inp = document.getElementById('tvSearchInp');
+            box.style.display = 'flex';
+            inp.focus();
+            // highlight search icon in bottom nav
+            document.querySelectorAll('.tv-bottom-item').forEach(el => el.classList.remove('tv-bottom-active'));
+            document.querySelector('.tv-bottom-search').classList.add('tv-bottom-active');
+        }
+
+        function closeTvSearch() {
+            const box = document.getElementById('tvSearchBox');
+            const inp = document.getElementById('tvSearchInp');
+            box.style.display = 'none';
+            inp.value = '';
+            renderTvList('');
+            // restore TV active
+            document.querySelectorAll('.tv-bottom-item').forEach(el => el.classList.remove('tv-bottom-active'));
+            document.querySelector('.tv-bottom-item:nth-child(3)').classList.add('tv-bottom-active');
+        }
+
         function openTvModal() {
             closeModal(); closeSearch();
             document.getElementById('tvSearchInp').value = '';
+            document.getElementById('tvSearchBox').style.display = 'none';
             renderTvList('');
             document.getElementById('tvModal').style.display = 'block';
             document.getElementById('tvModal').scrollTop = 0;
@@ -2935,6 +3178,27 @@
         }
         async function showLibrary(k) { const items = JSON.parse(localStorage.getItem(k) || '[]'); const grid = document.getElementById('feedGrid'); grid.innerHTML = ''; if (!items.length) { grid.innerHTML = '<div class="col-span-3 text-center py-20 text-zinc-500 text-xs">Belum ada konten disimpan</div>'; return; } const promises = items.map(i => fetchWithCache(`https://api.themoviedb.org/3/${i.type}/${i.id}?api_key=${API_KEY}&language=id-ID`).then(r => r)); const results = await Promise.all(promises); renderGrid(results.filter(m => m.id), grid); }
         window.onscroll = () => { if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000 && !loading && !searchQuery && !currentLibMode) { page++; loadFeed(false); } };
+
+        // ===== THEME TOGGLE =====
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            localStorage.setItem('amnesTheme', isLight ? 'light' : 'dark');
+            document.getElementById('themeLabel').innerText = isLight ? 'Terang' : 'Gelap';
+            // toggle pill color handled by CSS
+        }
+
+        // Apply saved theme on load
+        (function() {
+            const saved = localStorage.getItem('amnesTheme');
+            if (saved === 'light') {
+                document.body.classList.add('light-theme');
+                // update label after DOM ready
+                document.addEventListener('DOMContentLoaded', () => {
+                    const lbl = document.getElementById('themeLabel');
+                    if (lbl) lbl.innerText = 'Terang';
+                });
+            }
+        })();
     </script>
 </body>
 </html>
