@@ -1456,8 +1456,8 @@
                     <span class="dot-notify"></span>
                 </div>
                 <div class="flex gap-5">
-                    <i class="fa-regular fa-square-plus text-2xl cursor-pointer" onclick="openComingSoon()"></i>
-                    <i class="fa-solid fa-bars text-2xl cursor-pointer" onclick="toggleSideMenu()"></i>
+                    <i class="fa-regular fa-square-plus cursor-pointer" style="font-size:24px" onclick="openComingSoon()"></i>
+                    <i class="fa-solid fa-bars cursor-pointer" style="font-size:22px" onclick="toggleSideMenu()"></i>
                 </div>
             </div>
 
@@ -1724,13 +1724,13 @@
                 <i class="fa-solid fa-magnifying-glass cursor-pointer"></i>
             </div>
             <div class="tv-bottom-item" onclick="closeTvModal(); updateActiveNav(document.getElementById('reelsBtnNav')); openReels()">
-                <i class="fa-solid fa-circle-play cursor-pointer"></i>
-            </div>
-            <div class="tv-bottom-item tv-bottom-active">
                 <i class="fa-solid fa-clapperboard cursor-pointer"></i>
             </div>
+            <div class="tv-bottom-item tv-bottom-active">
+                <i class="fa-solid fa-tv cursor-pointer"></i>
+            </div>
             <div class="tv-bottom-item" onclick="closeTvModal(); updateActiveNav(document.getElementById('bookmarkBtnNav')); switchTab('bookmarks', document.getElementById('tabBookmark'))">
-                <i class="fa-solid fa-bookmark cursor-pointer"></i>
+                <i class="fa-regular fa-bookmark cursor-pointer"></i>
             </div>
         </nav>
     </div>
@@ -1751,26 +1751,26 @@
                 <div class="spinner"></div>
             </div>
         </div>
-
-        <!-- Bottom nav reels -->
-        <nav class="reels-bottom-nav">
-            <div class="reels-bottom-item" onclick="closeReels(); updateActiveNav(document.getElementById('homeBtnNav')); backToHome()">
-                <i class="fa-solid fa-house"></i>
-            </div>
-            <div class="reels-bottom-item" onclick="closeReels(); openSearch()">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </div>
-            <div class="reels-bottom-item active-reel-nav">
-                <i class="fa-solid fa-circle-play"></i>
-            </div>
-            <div class="reels-bottom-item" onclick="closeReels(); updateActiveNav(document.getElementById('tvBtnNav')); openTvModal()">
-                <i class="fa-solid fa-clapperboard"></i>
-            </div>
-            <div class="reels-bottom-item" onclick="openBookmarksFromReels()">
-                <i class="fa-solid fa-bookmark"></i>
-            </div>
-        </nav>
     </div>
+
+    <!-- Bottom nav reels — terpisah dari reelsModal agar tidak tertutup overlay -->
+    <nav class="reels-bottom-nav" id="reelsBottomNav" style="display:none">
+        <div class="reels-bottom-item" onclick="closeReels(); updateActiveNav(document.getElementById('homeBtnNav')); backToHome()">
+            <i class="fa-solid fa-house"></i>
+        </div>
+        <div class="reels-bottom-item" onclick="closeReels(); openSearch()">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <div class="reels-bottom-item active-reel-nav">
+            <i class="fa-solid fa-clapperboard"></i>
+        </div>
+        <div class="reels-bottom-item" onclick="closeReels(); updateActiveNav(document.getElementById('tvBtnNav')); openTvModal()">
+            <i class="fa-solid fa-tv"></i>
+        </div>
+        <div class="reels-bottom-item" onclick="openBookmarksFromReels()">
+            <i class="fa-regular fa-bookmark"></i>
+        </div>
+    </nav>
 
     <!-- ===== REEL DETAIL BOTTOM SHEET ===== -->
     <div id="reelDetailOverlay" onclick="closeReelDetail()"></div>
@@ -1824,9 +1824,9 @@
     <nav class="bottom-nav">
         <i class="fa-solid fa-house cursor-pointer text-xl active-nav" id="homeBtnNav" onclick="updateActiveNav(this); backToHome()"></i>
         <i class="fa-solid fa-magnifying-glass cursor-pointer text-xl" id="searchBtnNav" onclick="updateActiveNav(this); openSearch()"></i>
-        <i class="fa-solid fa-circle-play cursor-pointer text-xl" id="reelsBtnNav" onclick="updateActiveNav(this); openReels()"></i>
-        <i class="fa-solid fa-clapperboard cursor-pointer text-xl" id="tvBtnNav" onclick="updateActiveNav(this); openTvModal()"></i>
-        <i class="fa-solid fa-bookmark cursor-pointer text-xl" id="bookmarkBtnNav" onclick="updateActiveNav(this); switchTab('bookmarks', document.getElementById('tabBookmark'))"></i>
+        <i class="fa-solid fa-clapperboard cursor-pointer text-xl" id="reelsBtnNav" onclick="updateActiveNav(this); openReels()"></i>
+        <i class="fa-solid fa-tv cursor-pointer text-xl" id="tvBtnNav" onclick="updateActiveNav(this); openTvModal()"></i>
+        <i class="fa-regular fa-bookmark cursor-pointer text-xl" id="bookmarkBtnNav" onclick="updateActiveNav(this); switchTab('bookmarks', document.getElementById('tabBookmark'))"></i>
     </nav>
 
     <script>
@@ -1852,6 +1852,8 @@
 
         window.onload = () => {
             initFilters(); initHighlights(); loadFeed(); setupSwipe(); initSmartSearch(); initTvChannels();
+            // Pre-load YouTube IFrame API agar sudah siap saat reels dibuka
+            loadYTApi();
             // Isi popular chips
             const chips = ['Avengers','One Piece','Interstellar','Squid Game','Parasite','Dune','Breaking Bad','Inception'];
             const container = document.getElementById('popularChips');
@@ -2544,6 +2546,7 @@
 
         function _closeReelsSilent() {
             document.getElementById('reelsModal').style.display = 'none';
+            document.getElementById('reelsBottomNav').style.display = 'none';
             document.querySelectorAll('#reelsContainer iframe').forEach(f => {
                 try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
             });
@@ -2819,6 +2822,21 @@
             showLsUI();
         }
 
+        // Helper: pastikan judul selalu Latin/English
+        // Jika judul mengandung karakter non-Latin (Korea, Jepang, Arab, Hindi, Thai, dll), gunakan judul EN
+        function isNonLatin(str) {
+            return /[\u0900-\u097F\u0600-\u06FF\u0E00-\u0E7F\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF\u0370-\u03FF]/.test(str || '');
+        }
+        async function getLatinTitle(idData, type, id) {
+            const rawTitle = idData.title || idData.name || '';
+            if (!isNonLatin(rawTitle)) return rawTitle; // sudah Latin
+            // Fetch versi EN untuk judul Latin
+            try {
+                const enData = await fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=en-US`);
+                return enData.title || enData.name || rawTitle;
+            } catch { return rawTitle; }
+        }
+
         async function fetchWithCache(url) {
             const cached = sessionStorage.getItem(url);
             if (cached) return JSON.parse(cached);
@@ -3062,6 +3080,7 @@
         async function openReels() {
             const modal = document.getElementById('reelsModal');
             modal.style.display = 'block';
+            document.getElementById('reelsBottomNav').style.display = 'flex';
             document.body.style.overflow = 'hidden';
             history.pushState({view: 'reels'}, '');
 
@@ -3072,11 +3091,17 @@
 
         function closeReels() {
             document.getElementById('reelsModal').style.display = 'none';
+            document.getElementById('reelsBottomNav').style.display = 'none';
             document.body.style.overflow = 'auto';
             // Hentikan semua video yang sedang main
             document.querySelectorAll('#reelsContainer iframe').forEach(f => {
                 try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
             });
+            // Reset agar setiap buka reels dapat konten baru/acak
+            _reelsLoaded = false;
+            _reelsData = [];
+            _reelsPage = 1;
+            document.getElementById('reelsContainer').innerHTML = '<div class="reel-loading"><div class="spinner"></div></div>';
             history.replaceState({view: 'home'}, '');
         }
 
@@ -3113,7 +3138,8 @@
             if (isNew) {
                 container.innerHTML = '<div class="reel-loading"><div class="spinner"></div></div>';
                 _reelsData = [];
-                _reelsPage = 1;
+                // Acak halaman awal (1-5) agar konten berbeda tiap buka
+                _reelsPage = Math.floor(Math.random() * 5) + 1;
                 _reelsLoaded = false;
             }
 
@@ -3136,30 +3162,44 @@
                 }
 
                 // Untuk tiap film/serial, ambil video trailer pertama yang ada
-                const videoPromises = combined.slice(0, 20).map(async m => {
+                const videoPromises = combined.slice(0, 30).map(async m => {
                     try {
                         const mtype = m._mtype;
+                        // Fetch dengan include_video_language agar dapat lebih banyak pilihan
                         const vRes = await fetchWithCache(
-                            `https://api.themoviedb.org/3/${mtype}/${m.id}/videos?api_key=${API_KEY}&language=en-US`
+                            `https://api.themoviedb.org/3/${mtype}/${m.id}/videos?api_key=${API_KEY}&language=en-US&include_video_language=en,null`
                         );
-                        // Prioritas: Official Trailer > Trailer > Teaser > Clip
-                        let allVids = (vRes.results || []).filter(v => v.site === 'YouTube');
-                        
-                        // Filter akun non-English (Korea, India, Jepang, dll)
+                        let allVids = (vRes.results || []).filter(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser' || v.type === 'Clip'));
+
+                        // Jika tidak ada video sama sekali, coba endpoint tanpa filter bahasa
+                        if (allVids.length === 0) {
+                            const vRes2 = await fetchWithCache(
+                                `https://api.themoviedb.org/3/${mtype}/${m.id}/videos?api_key=${API_KEY}`
+                            );
+                            allVids = (vRes2.results || []).filter(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser' || v.type === 'Clip'));
+                        }
+
+                        if (allVids.length === 0) return null;
+
+                        // Filter akun non-English (Korea, India, Jepang, dll) - hanya jika ada pilihan EN
                         const _nonLatinPat = /[\u0900-\u097F\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0600-\u06FF]/;
                         const _regionalKw = /\b(korean?|hindi|japanese|arabic|chinese|thai|dubbed?|dub|tamil|telugu|bengali|urdu|turkish)\b/i;
                         const _enVids = allVids.filter(v => {
                             const nm = v.name || '';
-                            return !_nonLatinPat.test(nm) && !_regionalKw.test(nm) && (!v.iso_639_1 || v.iso_639_1 === 'en' || v.iso_639_1 === 'null');
+                            return !_nonLatinPat.test(nm) && !_regionalKw.test(nm) && (!v.iso_639_1 || v.iso_639_1 === 'en' || v.iso_639_1 === 'null' || v.iso_639_1 === '');
                         });
+                        // Hanya filter jika ada video EN — jika tidak, pakai semua
                         if (_enVids.length > 0) allVids = _enVids;
-                        
-                        const scoreVid = v => (v.official?4:0) + (v.type==='Trailer'?3:0) + (v.type==='Teaser'?1:0);
+
+                        const scoreVid = v => (v.official ? 4 : 0) + (v.type === 'Trailer' ? 3 : v.type === 'Teaser' ? 1 : 0);
                         allVids.sort((a, b) => scoreVid(b) - scoreVid(a));
                         const best = allVids[0];
                         if (!best) return null;
 
-                        const title = m.title || m.name || '';
+                        const rawTitle = m.title || m.name || '';
+                        const title = isNonLatin(rawTitle)
+                            ? (await fetchWithCache(`https://api.themoviedb.org/3/${mtype}/${m.id}?api_key=${API_KEY}&language=en-US`).then(r => r.title || r.name || rawTitle).catch(() => rawTitle))
+                            : rawTitle;
                         const year  = (m.release_date || m.first_air_date || '').split('-')[0];
                         const poster = m.poster_path || '';
                         const synopsis = m.overview || '';
@@ -3198,7 +3238,9 @@
 
                     // autoplay=1 agar langsung main saat slide pertama dimuat
                     // js_api diaktifkan agar bisa pause via postMessage
-                    const embedUrl = `https://www.youtube.com/embed/${reel.videoKey}?enablejsapi=1&autoplay=0&rel=0&modestbranding=1&showinfo=0&mute=0&playsinline=1&controls=0&disablekb=1&iv_load_policy=3&fs=0&color=white&branding=0`;
+                    // enablejsapi=1 wajib agar YT.Player onStateChange bekerja
+                    // controls=1 dibiarkan agar event state change tidak diblokir
+                    const embedUrl = `https://www.youtube.com/embed/${reel.videoKey}?enablejsapi=1&autoplay=0&rel=0&modestbranding=1&showinfo=0&playsinline=1&iv_load_policy=3&origin=${encodeURIComponent(location.origin || location.href.split('/').slice(0,3).join('/'))}`;
                     const typeLabel = reel.type === 'movie' ? 'Film' : 'Serial';
                     const ratingStr = reel.rating ? `· ★${reel.rating}` : '';
                     const synopsisId = `reel-syn-${reel.movieId}`;
@@ -3258,14 +3300,24 @@
 
             _reelsObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
-                    const iframe = entry.target.querySelector('iframe');
+                    const slide = entry.target;
+                    const iframe = slide.querySelector('iframe');
                     if (!iframe) return;
                     if (entry.isIntersecting && entry.intersectionRatio >= 0.8) {
-                        // Slide masuk layar → play
-                        try { iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
+                        // Pakai YT.Player jika tersedia, fallback ke postMessage
+                        if (slide._ytPlayer && slide._ytPlayer.playVideo) {
+                            try { slide._ytPlayer.playVideo(); } catch(e) {}
+                        } else {
+                            try { iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
+                        }
+                        // Attach YT Player jika belum
+                        if (!slide._ytPlayer) attachYTPlayer(iframe, slide);
                     } else {
-                        // Slide keluar layar → pause
-                        try { iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
+                        if (slide._ytPlayer && slide._ytPlayer.pauseVideo) {
+                            try { slide._ytPlayer.pauseVideo(); } catch(e) {}
+                        } else {
+                            try { iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
+                        }
                     }
                 });
             }, { threshold: 0.8 });
@@ -3288,10 +3340,110 @@
             }
         }
 
+        // ===== AUTO-SCROLL REELS — YT IFrame API =====
+        // Load YT API script sekali saja
+        window._ytApiReady = false;
+        window._ytPlayers = {}; // map: slideIndex → YT.Player
+        window._ytPendingSlides = []; // antrian slide yg menunggu API ready
+
+        function loadYTApi() {
+            if (document.getElementById('yt-api-script')) return;
+            const s = document.createElement('script');
+            s.id = 'yt-api-script';
+            s.src = 'https://www.youtube.com/iframe_api';
+            document.head.appendChild(s);
+        }
+
+        // Callback dipanggil YT saat API siap
+        window.onYouTubeIframeAPIReady = function() {
+            window._ytApiReady = true;
+            // Proses semua slide yang menunggu
+            window._ytPendingSlides.forEach(fn => fn());
+            window._ytPendingSlides = [];
+        };
+
+        function attachYTPlayer(iframe, slide) {
+            const doAttach = () => {
+                if (!iframe.id) iframe.id = 'yt-reel-' + Date.now() + Math.random().toString(36).slice(2);
+                try {
+                    const player = new YT.Player(iframe, {
+                        events: {
+                            onStateChange: (event) => {
+                                // State 0 = ended
+                                if (event.data === 0) {
+                                    const sheet = document.getElementById('reelDetailSheet');
+                                    if (sheet && sheet.style.display === 'block') return;
+                                    if (document.getElementById('reelsModal').style.display !== 'block') return;
+                                    scrollToNextReel(slide);
+                                }
+                            }
+                        }
+                    });
+                    slide._ytPlayer = player;
+                } catch(e) {}
+            };
+
+            if (window._ytApiReady) {
+                doAttach();
+            } else {
+                window._ytPendingSlides.push(doAttach);
+                loadYTApi();
+            }
+        }
+
+        function scrollToNextReel(currentSlide) {
+            const container = document.getElementById('reelsContainer');
+            if (!container) return;
+
+            let slide = currentSlide;
+            if (!slide) {
+                // Cari slide yang sedang visible
+                container.querySelectorAll('.reel-slide').forEach(s => {
+                    const r = s.getBoundingClientRect();
+                    if (r.top >= -50 && r.top <= 50) slide = s;
+                });
+            }
+
+            const next = slide ? slide.nextElementSibling : null;
+            if (next && next.classList.contains('reel-slide')) {
+                next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else if (container && slide) {
+                container.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+            }
+        }
+
+        // Stop semua video saat tab/app ditutup atau disembunyikan
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Pause semua iframe YouTube yang aktif
+                document.querySelectorAll('iframe[src*="youtube.com"]').forEach(f => {
+                    try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
+                });
+                // Pause via YT.Player API juga
+                Object.values(window._ytPlayers || {}).forEach(p => {
+                    try { if (p && p.pauseVideo) p.pauseVideo(); } catch(e) {}
+                });
+            }
+        });
+
         // Tambah reels ke popstate handler
-        function updateActiveNav(el) { 
-            document.querySelectorAll('.bottom-nav i').forEach(i => i.classList.remove('active-nav')); 
-            if(el) el.classList.add('active-nav'); 
+        function updateActiveNav(el) {
+            document.querySelectorAll('.bottom-nav i').forEach(i => {
+                i.classList.remove('active-nav');
+                // Bookmark: outline saat tidak aktif, solid saat aktif
+                if (i.id === 'bookmarkBtnNav') {
+                    i.className = i.className.replace('fa-solid', 'fa-regular').replace('active-nav', '');
+                    i.classList.add('fa-regular', 'fa-bookmark', 'cursor-pointer', 'text-xl');
+                }
+            });
+            if (el) {
+                el.classList.add('active-nav');
+                // Jika bookmark aktif, ganti ke solid
+                if (el.id === 'bookmarkBtnNav') {
+                    el.classList.remove('fa-regular');
+                    el.classList.add('fa-solid');
+                }
+            }
         }
 
         // ===== REEL DETAIL BOTTOM SHEET =====
@@ -3333,7 +3485,10 @@
                 const ext = extRatings.status === 'fulfilled' ? extRatings.value : {};
                 const imdbId = ext.imdb_id || d.imdb_id || null;
 
-                const title = d.title || d.name || '';
+                const rawTitle = d.title || d.name || '';
+                const title = isNonLatin(rawTitle)
+                    ? (await fetchWithCache(`https://api.themoviedb.org/3/${type}/${movieId}?api_key=${API_KEY}&language=en-US`).then(r => r.title || r.name || rawTitle).catch(() => rawTitle))
+                    : rawTitle;
                 const year = (d.release_date || d.first_air_date || '').split('-')[0];
                 const tmdbRating = d.vote_average ? d.vote_average.toFixed(1) : null;
                 const voteCount = d.vote_count || 0;
@@ -3458,8 +3613,9 @@
             document.getElementById('reelDetailSheet').style.display = 'none';
             _rdsCurrentId = null; _rdsCurrentType = null;
 
-            // Tutup reels
+            // Tutup reels + nav
             document.getElementById('reelsModal').style.display = 'none';
+            document.getElementById('reelsBottomNav').style.display = 'none';
             document.querySelectorAll('#reelsContainer iframe').forEach(f => {
                 try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
             });
@@ -3805,8 +3961,15 @@
                 const genreMap = {}; gData.genres.forEach(g => genreMap[g.id] = g.name);
 
                 list.innerHTML = '';
-                data.results.forEach(m => {
-                    const title = m.title || m.name || '';
+                // Untuk setiap item, pastikan judul Latin
+                const renderItems = data.results.map(async m => {
+                    let title = m.title || m.name || '';
+                    if (isNonLatin(title)) {
+                        try {
+                            const enM = await fetchWithCache(`https://api.themoviedb.org/3/${mediaType}/${m.id}?api_key=${API_KEY}&language=en-US`);
+                            title = enM.title || enM.name || title;
+                        } catch {}
+                    }
                     const releaseDate = m.release_date || m.first_air_date || '';
                     const year = releaseDate.split('-')[0];
                     const rating = (m.vote_average || 0).toFixed(1);
@@ -3831,6 +3994,7 @@
                         <i class="fa-solid fa-chevron-right" style="color:#2a2a2a;font-size:11px;flex-shrink:0"></i>`;
                     list.appendChild(item);
                 });
+                await Promise.allSettled(renderItems);
             } catch (e) { list.innerHTML = '<div class="text-center py-10 text-zinc-600 text-xs">Gagal memuat data.</div>'; }
         }
 
@@ -4011,26 +4175,50 @@
             else {
                 let endpoint = (currentType === 'tv') ? 'discover/tv' : 'discover/movie';
                 url = `https://api.themoviedb.org/3/${endpoint}?api_key=${API_KEY}&language=id-ID&page=${page}&include_adult=false&sort_by=popularity.desc`;
-                if(currentCountry) url += `&with_origin_country=${currentCountry}`;
-                if(currentGenre) url += `&with_genres=${currentGenre}`;
-                if(currentCompany) url += `&with_companies=${currentCompany}`;
-                if(currentType === 'short') { url += `&with_runtime.lte=20&with_runtime.gte=1&vote_count.lte=5000`; }
-                if(currentSchedule === 'now_playing' || currentSchedule === 'upcoming') { 
-                    const today = new Date().toISOString().split('T')[0]; 
-                    if(currentSchedule === 'now_playing') { 
-                        const prev = new Date(Date.now() - 60*24*60*60*1000).toISOString().split('T')[0]; 
-                        url += `&primary_release_date.gte=${prev}&primary_release_date.lte=${today}`; 
-                    } else { url += `&primary_release_date.gte=${today}`; } 
-                }
-                if(currentYear) {
-                    if(endpoint === 'discover/tv') url += `&first_air_date_year=${currentYear}`;
-                    else url += `&primary_release_year=${currentYear}`;
+                // SHORT: pakai genre Short Film (10770) + runtime ketat
+                if(currentType === 'short') {
+                    endpoint = 'discover/movie';
+                    url = `https://api.themoviedb.org/3/${endpoint}?api_key=${API_KEY}&language=id-ID&page=${page}&include_adult=false&sort_by=popularity.desc`;
+                    url += `&with_genres=10770&with_runtime.lte=40&with_runtime.gte=1`;
+                    if(currentCountry) url += `&with_origin_country=${currentCountry}`;
+                    if(currentGenre) url += `&with_genres=10770,${currentGenre}`;
+                    if(currentYear) url += `&primary_release_year=${currentYear}`;
+                } else {
+                    if(currentCountry) url += `&with_origin_country=${currentCountry}`;
+                    if(currentGenre) url += `&with_genres=${currentGenre}`;
+                    if(currentCompany) url += `&with_companies=${currentCompany}`;
+                    if(currentSchedule === 'now_playing' || currentSchedule === 'upcoming') { 
+                        const today = new Date().toISOString().split('T')[0]; 
+                        if(currentSchedule === 'now_playing') { 
+                            const prev = new Date(Date.now() - 60*24*60*60*1000).toISOString().split('T')[0]; 
+                            url += `&primary_release_date.gte=${prev}&primary_release_date.lte=${today}`; 
+                        } else { url += `&primary_release_date.gte=${today}`; } 
+                    }
+                    if(currentYear) {
+                        if(endpoint === 'discover/tv') url += `&first_air_date_year=${currentYear}`;
+                        else url += `&primary_release_year=${currentYear}`;
+                    }
                 }
             }
             try { 
                 const data = await fetchWithCache(url); 
                 let items = data.results || data.cast || []; 
                 if(currentCastId) items.sort((a,b) => b.popularity - a.popularity);
+
+                // Filter runtime client-side untuk mode SHORT agar tidak ada film panjang
+                if (currentType === 'short' && items.length > 0) {
+                    const runtimeChecks = items.map(async m => {
+                        try {
+                            const detail = await fetchWithCache(`https://api.themoviedb.org/3/movie/${m.id}?api_key=${API_KEY}`);
+                            const rt = detail.runtime || 0;
+                            // Lolos jika runtime 0 (tidak diketahui, biarkan tampil) atau ≤ 40 menit
+                            return rt === 0 || rt <= 40 ? m : null;
+                        } catch { return m; }
+                    });
+                    const checked = await Promise.all(runtimeChecks);
+                    items = checked.filter(Boolean);
+                }
+
                 if(items.length === 0 && isNew) { grid.innerHTML = `<div class="col-span-3 text-center py-20 text-zinc-600 text-xs">Konten tidak ditemukan.</div>`; } 
                 else { renderGrid(items, grid); }
             } catch(e) { if(e.name !== 'AbortError') console.error(e); }
@@ -4441,8 +4629,16 @@
                 return `<div class="cast-item" onclick="openActorProfile(${c.id})"><div class="cast-img-border"><div class="inner-border">${profileImg}</div></div><span class="cast-name">${c.name}</span></div>`;
             }).join('');
             document.getElementById('mLikeDisplay').innerText = `${Math.floor((dId.vote_average || 0) * 1234).toLocaleString('id-ID')} suka`;
-            // Prioritaskan judul en-US agar selalu Latin (mencegah aksara India/Thai/Cyrillic dll)
-            const displayTitle = dEn.title || dEn.name || dId.title || dId.name || '';
+            // Prioritaskan judul en-US agar selalu Latin
+            // Jika dEn kosong atau masih non-Latin, coba ambil lagi
+            let displayTitle = dEn.title || dEn.name || dId.title || dId.name || '';
+            if (isNonLatin(displayTitle)) {
+                // Coba fetch EN sekali lagi dengan endpoint yang berbeda
+                try {
+                    const enFallback = await fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=en-US`);
+                    displayTitle = enFallback.title || enFallback.name || displayTitle;
+                } catch {}
+            }
             document.getElementById('mTitle').innerText = displayTitle;
             // Simpan info untuk soundtrack search yang akurat
             window.currentMediaTitle = displayTitle;
