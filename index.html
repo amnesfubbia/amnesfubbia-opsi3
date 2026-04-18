@@ -2827,6 +2827,16 @@
         function isNonLatin(str) {
             return /[\u0900-\u097F\u0600-\u06FF\u0E00-\u0E7F\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF\u0370-\u03FF]/.test(str || '');
         }
+        async function getLatinTitle(idData, type, id) {
+            const rawTitle = idData.title || idData.name || '';
+            if (!isNonLatin(rawTitle)) return rawTitle; // sudah Latin
+            // Fetch versi EN untuk judul Latin
+            try {
+                const enData = await fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=en-US`);
+                return enData.title || enData.name || rawTitle;
+            } catch { return rawTitle; }
+        }
+
         async function fetchWithCache(url) {
             const cached = sessionStorage.getItem(url);
             if (cached) return JSON.parse(cached);
@@ -3083,13 +3093,7 @@
             document.getElementById('reelsModal').style.display = 'none';
             document.getElementById('reelsBottomNav').style.display = 'none';
             document.body.style.overflow = 'auto';
-            // Hentikan & destroy semua YT players untuk mencegah memory leak
-            document.querySelectorAll('#reelsContainer .reel-slide').forEach(slide => {
-                if (slide._ytPlayer) {
-                    try { slide._ytPlayer.stopVideo(); slide._ytPlayer.destroy(); } catch(e) {}
-                    slide._ytPlayer = null;
-                }
-            });
+            // Hentikan semua video yang sedang main
             document.querySelectorAll('#reelsContainer iframe').forEach(f => {
                 try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
             });
@@ -4171,50 +4175,26 @@
             else {
                 let endpoint = (currentType === 'tv') ? 'discover/tv' : 'discover/movie';
                 url = `https://api.themoviedb.org/3/${endpoint}?api_key=${API_KEY}&language=id-ID&page=${page}&include_adult=false&sort_by=popularity.desc`;
-                // SHORT: pakai genre Short Film (10770) + runtime ketat
-                if(currentType === 'short') {
-                    endpoint = 'discover/movie';
-                    url = `https://api.themoviedb.org/3/${endpoint}?api_key=${API_KEY}&language=id-ID&page=${page}&include_adult=false&sort_by=popularity.desc`;
-                    url += `&with_genres=10770&with_runtime.lte=40&with_runtime.gte=1`;
-                    if(currentCountry) url += `&with_origin_country=${currentCountry}`;
-                    if(currentGenre) url += `&with_genres=10770,${currentGenre}`;
-                    if(currentYear) url += `&primary_release_year=${currentYear}`;
-                } else {
-                    if(currentCountry) url += `&with_origin_country=${currentCountry}`;
-                    if(currentGenre) url += `&with_genres=${currentGenre}`;
-                    if(currentCompany) url += `&with_companies=${currentCompany}`;
-                    if(currentSchedule === 'now_playing' || currentSchedule === 'upcoming') { 
-                        const today = new Date().toISOString().split('T')[0]; 
-                        if(currentSchedule === 'now_playing') { 
-                            const prev = new Date(Date.now() - 60*24*60*60*1000).toISOString().split('T')[0]; 
-                            url += `&primary_release_date.gte=${prev}&primary_release_date.lte=${today}`; 
-                        } else { url += `&primary_release_date.gte=${today}`; } 
-                    }
-                    if(currentYear) {
-                        if(endpoint === 'discover/tv') url += `&first_air_date_year=${currentYear}`;
-                        else url += `&primary_release_year=${currentYear}`;
-                    }
+                if(currentCountry) url += `&with_origin_country=${currentCountry}`;
+                if(currentGenre) url += `&with_genres=${currentGenre}`;
+                if(currentCompany) url += `&with_companies=${currentCompany}`;
+                if(currentType === 'short') { url += `&with_runtime.lte=20&with_runtime.gte=1&vote_count.lte=5000`; }
+                if(currentSchedule === 'now_playing' || currentSchedule === 'upcoming') { 
+                    const today = new Date().toISOString().split('T')[0]; 
+                    if(currentSchedule === 'now_playing') { 
+                        const prev = new Date(Date.now() - 60*24*60*60*1000).toISOString().split('T')[0]; 
+                        url += `&primary_release_date.gte=${prev}&primary_release_date.lte=${today}`; 
+                    } else { url += `&primary_release_date.gte=${today}`; } 
+                }
+                if(currentYear) {
+                    if(endpoint === 'discover/tv') url += `&first_air_date_year=${currentYear}`;
+                    else url += `&primary_release_year=${currentYear}`;
                 }
             }
             try { 
                 const data = await fetchWithCache(url); 
                 let items = data.results || data.cast || []; 
                 if(currentCastId) items.sort((a,b) => b.popularity - a.popularity);
-
-                // Filter runtime client-side untuk mode SHORT agar tidak ada film panjang
-                if (currentType === 'short' && items.length > 0) {
-                    const runtimeChecks = items.map(async m => {
-                        try {
-                            const detail = await fetchWithCache(`https://api.themoviedb.org/3/movie/${m.id}?api_key=${API_KEY}`);
-                            const rt = detail.runtime || 0;
-                            // Lolos jika runtime 0 (tidak diketahui, biarkan tampil) atau ≤ 40 menit
-                            return rt === 0 || rt <= 40 ? m : null;
-                        } catch { return m; }
-                    });
-                    const checked = await Promise.all(runtimeChecks);
-                    items = checked.filter(Boolean);
-                }
-
                 if(items.length === 0 && isNew) { grid.innerHTML = `<div class="col-span-3 text-center py-20 text-zinc-600 text-xs">Konten tidak ditemukan.</div>`; } 
                 else { renderGrid(items, grid); }
             } catch(e) { if(e.name !== 'AbortError') console.error(e); }
