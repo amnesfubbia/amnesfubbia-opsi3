@@ -2827,16 +2827,6 @@
         function isNonLatin(str) {
             return /[\u0900-\u097F\u0600-\u06FF\u0E00-\u0E7F\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF\u0370-\u03FF]/.test(str || '');
         }
-        async function getLatinTitle(idData, type, id) {
-            const rawTitle = idData.title || idData.name || '';
-            if (!isNonLatin(rawTitle)) return rawTitle; // sudah Latin
-            // Fetch versi EN untuk judul Latin
-            try {
-                const enData = await fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=en-US`);
-                return enData.title || enData.name || rawTitle;
-            } catch { return rawTitle; }
-        }
-
         async function fetchWithCache(url) {
             const cached = sessionStorage.getItem(url);
             if (cached) return JSON.parse(cached);
@@ -3093,7 +3083,13 @@
             document.getElementById('reelsModal').style.display = 'none';
             document.getElementById('reelsBottomNav').style.display = 'none';
             document.body.style.overflow = 'auto';
-            // Hentikan semua video yang sedang main
+            // Hentikan & destroy semua YT players untuk mencegah memory leak
+            document.querySelectorAll('#reelsContainer .reel-slide').forEach(slide => {
+                if (slide._ytPlayer) {
+                    try { slide._ytPlayer.stopVideo(); slide._ytPlayer.destroy(); } catch(e) {}
+                    slide._ytPlayer = null;
+                }
+            });
             document.querySelectorAll('#reelsContainer iframe').forEach(f => {
                 try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
             });
