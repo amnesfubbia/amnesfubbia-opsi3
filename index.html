@@ -2547,52 +2547,56 @@
             }
 
             try {
-                // Query 1: spesifik — judul + tahun + soundtrack
+                // Query bertingkat: spesifik dulu, lalu fallback
                 const q1 = encodeURIComponent(`${mediaTitle} ${mediaYear} soundtrack`);
-                // Query 2: fallback — judul saja + soundtrack  
                 const q2 = encodeURIComponent(`${mediaTitle} soundtrack`);
+                const q3 = encodeURIComponent(`${mediaTitle} original score`);
+                const q4 = encodeURIComponent(`${mediaTitle} ost`);
 
-                // Fetch dua query sekaligus, gabung hasilnya
-                const [r1, r2] = await Promise.allSettled([
-                    fetch(`https://itunes.apple.com/search?term=${q1}&entity=song&limit=20`).then(r=>r.json()),
-                    fetch(`https://itunes.apple.com/search?term=${q2}&entity=song&limit=20`).then(r=>r.json())
+                const [r1, r2, r3, r4] = await Promise.allSettled([
+                    fetch(`https://itunes.apple.com/search?term=${q1}&entity=song&limit=25`).then(r=>r.json()),
+                    fetch(`https://itunes.apple.com/search?term=${q2}&entity=song&limit=25`).then(r=>r.json()),
+                    fetch(`https://itunes.apple.com/search?term=${q3}&entity=song&limit=15`).then(r=>r.json()),
+                    fetch(`https://itunes.apple.com/search?term=${q4}&entity=song&limit=15`).then(r=>r.json()),
                 ]);
 
                 let allResults = [];
-                if (r1.status === 'fulfilled') allResults.push(...(r1.value.results || []));
-                if (r2.status === 'fulfilled') allResults.push(...(r2.value.results || []));
+                [r1,r2,r3,r4].forEach(r => { if(r.status==='fulfilled') allResults.push(...(r.value.results||[])); });
 
-                // Deduplikasi berdasarkan trackId
+                // Deduplikasi
                 const seen = new Set();
-                allResults = allResults.filter(s => {
-                    if (seen.has(s.trackId)) return false;
-                    seen.add(s.trackId);
-                    return true;
-                });
+                allResults = allResults.filter(s => { if(seen.has(s.trackId)) return false; seen.add(s.trackId); return true; });
 
                 if (allResults.length === 0) {
-                    listCont.innerHTML = '<div class="text-center py-20 text-zinc-700 text-[10px] uppercase tracking-widest">No soundtrack tracks found.</div>';
+                    listCont.innerHTML = '<div class="text-center py-20 text-zinc-700 text-[10px] uppercase tracking-widest">Soundtrack tidak tersedia.</div>';
                     return;
                 }
 
-                // Skor tiap lagu berdasarkan kemiripan dengan judul film
-                // Cek di: collectionName (album), trackName (judul lagu), artistName
+                // Scoring lebih ketat: album name harus mengandung kata kunci judul film
                 const scored = allResults.map(song => {
-                    const collScore = titleMatchScore(song.collectionName, mediaTitle);
-                    const trackScore = titleMatchScore(song.trackName, mediaTitle) * 0.4;
-                    const score = Math.max(collScore, trackScore);
+                    const collScore = titleMatchScore(song.collectionName, mediaTitle) * 1.5; // bobot album lebih tinggi
+                    const trackScore = titleMatchScore(song.trackName, mediaTitle) * 0.3;
+                    const artistScore = titleMatchScore(song.artistName, mediaTitle) * 0.2;
+                    const score = Math.max(collScore, trackScore + artistScore);
                     return { song, score };
                 });
 
-                // Filter: hanya tampilkan yang punya kemiripan cukup (score >= 0.4)
-                let filtered = scored
-                    .filter(s => s.score >= 0.4)
+                // Ambil yang score >= 0.5 (lebih ketat dari sebelumnya)
+                let filtered = scored.filter(s => s.score >= 0.5)
                     .sort((a, b) => b.score - a.score)
                     .map(s => s.song);
 
-                // Jika hasil filter terlalu sedikit, fallback ke semua hasil
+                // Jika tidak ada yang cukup relevan → tampilkan pesan kosong
+                if (filtered.length === 0) {
+                    listCont.innerHTML = '<div class="text-center py-20 text-zinc-700 text-[10px] uppercase tracking-widest">Soundtrack tidak tersedia untuk film ini.</div>';
+                    return;
+                }
+
+                // Jika ada tapi sedikit, coba ambil lebih banyak dengan threshold lebih rendah
                 if (filtered.length < 3) {
-                    filtered = scored.sort((a, b) => b.score - a.score).map(s => s.song);
+                    filtered = scored.filter(s => s.score >= 0.3)
+                        .sort((a, b) => b.score - a.score)
+                        .map(s => s.song);
                 }
 
                 const toShow = filtered.slice(0, 15);
@@ -4871,8 +4875,9 @@
             // Recently viewed (poster saja)
             addToRecentlyViewed(id, type, dId.poster_path || '');
 
-            // Similar films (non-blocking)
-            loadSimilarFilms(id, type);
+            // Similar films (non-blocking, genre-based)
+            const _genreIds = (dId.genres || []).map(g => g.id);
+            loadSimilarFilms(id, type, _genreIds);
         }
 
         async function handleTranslate() {
@@ -5076,7 +5081,7 @@
             const episodes = data.episodes || [];
             document.getElementById('episodeGrid').innerHTML = episodes.map((e) => { 
                 const epNum = e.episode_number; 
-                const isActive = (epNum == activeEpisode) ? 'active-pill' : '';
+                const isActive = ''; // border menyala hanya saat diklik
                 return `<div class="pill text-[10px] flex flex-col items-center justify-center gap-1 min-h-[45px] ep-btn ${isActive}" onclick="changeEpisode(${epNum}, this)"><span class="font-bold">${epNum}</span></div>`; 
             }).join(''); 
         }
@@ -5199,17 +5204,42 @@
         }
 
         // ===== SIMILAR FILMS =====
-        async function loadSimilarFilms(id, type) {
+        async function loadSimilarFilms(id, type, genreIds) {
             const section = document.getElementById('mSimilarSection');
             const scroll = document.getElementById('mSimilarScroll');
             if (!section || !scroll) return;
             section.style.display = 'none';
             scroll.innerHTML = '';
             try {
-                const data = await fetchWithCache(
-                    `https://api.themoviedb.org/3/${type}/${id}/recommendations?api_key=${API_KEY}&language=en-US&page=1`
-                );
-                const items = (data.results || []).filter(m => m.poster_path).slice(0, 12);
+                let items = [];
+                // Coba recommendations dulu
+                try {
+                    const recData = await fetchWithCache(
+                        `https://api.themoviedb.org/3/${type}/${id}/recommendations?api_key=${API_KEY}&language=en-US&page=1`
+                    );
+                    items = (recData.results || []).filter(m => m.poster_path && m.id != id);
+                } catch(e) {}
+
+                // Jika recommendations < 6, fallback ke discover dengan genre yang sama
+                if (items.length < 6 && genreIds && genreIds.length > 0) {
+                    const endpoint = type === 'tv' ? 'discover/tv' : 'discover/movie';
+                    const discData = await fetchWithCache(
+                        `https://api.themoviedb.org/3/${endpoint}?api_key=${API_KEY}&language=en-US&with_genres=${genreIds.join(',')}&sort_by=popularity.desc&vote_count.gte=50&page=1`
+                    );
+                    const discItems = (discData.results || []).filter(m => m.poster_path && m.id != id);
+                    // Merge, hindari duplikat
+                    const existIds = new Set(items.map(m => m.id));
+                    discItems.forEach(m => { if (!existIds.has(m.id)) items.push(m); });
+                }
+
+                // Filter: hanya tampilkan yang punya genre overlap dengan film ini
+                if (genreIds && genreIds.length > 0) {
+                    const genreSet = new Set(genreIds);
+                    const withOverlap = items.filter(m => (m.genre_ids || []).some(g => genreSet.has(g)));
+                    if (withOverlap.length >= 4) items = withOverlap;
+                }
+
+                items = items.slice(0, 15);
                 if (!items.length) return;
                 section.style.display = 'block';
                 scroll.innerHTML = items.map(m => {
@@ -5217,7 +5247,7 @@
                     return `<div class="similar-card" onclick="openModal(${m.id}, '${type}')">
                         <img class="similar-poster" src="https://image.tmdb.org/t/p/w185${m.poster_path}"
                              loading="lazy" onload="this.classList.add('loaded')">
-                        ${r ? `<div class="similar-rating">★ ${r}</div>` : ''}
+                        ${r ? `<div class="similar-rating">${r}</div>` : ''}
                     </div>`;
                 }).join('');
             } catch(e) {}
