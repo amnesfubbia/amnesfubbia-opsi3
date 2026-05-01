@@ -1036,14 +1036,14 @@
         }
         .reel-translate-btn:active { color: rgba(255,255,255,0.9); }
         .reel-detail-btn {
-            pointer-events: auto; display: inline-flex; align-items: center; gap: 5px;
-            padding: 6px 14px; border-radius: 20px;
-            background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-            font-size: 11px; font-weight: 700; color: #fff; cursor: pointer;
-            -webkit-tap-highlight-color: transparent; transition: background 0.15s;
+            pointer-events: auto; display: inline-block;
+            padding: 0; border-radius: 0;
+            background: transparent; border: none;
+            font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6);
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            transition: color 0.15s;
         }
-        .reel-detail-btn:active { background: rgba(255,255,255,0.3); }
+        .reel-detail-btn:active { color: #fff; }
 
         /* Tombol aksi kanan bawah (like, bookmark) */
         .reel-actions {
@@ -3512,9 +3512,7 @@
                                  data-translated="0" data-orig="${encodeURIComponent(reel.synopsis)}" data-trans="">
                                 Lihat terjemahan
                             </div>` : ''}
-                            <div class="reel-detail-btn" onclick="openReelDetail(${reel.movieId}, '${reel.type}')">
-                                <i class="fa-solid fa-circle-info" style="font-size:10px"></i>Detail Film
-                            </div>
+                            <div class="reel-detail-btn" onclick="openReelDetail(${reel.movieId}, '${reel.type}')">Detail Film</div>
                         </div>
                         <div class="reel-actions">
                             <div class="reel-action-btn ${lib.liked ? 'liked' : ''}" 
