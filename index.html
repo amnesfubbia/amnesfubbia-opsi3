@@ -2955,17 +2955,31 @@
         function _closeActorModalSilent() {
             document.getElementById('actorModal').style.display = 'none';
             if (document.getElementById('movieModal').style.display === 'block') {
-                // Modal film masih terbuka, restore trailer
                 const track = document.getElementById('carouselTrack');
                 track.innerHTML = '';
                 lastTrailerSources.forEach((src, i) => {
                     if (src) {
                         const slide = document.createElement('div');
                         slide.className = 'carousel-slide';
-                        slide.innerHTML = `<iframe id="vid-${i}" src="${src}" class="w-full h-full" allow="autoplay; fullscreen"></iframe>`;
+                        const modSrc = src.replace('autoplay=1', 'autoplay=0');
+                        slide.innerHTML = `<iframe id="vid-${i}" src="${modSrc}" class="w-full h-full" allow="autoplay; fullscreen"></iframe><div class="yt-overlay-mask" onclick="void(0)"></div>`;
                         track.appendChild(slide);
                     }
                 });
+                // Restore posisi slide
+                const restoreIdx = window._lastTrailerIdx || 0;
+                currentIdx = restoreIdx;
+                track.style.transform = `translateX(-${restoreIdx * 100}%)`;
+                document.querySelectorAll('.dot').forEach((d, i) => {
+                    d.className = `dot w-1.5 h-1.5 rounded-full ${i===restoreIdx?'bg-blue-500':'bg-zinc-700'}`;
+                });
+                setTimeout(() => {
+                    const activeFrame = document.getElementById(`vid-${restoreIdx}`);
+                    if (activeFrame) {
+                        try { activeFrame.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
+                        activeFrame.closest('.carousel-slide')?.classList.add('playing');
+                    }
+                }, 800);
             } else {
                 document.body.style.overflow = 'auto';
             }
@@ -3313,6 +3327,7 @@
         async function openActorProfile(actorId) {
             window._currentActorId = actorId;
             lastTrailerSources = [];
+            window._lastTrailerIdx = currentIdx; // simpan posisi slide aktif
             const frames = document.querySelectorAll('#carouselTrack iframe');
             frames.forEach(f => { 
                 lastTrailerSources.push(f.src); 
@@ -3530,10 +3545,28 @@
                     if (src) {
                         const slide = document.createElement('div');
                         slide.className = 'carousel-slide';
-                        slide.innerHTML = `<iframe id="vid-${i}" src="${src}" class="w-full h-full" allow="autoplay; fullscreen"></iframe>`;
+                        // Modifikasi src: set autoplay=0 dulu, nanti play manual
+                        const modSrc = src.replace('autoplay=1', 'autoplay=0');
+                        slide.innerHTML = `<iframe id="vid-${i}" src="${modSrc}" class="w-full h-full" allow="autoplay; fullscreen"></iframe><div class="yt-overlay-mask" onclick="void(0)"></div>`;
                         track.appendChild(slide);
                     }
                 });
+                // Kembalikan ke posisi slide yang terakhir aktif
+                const restoreIdx = window._lastTrailerIdx || 0;
+                currentIdx = restoreIdx;
+                track.style.transform = `translateX(-${restoreIdx * 100}%)`;
+                // Update dots
+                document.querySelectorAll('.dot').forEach((d, i) => {
+                    d.className = `dot w-1.5 h-1.5 rounded-full ${i===restoreIdx?'bg-blue-500':'bg-zinc-700'}`;
+                });
+                // Auto-play slide yang aktif via postMessage setelah iframe load
+                setTimeout(() => {
+                    const activeFrame = document.getElementById(`vid-${restoreIdx}`);
+                    if (activeFrame) {
+                        try { activeFrame.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
+                        activeFrame.closest('.carousel-slide')?.classList.add('playing');
+                    }
+                }, 800);
                 // body tetap hidden karena movieModal masih buka
                 history.replaceState({view: 'modal'}, '');
             } else {
@@ -4902,15 +4935,15 @@
 
         async function filterEmbeddableVideos(videos) {
             if (!videos || videos.length === 0) return [];
+            // Batasi ke 5 video saja untuk mengurangi jumlah request ke YouTube
             const toCheck = videos.slice(0, 5);
             const results = await Promise.allSettled(
                 toCheck.map(v => checkYouTubeEmbeddable(v.key))
             );
-            // Yang lolos oEmbed di depan, yang gagal di belakang
-            const ok = toCheck.filter((v, i) => results[i].status === 'fulfilled' && results[i].value === true);
-            const fail = toCheck.filter((v, i) => !(results[i].status === 'fulfilled' && results[i].value === true));
-            // Gabung: ok dulu, lalu yang mungkin error di belakang
-            return ok.length > 0 ? [...ok, ...fail] : toCheck;
+            const filtered = toCheck.filter((v, i) => 
+                results[i].status === 'fulfilled' && results[i].value === true
+            );
+            return filtered.length > 0 ? filtered : toCheck;
         }
 
         async function replayTrailer() {
@@ -5019,8 +5052,7 @@
                         dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===0?'bg-blue-500':'bg-zinc-700'}"></div>`;
                     }
                 });
-                // Start YT error detector
-                if (window._startYtFallbackTimer) window._startYtFallbackTimer(0);
+
 
                 const soR = document.getElementById('swipeOverlay');
                 soR.style.display = vidsToDisplay.length > 1 ? 'block' : 'none';
@@ -5179,8 +5211,7 @@
                     setTimeout(() => { slideDiv.classList.add('playing'); }, 3000);
                     if(vidsToDisplay.length > 1) { dots.innerHTML += `<div class="dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}"></div>`; }
                 });
-                // Start YT error detector
-                if (window._startYtFallbackTimer) window._startYtFallbackTimer(0); 
+
                 const so = document.getElementById('swipeOverlay');
                 so.style.display = vidsToDisplay.length > 1 ? 'block' : 'none';
                 so.style.pointerEvents = 'auto'; // aktifkan kembali untuk swipe trailer
@@ -5544,101 +5575,7 @@
             }); 
         }
 
-        // ===== DETEKSI ERROR YOUTUBE via postMessage =====
-        // Tanpa cover hitam — deteksi onError dari YT dan langsung replace dengan streaming
-        // Timeout 8 detik jika tidak ada playing state → fallback
-        (function setupYTErrorDetector() {
-            const _ytTimers = {};
-            const _ytOkSlides = new Set();
 
-            window.addEventListener('message', function(e) {
-                try {
-                    const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-                    if (!data) return;
-
-                    const iframes = document.querySelectorAll('#carouselTrack iframe');
-                    let senderIframe = null;
-                    iframes.forEach(f => { try { if (f.contentWindow === e.source) senderIframe = f; } catch(err) {} });
-                    if (!senderIframe) return;
-
-                    const slideEl = senderIframe.closest('.carousel-slide');
-                    if (!slideEl) return;
-                    const allSlides = [...document.querySelectorAll('#carouselTrack .carousel-slide')];
-                    const slideIdx = allSlides.indexOf(slideEl);
-
-                    // YT error: 101/150 = embed not allowed (region/age), 100 = not found
-                    if (data.event === 'onError') {
-                        const code = data.info;
-                        if (code === 101 || code === 150 || code === 100 || code === 2 || code === 5) {
-                            _onSlideError(slideEl, slideIdx, allSlides);
-                        }
-                        return;
-                    }
-
-                    // playerState 1 = playing → OK
-                    const state = data.info && data.info.playerState !== undefined
-                        ? data.info.playerState
-                        : (data.event === 'onStateChange' ? data.info : null);
-                    if (state === 1) {
-                        _ytOkSlides.add(slideIdx);
-                        if (_ytTimers[slideIdx]) { clearTimeout(_ytTimers[slideIdx]); delete _ytTimers[slideIdx]; }
-                    }
-                } catch(err) {}
-            });
-
-            window._startYtFallbackTimer = function(slideIdx) {
-                if (_ytTimers[slideIdx]) clearTimeout(_ytTimers[slideIdx]);
-                _ytOkSlides.delete(slideIdx);
-                _ytTimers[slideIdx] = setTimeout(() => {
-                    if (!_ytOkSlides.has(slideIdx)) {
-                        const slides = [...document.querySelectorAll('#carouselTrack .carousel-slide')];
-                        if (slides[slideIdx]) _onSlideError(slides[slideIdx], slideIdx, slides);
-                    }
-                }, 8000);
-            };
-
-            function _onSlideError(slideEl, slideIdx, allSlides) {
-                if (_ytOkSlides.has(slideIdx)) return;
-                slideEl.dataset.ytError = '1';
-                const errorCount = allSlides.filter(s => s.dataset.ytError === '1').length;
-                if (errorCount >= allSlides.length) {
-                    _fallbackToStreaming();
-                } else if (slideIdx === currentIdx) {
-                    // Geser ke slide berikutnya yang OK
-                    let nextOk = allSlides.findIndex((s, i) => i !== slideIdx && s.dataset.ytError !== '1');
-                    if (nextOk !== -1) {
-                        currentIdx = nextOk;
-                        document.getElementById('carouselTrack').style.transform = `translateX(-${currentIdx * 100}%)`;
-                        document.querySelectorAll('.dot').forEach((d, i) => {
-                            d.className = `dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}`;
-                        });
-                        const nf = document.getElementById(`vid-${currentIdx}`);
-                        if (nf) try { nf.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
-                        window._startYtFallbackTimer(currentIdx);
-                    } else {
-                        _fallbackToStreaming();
-                    }
-                }
-            }
-        })();
-
-        function _fallbackToStreaming() {
-            if (!window.currentMediaId || !window.currentMediaType) return;
-            const url = buildEmbedUrl(window.currentMediaType, window.currentMediaId, activeSeason, activeEpisode, 1);
-            const track = document.getElementById('carouselTrack');
-            const dots = document.getElementById('carouselDots');
-            track.querySelectorAll('iframe').forEach(f => { f.src = ''; f.remove(); });
-            track.innerHTML = ''; dots.innerHTML = ''; currentIdx = 0;
-            const slide = document.createElement('div');
-            slide.className = 'carousel-slide';
-            slide.innerHTML = `<iframe id="player-frame" src="${url}" class="w-full h-full" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
-            track.appendChild(slide);
-            track.style.transform = 'translateX(0)';
-            document.getElementById('swipeOverlay').style.display = 'none';
-            document.querySelectorAll('.server-btn').forEach((b, i) => {
-                b.classList.toggle('active-link', i === 0);
-            });
-        }
         function updateLibButtons(id) { const isL = JSON.parse(localStorage.getItem('likes') || '[]').some(x=>x.id==id); const isB = JSON.parse(localStorage.getItem('bookmarks') || '[]').some(x=>x.id==id); document.getElementById('btnLikeModal').className = isL ? 'fa-solid fa-heart text-red-500 interaction-icon' : 'fa-regular fa-heart interaction-icon'; document.getElementById('btnBookModal').className = isB ? 'fa-solid fa-bookmark text-white interaction-icon' : 'fa-regular fa-bookmark interaction-icon'; document.getElementById('btnLikeModal').onclick = () => toggleLib('likes'); document.getElementById('btnBookModal').onclick = () => toggleLib('bookmarks'); }
         function toggleLib(k) { let items = JSON.parse(localStorage.getItem(k) || '[]'); const idx = items.findIndex(x => x.id == window.currentMediaId); idx > -1 ? items.splice(idx,1) : items.push({id: window.currentMediaId, type: window.currentMediaType}); localStorage.setItem(k, JSON.stringify(items)); updateLibButtons(window.currentMediaId); }
         async function switchTab(mode, el) { 
