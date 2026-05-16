@@ -2903,7 +2903,7 @@
 
         function handleDownload() {
             if(window.currentMediaId && window.currentMediaType) {
-                const downloadUrl = `https://dl.vidsrc.vip/${window.currentMediaType}/${window.currentMediaId}`;
+                const downloadUrl = `https://vidvault.ru/${window.currentMediaType}/${window.currentMediaId}`;
                 window.open(downloadUrl, '_blank');
             } else {
                 alert("ID Media tidak ditemukan.");
@@ -2955,31 +2955,17 @@
         function _closeActorModalSilent() {
             document.getElementById('actorModal').style.display = 'none';
             if (document.getElementById('movieModal').style.display === 'block') {
+                // Modal film masih terbuka, restore trailer
                 const track = document.getElementById('carouselTrack');
                 track.innerHTML = '';
                 lastTrailerSources.forEach((src, i) => {
                     if (src) {
                         const slide = document.createElement('div');
                         slide.className = 'carousel-slide';
-                        const modSrc = src.replace('autoplay=1', 'autoplay=0');
-                        slide.innerHTML = `<iframe id="vid-${i}" src="${modSrc}" class="w-full h-full" allow="autoplay; fullscreen"></iframe><div class="yt-overlay-mask" onclick="void(0)"></div>`;
+                        slide.innerHTML = `<iframe id="vid-${i}" src="${src}" class="w-full h-full" allow="autoplay; fullscreen"></iframe>`;
                         track.appendChild(slide);
                     }
                 });
-                // Restore posisi slide
-                const restoreIdx = window._lastTrailerIdx || 0;
-                currentIdx = restoreIdx;
-                track.style.transform = `translateX(-${restoreIdx * 100}%)`;
-                document.querySelectorAll('.dot').forEach((d, i) => {
-                    d.className = `dot w-1.5 h-1.5 rounded-full ${i===restoreIdx?'bg-blue-500':'bg-zinc-700'}`;
-                });
-                setTimeout(() => {
-                    const activeFrame = document.getElementById(`vid-${restoreIdx}`);
-                    if (activeFrame) {
-                        try { activeFrame.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
-                        activeFrame.closest('.carousel-slide')?.classList.add('playing');
-                    }
-                }, 800);
             } else {
                 document.body.style.overflow = 'auto';
             }
@@ -3327,7 +3313,6 @@
         async function openActorProfile(actorId) {
             window._currentActorId = actorId;
             lastTrailerSources = [];
-            window._lastTrailerIdx = currentIdx; // simpan posisi slide aktif
             const frames = document.querySelectorAll('#carouselTrack iframe');
             frames.forEach(f => { 
                 lastTrailerSources.push(f.src); 
@@ -3545,28 +3530,10 @@
                     if (src) {
                         const slide = document.createElement('div');
                         slide.className = 'carousel-slide';
-                        // Modifikasi src: set autoplay=0 dulu, nanti play manual
-                        const modSrc = src.replace('autoplay=1', 'autoplay=0');
-                        slide.innerHTML = `<iframe id="vid-${i}" src="${modSrc}" class="w-full h-full" allow="autoplay; fullscreen"></iframe><div class="yt-overlay-mask" onclick="void(0)"></div>`;
+                        slide.innerHTML = `<iframe id="vid-${i}" src="${src}" class="w-full h-full" allow="autoplay; fullscreen"></iframe>`;
                         track.appendChild(slide);
                     }
                 });
-                // Kembalikan ke posisi slide yang terakhir aktif
-                const restoreIdx = window._lastTrailerIdx || 0;
-                currentIdx = restoreIdx;
-                track.style.transform = `translateX(-${restoreIdx * 100}%)`;
-                // Update dots
-                document.querySelectorAll('.dot').forEach((d, i) => {
-                    d.className = `dot w-1.5 h-1.5 rounded-full ${i===restoreIdx?'bg-blue-500':'bg-zinc-700'}`;
-                });
-                // Auto-play slide yang aktif via postMessage setelah iframe load
-                setTimeout(() => {
-                    const activeFrame = document.getElementById(`vid-${restoreIdx}`);
-                    if (activeFrame) {
-                        try { activeFrame.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
-                        activeFrame.closest('.carousel-slide')?.classList.add('playing');
-                    }
-                }, 800);
                 // body tetap hidden karena movieModal masih buka
                 history.replaceState({view: 'modal'}, '');
             } else {
@@ -4299,7 +4266,7 @@
         function openReelDownload(btn) {
             if (!_rdsCurrentId || !_rdsCurrentType) return;
             if (btn) { btn.classList.add('pressed'); setTimeout(() => btn.classList.remove('pressed'), 300); }
-            const url = `https://dl.vidsrc.vip/${_rdsCurrentType}/${_rdsCurrentId}`;
+            const url = `https://vidvault.ru/${_rdsCurrentType}/${_rdsCurrentId}`;
             window.open(url, '_blank');
         }
 
