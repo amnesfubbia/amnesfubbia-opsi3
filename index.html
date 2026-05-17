@@ -2229,10 +2229,14 @@
         let activeSeason = 1;
 
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                document.getElementById('splashScreen').style.display = 'none';
-                document.getElementById('mainProfile').style.display = 'block';
-            }, 1200);
+            const _hideSplash = () => {
+                const s = document.getElementById('splashScreen');
+                const m = document.getElementById('mainProfile');
+                if (s) s.style.display = 'none';
+                if (m) m.style.display = 'block';
+            };
+            setTimeout(_hideSplash, 1200);
+            setTimeout(_hideSplash, 3000); // failsafe
         });
 
         window.onload = () => {
@@ -2955,17 +2959,30 @@
         function _closeActorModalSilent() {
             document.getElementById('actorModal').style.display = 'none';
             if (document.getElementById('movieModal').style.display === 'block') {
-                // Modal film masih terbuka, restore trailer
                 const track = document.getElementById('carouselTrack');
                 track.innerHTML = '';
                 lastTrailerSources.forEach((src, i) => {
                     if (src) {
                         const slide = document.createElement('div');
                         slide.className = 'carousel-slide';
-                        slide.innerHTML = `<iframe id="vid-${i}" src="${src}" class="w-full h-full" allow="autoplay; fullscreen"></iframe>`;
+                        const modSrc = src.replace('autoplay=1', 'autoplay=0');
+                        slide.innerHTML = `<iframe id="vid-${i}" src="${modSrc}" class="w-full h-full" allow="autoplay; fullscreen"></iframe><div class="yt-overlay-mask" onclick="void(0)"></div>`;
                         track.appendChild(slide);
                     }
                 });
+                const restoreIdx = window._lastTrailerIdx || 0;
+                currentIdx = restoreIdx;
+                track.style.transform = `translateX(-${restoreIdx * 100}%)`;
+                document.querySelectorAll('.dot').forEach((d, i) => {
+                    d.className = `dot w-1.5 h-1.5 rounded-full ${i===restoreIdx?'bg-blue-500':'bg-zinc-700'}`;
+                });
+                setTimeout(() => {
+                    const af = document.getElementById(`vid-${restoreIdx}`);
+                    if (af) {
+                        try { af.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
+                        af.closest('.carousel-slide')?.classList.add('playing');
+                    }
+                }, 800);
             } else {
                 document.body.style.overflow = 'auto';
             }
@@ -3293,15 +3310,22 @@
 
         async function fetchWithCache(url) {
             const cached = sessionStorage.getItem(url);
-            if (cached) return JSON.parse(cached);
-            // Bungkus dalam Promise dengan timeout manual — tidak simpan AbortController di scope global
+            if (cached) { try { return JSON.parse(cached); } catch(e) { sessionStorage.removeItem(url); } }
             return new Promise(async (resolve, reject) => {
                 const timer = setTimeout(() => reject(new Error('fetch timeout')), 8000);
                 try {
                     const res = await fetch(url);
                     const data = await res.json();
                     clearTimeout(timer);
-                    try { sessionStorage.setItem(url, JSON.stringify(data)); } catch(e) {}
+                    try {
+                        sessionStorage.setItem(url, JSON.stringify(data));
+                    } catch(e) {
+                        try {
+                            const keys = Object.keys(sessionStorage);
+                            keys.slice(0, 20).forEach(k => sessionStorage.removeItem(k));
+                            sessionStorage.setItem(url, JSON.stringify(data));
+                        } catch(e2) {}
+                    }
                     resolve(data);
                 } catch(e) {
                     clearTimeout(timer);
@@ -3313,6 +3337,7 @@
         async function openActorProfile(actorId) {
             window._currentActorId = actorId;
             lastTrailerSources = [];
+            window._lastTrailerIdx = currentIdx;
             const frames = document.querySelectorAll('#carouselTrack iframe');
             frames.forEach(f => { 
                 lastTrailerSources.push(f.src); 
@@ -3526,15 +3551,28 @@
             if (document.getElementById('movieModal').style.display === 'block') {
                 const track = document.getElementById('carouselTrack');
                 track.innerHTML = "";
-                lastTrailerSources.forEach((src, i) => { 
+                lastTrailerSources.forEach((src, i) => {
                     if (src) {
                         const slide = document.createElement('div');
                         slide.className = 'carousel-slide';
-                        slide.innerHTML = `<iframe id="vid-${i}" src="${src}" class="w-full h-full" allow="autoplay; fullscreen"></iframe>`;
+                        const modSrc = src.replace('autoplay=1', 'autoplay=0');
+                        slide.innerHTML = `<iframe id="vid-${i}" src="${modSrc}" class="w-full h-full" allow="autoplay; fullscreen"></iframe><div class="yt-overlay-mask" onclick="void(0)"></div>`;
                         track.appendChild(slide);
                     }
                 });
-                // body tetap hidden karena movieModal masih buka
+                const restoreIdx = window._lastTrailerIdx || 0;
+                currentIdx = restoreIdx;
+                track.style.transform = `translateX(-${restoreIdx * 100}%)`;
+                document.querySelectorAll('.dot').forEach((d, i) => {
+                    d.className = `dot w-1.5 h-1.5 rounded-full ${i===restoreIdx?'bg-blue-500':'bg-zinc-700'}`;
+                });
+                setTimeout(() => {
+                    const af = document.getElementById(`vid-${restoreIdx}`);
+                    if (af) {
+                        try { af.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
+                        af.closest('.carousel-slide')?.classList.add('playing');
+                    }
+                }, 800);
                 history.replaceState({view: 'modal'}, '');
             } else {
                 document.body.style.overflow = 'auto';
@@ -4684,7 +4722,7 @@
         function closeD() { document.querySelectorAll('.filter-dropdown').forEach(d => d.style.display = 'none'); document.getElementById('filterOverlay').style.display = 'none'; document.body.style.overflow = 'auto'; }
 
         async function loadFeed(isNew = true) {
-            if(loading && isNew) { loading = false; } // reset flag agar request baru bisa jalan
+            if(isNew) { loading = false; }
             if(loading && !isNew) return;
             loading = true;
             const grid = document.getElementById('searchOverlay').style.display === 'block' ? document.getElementById('searchGrid') : document.getElementById('feedGrid');
@@ -5472,94 +5510,32 @@
         }
 
         function buildEmbedUrl(type, id, s, e, srv) {
-        function buildEmbedUrl(type, id, s, e, srv) {
-    // Pastikan season dan episode punya nilai default jika kosong (untuk mencegah URL error)
-    if (type === 'tv') {
-        s = s || '1';
-        e = e || '1';
-    }
-
-    let url = "";
-
-    switch(srv) {
-        // --- SERVER 1-13: PROVIDER LAMA (Dipertahankan & Dirapikan) ---
-        case 1: url = `https://vidrock.net/embed/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 2: url = `https://vidstorm.ru/embed/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 3: url = `https://vidlink.pro/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 4: url = `https://vidfast.pro/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 5: url = `https://vidnest.fun/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 6: url = `https://111movies.com/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 7: url = `https://player.videasy.net/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 8: 
-            if (type === 'movie') {
-                url = `https://www.2embed.cc/embed/movie/${id}`;
-            } else {
-                url = `https://www.2embed.cc/embed/tv/${id}?s=${s}&e=${e}`;
+            const seriesSuffix = (type === 'tv') ? `/${s}/${e}` : '';
+            
+            let url = "";
+            switch(srv) {
+                case 1: url = `https://vidrock.net/embed/${type}/${id}${seriesSuffix}`; break;
+                case 2: url = `https://vidstorm.ru/embed/${type}/${id}${seriesSuffix}`; break;
+                case 3: url = `https://vidlink.pro/${type}/${id}${seriesSuffix}`; break;
+                case 4: url = `https://vidfast.pro/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 5: url = `https://vidnest.fun/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 6: url = `https://111movies.com/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 7: url = `https://player.videasy.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 8: url = `https://www.2embed.cc/embed${type==='tv'?'/tv':''}/${id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
+                case 9: url = `https://www.nontongo.win/embed/${type}/${id}${seriesSuffix}`; break;
+                case 10: url = `https://vidsrc.cc/v2/embed/${type}/${id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
+                case 11: url = `https://vidfast.net/${type}/${id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
+                case 12: url = `https://111movies.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 13: url = `https://vidsrcme.ru/embed/${type}/${id}${seriesSuffix}`; break;
+                case 14: url = `https://vidsrc.me/embed/${type}?tmdb=${id}${type==='tv'?`&s=${s}&e=${e}`:''}`; break;
+                case 15: url = `https://vidsrc.icu/embed/${type}/${id}${seriesSuffix}`; break;
+                case 16: url = `https://vidsrc.ru/${type}/${currentImdbId || id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
+                case 17: url = `https://warezcdn.site/${type==='tv'?'serie':'filme'}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 18: url = `https://autoembed.co/${type}?tmdb=${id}${type==='tv'?`&season=${s}&episode=${e}`:''}`; break;
+                case 21: url = `https://www.dailymotion.com/embed/video/${currentDailymotionId}`; break;
+                default: url = `https://vidrock.net/embed/${type}/${id}${seriesSuffix}`;
             }
-            break;
-        case 9: url = `https://www.nontongo.win/embed/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 10: url = `https://vidsrc.ru/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 11: url = `https://vidsrc.cc/v2/embed/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 12: url = `https://vidfast.net/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-        case 13: url = `https://111movies.net/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
-
-        // --- SERVER 14-19: PROVIDER BARU & STABIL (Sesuai Permintaan Anda) ---
-        
-        // 14: VidBinge.to (Sangat Stabil)
-        case 14: 
-            url = `https://vidbinge.to/${type}${id}`;
-            if (type === 'tv') url += `/${s}/${e}`;
-            break;
-
-        // 15: AutoEmbed.net
-        case 15: 
-            url = `https://autoembed.net/${type}?tmdb=${id}`;
-            if (type === 'tv') url += `/${s}/${e}`;
-            break;
-
-        // 16: 2Embed.online (Paling Populer)
-        case 16: 
-            if (type === 'movie') {
-                url = `https://2embed.online/embed/movie?id=${id}`;
-            } else {
-                url = `https://2embed.online/embed/tv?id=${id}&s=${s}&e=${e}`;
-            }
-            break;
-
-        // 17: MultiEmbed.mov
-        case 17: 
-            if (type === 'movie') {
-                url = `https://multiembed.mov/?video_id=${id}&tmdb=1`;
-            } else {
-                url = `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`;
-            }
-            break;
-
-        // 18: AutoEmbed.co (Alternatif domain dari .net)
-        case 18: 
-            url = `https://autoembed.co/${type}?tmdb=${id}`;
-            if (type === 'tv') url += `/${s}/${e}`;
-            break;
-
-        // 19: VidSrc.me (Format ?tmdb=)
-        case 19: 
-            url = `https://vidsrc.me/embed/${type}?tmdb=${id}`;
-            if (type === 'tv') url += `/${s}/${e}`;
-            break;
-
-        // --- SERVER LAINNYA ---
-        case 21: // DailyMotion
-            url = `https://www.dailymotion.com/embed/video/${currentDailymotionId || ''}`; 
-            break;
-
-        default: 
-            // Fallback ke VidBinge (Server 14) karena paling stabil saat ini
-            url = `https://vidbinge.to/${type}${id}`;
-            if (type === 'tv') url += `/${s}/${e}`;
-    }
-
-    return url.replace("http://", "https://");
-
+            return url.replace("http://", "https://");
         }
 
         async function loadEpisodes() { 
