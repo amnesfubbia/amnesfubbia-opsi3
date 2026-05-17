@@ -5472,29 +5472,24 @@
         }
 
         function buildEmbedUrl(type, id, s, e, srv) {
-            function buildEmbedUrl(type, id, s, e, srv) {
-    // Pastikan season dan episode ada nilainya jika type TV, default ke '1' jika kosong
+        function buildEmbedUrl(type, id, s, e, srv) {
+    // Pastikan season dan episode punya nilai default jika kosong (untuk mencegah URL error)
     if (type === 'tv') {
         s = s || '1';
         e = e || '1';
     }
 
-    // Suffix standar untuk provider yang menggunakan format path: /ID/SEASON/EPISODE
-    const seriesSuffix = (type === 'tv') ? `/${s}/${e}` : '';
-
     let url = "";
 
     switch(srv) {
-        // --- SERVER 1-13: PROVIDER LAMA (Dipertahankan sesuai permintaan) ---
-        case 1: url = `https://vidrock.net/embed/${type}/${id}${seriesSuffix}`; break;
-        case 2: url = `https://vidstorm.ru/embed/${type}/${id}${seriesSuffix}`; break;
-        case 3: url = `https://vidlink.pro/${type}/${id}${seriesSuffix}`; break;
-        case 4: url = `https://vidfast.pro/${type}/${id}${seriesSuffix}`; break;
-        case 5: url = `https://vidnest.fun/${type}/${id}${seriesSuffix}`; break;
-        case 6: url = `https://111movies.com/${type}/${id}${seriesSuffix}`; break;
-        case 7: url = `https://player.videasy.net/${type}/${id}${seriesSuffix}`; break;
-        
-        // Case 8: 2Embed.cc (Format Lama, sering error tapi dipertahankan)
+        // --- SERVER 1-13: PROVIDER LAMA (Dipertahankan & Dirapikan) ---
+        case 1: url = `https://vidrock.net/embed/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 2: url = `https://vidstorm.ru/embed/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 3: url = `https://vidlink.pro/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 4: url = `https://vidfast.pro/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 5: url = `https://vidnest.fun/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 6: url = `https://111movies.com/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 7: url = `https://player.videasy.net/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
         case 8: 
             if (type === 'movie') {
                 url = `https://www.2embed.cc/embed/movie/${id}`;
@@ -5502,29 +5497,27 @@
                 url = `https://www.2embed.cc/embed/tv/${id}?s=${s}&e=${e}`;
             }
             break;
+        case 9: url = `https://www.nontongo.win/embed/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 10: url = `https://vidsrc.ru/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 11: url = `https://vidsrc.cc/v2/embed/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 12: url = `https://vidfast.net/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
+        case 13: url = `https://111movies.net/${type}/${id}${(type==='tv'?`/${s}/${e}`:'')}`; break;
 
-        case 9: url = `https://www.nontongo.win/embed/${type}/${id}${seriesSuffix}`; break;
+        // --- SERVER 14-19: PROVIDER BARU & STABIL (Sesuai Permintaan Anda) ---
         
-        // Vidsrc Variants (Sering down, tapi ada sebagai cadangan)
-        case 10: url = `https://vidsrc.ru/${type}/${id}${seriesSuffix}`; break;
-        case 11: url = `https://vidsrc.cc/v2/embed/${type}/${id}${seriesSuffix}`; break;
-        case 12: url = `https://vidfast.net/${type}/${id}${seriesSuffix}`; break;
-        case 13: url = `https://111movies.net/${type}/${id}${seriesSuffix}`; break;
-
-        // --- SERVER 14-19: PROVIDER BARU & STABIL (Sesuai Permintaan) ---
-
-        // 14: VidBinge.to (Sangat Stabil, Format Path Sederhana)
+        // 14: VidBinge.to (Sangat Stabil)
         case 14: 
-            url = `https://vidbinge.to/${type}${id}${seriesSuffix}`; 
+            url = `https://vidbinge.to/${type}${id}`;
+            if (type === 'tv') url += `/${s}/${e}`;
             break;
 
-        // 15: AutoEmbed.net (Stabil, Format Query ?tmdb=)
+        // 15: AutoEmbed.net
         case 15: 
-            // Format: /movie?tmdb=ID atau /tv?tmdb=ID/SEASON/EPISODE
-            url = `https://autoembed.net/${type}?tmdb=${id}${seriesSuffix}`; 
+            url = `https://autoembed.net/${type}?tmdb=${id}`;
+            if (type === 'tv') url += `/${s}/${e}`;
             break;
 
-        // 16: 2Embed.online (Paling Populer, Format Query Parameter)
+        // 16: 2Embed.online (Paling Populer)
         case 16: 
             if (type === 'movie') {
                 url = `https://2embed.online/embed/movie?id=${id}`;
@@ -5533,7 +5526,7 @@
             }
             break;
 
-        // 17: MultiEmbed.mov (Format Query Parameter &tmdb=1)
+        // 17: MultiEmbed.mov
         case 17: 
             if (type === 'movie') {
                 url = `https://multiembed.mov/?video_id=${id}&tmdb=1`;
@@ -5544,29 +5537,28 @@
 
         // 18: AutoEmbed.co (Alternatif domain dari .net)
         case 18: 
-            url = `https://autoembed.co/${type}?tmdb=${id}${seriesSuffix}`; 
+            url = `https://autoembed.co/${type}?tmdb=${id}`;
+            if (type === 'tv') url += `/${s}/${e}`;
             break;
 
-        // 19: VidSrc.me (Alternatif lain, format ?tmdb=)
+        // 19: VidSrc.me (Format ?tmdb=)
         case 19: 
-            url = `https://vidsrc.me/embed/${type}?tmdb=${id}${seriesSuffix}`; 
+            url = `https://vidsrc.me/embed/${type}?tmdb=${id}`;
+            if (type === 'tv') url += `/${s}/${e}`;
             break;
 
         // --- SERVER LAINNYA ---
-        case 21: 
-            // DailyMotion butuh ID khusus. Jika currentDailymotionId tidak ada, URL akan rusak.
-            // Pastikan variabel global currentDailymotionId terisi jika pakai server ini.
+        case 21: // DailyMotion
             url = `https://www.dailymotion.com/embed/video/${currentDailymotionId || ''}`; 
             break;
 
         default: 
             // Fallback ke VidBinge (Server 14) karena paling stabil saat ini
-            url = `https://vidbinge.to/${type}${id}${seriesSuffix}`;
+            url = `https://vidbinge.to/${type}${id}`;
+            if (type === 'tv') url += `/${s}/${e}`;
     }
 
-    // Pastikan protokol selalu HTTPS
     return url.replace("http://", "https://");
-}
 
         }
 
