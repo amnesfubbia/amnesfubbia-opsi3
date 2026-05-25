@@ -5535,13 +5535,45 @@
         async function loadEpisodes() { 
             activeSeason = document.getElementById('seasonSel').value;
             activeEpisode = 1;
-            const data = await fetchWithCache(`https://api.themoviedb.org/3/tv/${window.currentMediaId}/season/${activeSeason}?api_key=${API_KEY}`); 
+            document.querySelectorAll('.ep-card').forEach(b => b.classList.remove('active-ep'));
+            let data = await fetchWithCache(`https://api.themoviedb.org/3/tv/${window.currentMediaId}/season/${activeSeason}?api_key=${API_KEY}&language=en-US`);
             const episodes = data.episodes || [];
-            document.getElementById('episodeGrid').innerHTML = episodes.map((e) => { 
-                const epNum = e.episode_number; 
-                const isActive = ''; // border menyala hanya saat diklik
-                return `<div class="pill text-[10px] flex flex-col items-center justify-center gap-1 min-h-[45px] ep-btn ${isActive}" onclick="changeEpisode(${epNum}, this)"><span class="font-bold">${epNum}</span></div>`; 
-            }).join(''); 
+            const grid = document.getElementById('episodeGrid');
+            const seriesPoster = window._currentSeriesPoster || '';
+
+            grid.innerHTML = episodes.map((ep) => { 
+                const epNum = ep.episode_number;
+                const epTitle = ep.name || `Episode ${epNum}`;
+                const epDate = ep.air_date ? new Date(ep.air_date).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'}) : '';
+                
+                let thumbHTML;
+                if (ep.still_path) {
+                    thumbHTML = `<img class="ep-thumb" src="https://image.tmdb.org/t/p/w300${ep.still_path}" loading="lazy" decoding="async"
+                        onerror="this.src='${seriesPoster ? `https://image.tmdb.org/t/p/w300${seriesPoster}` : ''}'; this.onerror=null; this.style.objectFit='contain'; this.style.background='#111'">`;
+                } else if (seriesPoster) {
+                    thumbHTML = `<img class="ep-thumb" src="https://image.tmdb.org/t/p/w300${seriesPoster}" loading="lazy" decoding="async" style="object-fit:contain;background:#111">`;
+                } else {
+                    thumbHTML = `<div class="ep-thumb-placeholder"><i class="fa-solid fa-play"></i></div>`;
+                }
+
+                return `<div class="ep-card" onclick="changeEpisode(${epNum}, this)">
+                    ${thumbHTML}
+                    <div class="ep-info">
+                        <div class="ep-num">Episode ${epNum}</div>
+                        <div class="ep-title">${epTitle}</div>
+                        ${epDate ? `<div class="ep-date">${epDate}</div>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+
+            const searchWrap = document.getElementById('episodeSearchWrap');
+            const searchInp = document.getElementById('episodeSearchInp');
+            if (searchWrap) {
+                searchWrap.style.display = episodes.length > 50 ? 'block' : 'none';
+                if (searchInp) searchInp.value = '';
+            }
+            const activeCard = grid.querySelector('.ep-card.active-ep');
+            if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
         
         function setupSwipe() { 
