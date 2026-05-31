@@ -2053,12 +2053,12 @@
 
                 <div id="serverList" class="server-scroll-wrapper mt-4 px-4"></div>
                 
-                <div style="display:flex;gap:6px;margin-top:8px;margin-bottom:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
-                    <button class="dl-link-btn" onclick="handleDownload()" style="flex:0 0 auto;white-space:nowrap;padding:10px 12px">⬇️1</button>
-                    <button class="dl-link-btn" onclick="handleDownload2()" style="flex:0 0 auto;white-space:nowrap;padding:10px 12px">⬇️2</button>
-                    <button class="dl-link-btn" onclick="handleDownload3()" style="flex:0 0 auto;white-space:nowrap;padding:10px 12px">⬇️3</button>
-                    <button class="dl-link-btn" onclick="handleDownload4()" style="flex:0 0 auto;white-space:nowrap;padding:10px 12px">⬇️4</button>
-                    <button class="dl-link-btn" onclick="handleDownload5()" style="flex:0 0 auto;white-space:nowrap;padding:10px 12px">⬇️5</button>
+                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px;margin-bottom:2px;">
+                    <button class="dl-link-btn" onclick="handleDownload()" style="padding:10px 4px;font-size:10px">Down1</button>
+                    <button class="dl-link-btn" onclick="handleDownload2()" style="padding:10px 4px;font-size:10px">Down2</button>
+                    <button class="dl-link-btn" onclick="handleDownload3()" style="padding:10px 4px;font-size:10px">Down3</button>
+                    <button class="dl-link-btn" onclick="handleDownload4()" style="padding:10px 4px;font-size:10px">Down4</button>
+                    <button class="dl-link-btn" onclick="handleDownload5()" style="padding:10px 4px;font-size:10px">Down5</button>
                 </div>
                 <div id="mSimilarSection" class="similar-section" style="display:none">
                     <span class="similar-label">Similar Movies</span>
@@ -3935,11 +3935,9 @@
                     const synTransId = `reel-trans-${reel.movieId}`;
 
                     slide.innerHTML = `
-                        <!-- Blurred background - pakai thumbnail YouTube -->
+                        <!-- Blurred background - pakai poster TMDb -->
                         <div class="reel-blur-bg">
-                            <img src="https://img.youtube.com/vi/${reel.videoKey}/maxresdefault.jpg"
-                                 onerror="this.src='https://img.youtube.com/vi/${reel.videoKey}/hqdefault.jpg'"
-                                 alt="" loading="lazy">
+                            ${reel.poster ? `<img src="https://image.tmdb.org/t/p/w500${reel.poster}" alt="" loading="lazy">` : ''}
                         </div>
                         <div class="reel-video-wrap">
                             <iframe src="${embedUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
@@ -3977,13 +3975,13 @@
                                  id="reel-like-${reel.movieId}"
                                  onclick="toggleReelLib('likes', ${reel.movieId}, '${reel.type}', this)">
                                 <i class="fa-${lib.liked ? 'solid' : 'regular'} fa-heart"></i>
-                                <span class="reel-action-label">Suka</span>
+                                <span class="reel-action-label">Like</span>
                             </div>
                             <div class="reel-action-btn ${lib.bookmarked ? 'bookmarked' : ''}"
                                  id="reel-bm-${reel.movieId}"
                                  onclick="toggleReelLib('bookmarks', ${reel.movieId}, '${reel.type}', this)">
                                 <i class="fa-${lib.bookmarked ? 'solid' : 'regular'} fa-bookmark"></i>
-                                <span class="reel-action-label">Simpan</span>
+                                <span class="reel-action-label">Save</span>
                             </div>
                         </div>`;
                     container.appendChild(slide);
