@@ -978,7 +978,7 @@
         .reel-slide {
             width: 100%; height: 100svh;
             scroll-snap-align: start; scroll-snap-stop: always;
-            position: relative; background: #000;
+            position: relative; background: transparent;
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
         }
@@ -987,14 +987,14 @@
         /* Blur background seperti Instagram Reels */
         .reel-blur-bg {
             position: absolute; inset: 0; z-index: 0;
-            overflow: hidden; background: #000;
+            overflow: hidden; background: #111;
         }
         .reel-blur-bg img {
             position: absolute; top: -10%; left: -10%;
             width: 120%; height: 120%;
             object-fit: cover; pointer-events: none;
-            filter: blur(24px) brightness(0.35) saturate(1.8);
-            transform: scale(1.1);
+            filter: blur(30px) brightness(0.5) saturate(2);
+            transform: scale(1.15);
         }
         .reel-video-wrap {
             position: absolute;
@@ -2048,6 +2048,14 @@
                         <h4 class="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Episodes</h4>
                         <select id="seasonSel" class="bg-zinc-900 text-white text-[10px] px-2 py-1 rounded border border-zinc-700 appearance-none" onchange="loadEpisodes()"></select>
                     </div>
+                    <div id="episodeSearchWrap" style="margin-bottom:10px;display:none">
+                        <div style="background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px">
+                            <i class="fa-solid fa-magnifying-glass" style="font-size:10px;color:#555"></i>
+                            <input id="episodeSearchInp" type="number" min="1" placeholder="Search episode..."
+                                style="background:transparent;border:none;outline:none;color:#fff;font-size:12px;width:100%"
+                                oninput="filterEpisodes(this.value)">
+                        </div>
+                    </div>
                     <div id="episodeGrid" class="flex gap-3 overflow-x-auto pb-2" style="scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
                 </div>
 
@@ -2349,17 +2357,18 @@
             }, 1200);
 
             // PWA Status Bar Fix
-            (function() {
+            function applyStatusBarFix() {
                 const isPWA = window.matchMedia('(display-mode: standalone)').matches
                     || window.navigator.standalone === true
                     || document.referrer.includes('android-app://');
                 if (isPWA) {
                     document.body.classList.add('pwa-mode');
-                    // Pakai screenY sebagai tinggi status bar di Android
                     const h = window.screenY > 0 ? window.screenY : 28;
                     document.documentElement.style.setProperty('--status-bar-height', h + 'px');
                 }
-            })();
+            }
+            applyStatusBarFix();
+            window.matchMedia('(display-mode: standalone)').addEventListener('change', applyStatusBarFix);
         });
 
         window.onload = () => {
@@ -3104,6 +3113,14 @@
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Episodes</h4>
                         <select id="seasonSel" class="bg-zinc-900 text-white text-[10px] px-2 py-1 rounded border border-zinc-700 appearance-none" onchange="loadEpisodes()"></select>
+                    </div>
+                    <div id="episodeSearchWrap" style="margin-bottom:10px;display:none">
+                        <div style="background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px">
+                            <i class="fa-solid fa-magnifying-glass" style="font-size:10px;color:#555"></i>
+                            <input id="episodeSearchInp" type="number" min="1" placeholder="Search episode..."
+                                style="background:transparent;border:none;outline:none;color:#fff;font-size:12px;width:100%"
+                                oninput="filterEpisodes(this.value)">
+                        </div>
                     </div>
                     <div id="episodeGrid" class="flex gap-3 overflow-x-auto pb-2" style="scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
                 </div>
@@ -3941,10 +3958,10 @@
                         </div>
                         <div class="reel-video-wrap">
                             <iframe src="${embedUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
-                            <!-- Tutup header YouTube (atas) -->
-                            <div style="position:absolute;top:0;left:0;right:0;height:52px;background:transparent;z-index:2;pointer-events:none"></div>
+                            <!-- Tutup header YouTube (atas) - pakai warna blur bg agar seamless -->
+                            <div style="position:absolute;top:0;left:0;right:0;height:52px;z-index:2;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,0.85) 0%,transparent 100%)"></div>
                             <!-- Tutup UI bawah YouTube (share, thumbnail, logo) -->
-                            <div style="position:absolute;bottom:0;left:0;right:0;height:50px;background:transparent;z-index:2;pointer-events:none"></div>
+                            <div style="position:absolute;bottom:0;left:0;right:0;height:52px;z-index:2;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,0.85) 0%,transparent 100%)"></div>
                         </div>
                         <div class="reel-heart-pop" id="heart-${reel.movieId}"><i class="fa-solid fa-heart"></i></div>
                         <div class="reel-gradient"></div>
@@ -5571,6 +5588,14 @@
                         <h4 class="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Episodes</h4>
                         <select id="seasonSel" class="bg-zinc-900 text-white text-[10px] px-2 py-1 rounded border border-zinc-700 appearance-none" onchange="loadEpisodes()"></select>
                     </div>
+                    <div id="episodeSearchWrap" style="margin-bottom:10px;display:none">
+                        <div style="background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px">
+                            <i class="fa-solid fa-magnifying-glass" style="font-size:10px;color:#555"></i>
+                            <input id="episodeSearchInp" type="number" min="1" placeholder="Search episode..."
+                                style="background:transparent;border:none;outline:none;color:#fff;font-size:12px;width:100%"
+                                oninput="filterEpisodes(this.value)">
+                        </div>
+                    </div>
                     <div id="episodeGrid" class="flex gap-3 overflow-x-auto pb-2" style="scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
                 </div>
                 <div id="serverList" class="server-scroll-wrapper mt-4 px-4"></div>
@@ -5784,6 +5809,21 @@
             if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
         
+        function filterEpisodes(val) {
+            const num = parseInt(val);
+            const cards = document.querySelectorAll('#episodeGrid .ep-card');
+            cards.forEach(card => {
+                const epNumEl = card.querySelector('.ep-num');
+                const epNum = parseInt((epNumEl?.innerText || '').replace('Episode ','') || '0');
+                if (!val || epNum === num) {
+                    card.style.display = '';
+                    if (epNum === num) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
         function setupSwipe() { 
             const overlay = document.getElementById('swipeOverlay');
             let _swSx = 0;
@@ -6337,6 +6377,8 @@
         }
 
         // ===== SIMILAR FILMS =====
+        function loadSimilarFilms(id,type,genreIds){return loadSimilarMovies(id,type,genreIds);}
+
         async function loadSimilarMovies(id, type, genreIds) {
             const section = document.getElementById('mSimilarSection');
             const scroll = document.getElementById('mSimilarScroll');
