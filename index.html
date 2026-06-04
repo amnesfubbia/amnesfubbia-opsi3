@@ -109,7 +109,9 @@
         .tab-item.active { color: #fff; border-bottom: 1px solid #fff; }
 
         .movie-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; padding-bottom: 80px; }
-        .post-card { position: relative; aspect-ratio: 2/3; background: #0a0a0a; overflow: hidden; cursor: pointer; }
+        .post-card { position: relative; aspect-ratio: 2/3; background: #0a0a0a; overflow: hidden; cursor: pointer; border-radius: 10px; }
+        .card-title-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px 6px 6px; background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%); }
+        .card-title-text { font-size: 10px; font-weight: 700; color: #fff; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .post-card img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s; }
         .badge-rating { position: absolute; top: 6px; left: 6px; padding: 2px 5px; border-radius: 2px; font-size: 7px; font-weight: 900; z-index: 5; background: rgba(0,0,0,0.7); color: #fff; border: 0.5px solid rgba(255,255,255,0.3); }
         .badge-type { position: absolute; top: 6px; right: 6px; padding: 2px 5px; border-radius: 2px; font-size: 7px; font-weight: 900; z-index: 5; background: rgba(0,0,0,0.7); color: #fff; text-transform: uppercase; border: 0.5px solid rgba(255,255,255,0.3); }
@@ -987,7 +989,7 @@
         /* Blur background seperti Instagram Reels */
         .reel-blur-bg {
             position: absolute; inset: 0; z-index: 0;
-            overflow: hidden; background: #111;
+            overflow: hidden; background: #000;
         }
         .reel-blur-bg img {
             position: absolute; top: -10%; left: -10%;
@@ -998,11 +1000,11 @@
         }
         .reel-video-wrap {
             position: absolute;
-            top: 50%; left: 50%;
+            top: 40%; left: 50%;
             transform: translate(-50%, -50%);
             width: 100%;
             aspect-ratio: 9/16;
-            max-height: 100svh;
+            max-height: 72svh;
             background: transparent;
             overflow: hidden;
             z-index: 1;
@@ -1048,20 +1050,40 @@
 
         /* Info teks kiri bawah */
         .reel-info {
-            position: absolute; bottom: 62px; left: 0; right: 0;
+            position: absolute; bottom: 58px; left: 0; right: 0;
             padding: 0 16px; z-index: 10; pointer-events: none;
         }
+        /* Meta pills row */
+        .reel-meta-pills {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+        }
+        .reel-pill {
+            padding: 5px 14px; border-radius: 20px;
+            font-size: 13px; font-weight: 700;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        .reel-pill-type { background: rgba(20,30,60,0.85); color: #fff; }
+        .reel-pill-year { background: rgba(60,50,10,0.85); color: #e8c84a; border: 1px solid rgba(232,200,74,0.3); }
+        .reel-pill-rating { background: rgba(60,50,10,0.85); color: #f5c518; border: 1px solid rgba(245,197,24,0.3); }
+        .reel-pill-runtime { background: rgba(40,40,40,0.85); color: #ccc; }
         .reel-title {
-            font-size: 22px; font-weight: 900; color: #fff;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-            margin-bottom: 4px; line-height: 1.2; letter-spacing: -0.5px;
+            font-size: 38px; font-weight: 900; color: #fff;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            margin-bottom: 12px; line-height: 1.05; letter-spacing: -1.5px;
             display: -webkit-box; -webkit-line-clamp: 2;
             -webkit-box-orient: vertical; overflow: hidden;
         }
-        .reel-year {
-            font-size: 11px; color: rgba(255,255,255,0.5);
-            font-weight: 600; margin-bottom: 6px;
+        .reel-genre-pills {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
         }
+        .reel-genre-pill {
+            padding: 6px 16px; border-radius: 20px;
+            background: rgba(40,40,40,0.75); color: #fff;
+            font-size: 13px; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(6px);
+        }
+        .reel-year { display: none; }
         .reel-synopsis-overlay {
             font-size: 11px; color: rgba(255,255,255,0.75);
             line-height: 1.5; margin-bottom: 6px;
@@ -1096,7 +1118,7 @@
 
         /* Tombol aksi kanan bawah (like, bookmark) */
         .reel-actions {
-            position: absolute; top: 42%; right: 12px;
+            position: absolute; top: 32%; right: 12px;
             transform: translateY(-50%);
             display: flex; flex-direction: column; align-items: center; gap: 18px;
             z-index: 10;
@@ -1486,12 +1508,16 @@
 
         /* ===== BADGE NEW on poster ===== */
         .badge-new {
-            position: absolute; bottom: 6px; left: 6px;
-            padding: 2px 5px; border-radius: 2px;
-            font-size: 7px; font-weight: 900; z-index: 5;
-            background: rgba(0,0,0,0.7); color: #ff3b30;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            border: 0.5px solid rgba(255,255,255,0.3);
+            position: absolute; top: 6px; right: 6px;
+            padding: 3px 8px; border-radius: 6px;
+            font-size: 8px; font-weight: 900; z-index: 5; letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: #fff; box-shadow: 0 2px 8px rgba(255,65,108,0.5);
+            animation: pulse-new 2s infinite;
+        }
+        @keyframes pulse-new {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         /* ===== PULL TO REFRESH ===== */
@@ -2010,6 +2036,26 @@
                 <div style="font-size:10px;font-weight:800;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;padding:0 4px">Popular Searches</div>
                 <div id="popularChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
             </div>
+        </div>
+        <!-- Search filter pills -->
+        <div id="searchFilterBar" style="display:none;padding:6px 16px 0;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch" class="flex">
+            <select id="searchYearFilter" onchange="applySearchFilters()" style="flex:0 0 auto;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;outline:none;cursor:pointer">
+                <option value="">All Years</option>
+            </select>
+            <select id="searchGenreFilter" onchange="applySearchFilters()" style="flex:0 0 auto;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;outline:none;cursor:pointer">
+                <option value="">All Genres</option>
+                <option value="28">Action</option><option value="12">Adventure</option>
+                <option value="16">Animation</option><option value="35">Comedy</option>
+                <option value="80">Crime</option><option value="18">Drama</option>
+                <option value="14">Fantasy</option><option value="27">Horror</option>
+                <option value="10749">Romance</option><option value="878">Sci-Fi</option>
+                <option value="53">Thriller</option>
+            </select>
+            <select id="searchTypeFilter" onchange="applySearchFilters()" style="flex:0 0 auto;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;outline:none;cursor:pointer">
+                <option value="">All Types</option>
+                <option value="movie">Movie</option>
+                <option value="tv">Series</option>
+            </select>
         </div>
         <div id="searchContent" style="display:none; flex-direction:column;">
             <div id="calendarHeader" class="hidden sticky-wrapper"></div>
@@ -3973,7 +4019,12 @@
                         const poster = m.poster_path || '';
                         const synopsis = m.overview || '';
                         const rating = m.vote_average ? m.vote_average.toFixed(1) : '';
-                        return { movieId: m.id, type: mtype, title, year, poster, videoKey: best.key, synopsis, rating };
+                        const runtime = m.runtime || (m.episode_run_time && m.episode_run_time[0]) || null;
+                        const genres = (m.genre_ids || []).slice(0,3).map(id => {
+                            const gMap = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',53:'Thriller',10752:'War',37:'Western',10759:'Action & Adventure',10762:'Kids',10763:'News',10764:'Reality',10765:'Sci-Fi & Fantasy',10766:'Soap',10767:'Talk',10768:'War & Politics'};
+                            return gMap[id] || '';
+                        }).filter(Boolean);
+                        return { movieId: m.id, type: mtype, title, year, poster, videoKey: best.key, synopsis, rating, runtime, genres };
                     } catch(e) { return null; }
                 });
 
@@ -4031,7 +4082,14 @@
                         <div class="reel-heart-pop" id="heart-${reel.movieId}"><i class="fa-solid fa-heart"></i></div>
                         <div class="reel-gradient"></div>
                         <div class="reel-info">
+                            <div class="reel-meta-pills">
+                                <span class="reel-pill reel-pill-type">${typeLabel}</span>
+                                ${reel.year ? `<span class="reel-pill reel-pill-year">${reel.year}</span>` : ''}
+                                ${reel.rating ? `<span class="reel-pill reel-pill-rating">★ ${reel.rating}</span>` : ''}
+                                ${reel.runtime ? `<span class="reel-pill reel-pill-runtime">${reel.runtime} min</span>` : ''}
+                            </div>
                             <div class="reel-title">${reel.title}</div>
+                            ${reel.genres && reel.genres.length ? `<div class="reel-genre-pills">${reel.genres.map(g=>`<span class="reel-genre-pill">${g}</span>`).join('')}</div>` : ''}
                             <div class="reel-year">${reel.year || ''} · ${typeLabel} ${ratingStr}</div>
                             ${reel.synopsis ? `
                             <div class="reel-synopsis-overlay" id="${synopsisId}">${reel.synopsis}</div>
@@ -5032,9 +5090,34 @@
                 let items = data.results || data.cast || []; 
                 if(currentCastId) items.sort((a,b) => b.popularity - a.popularity);
                 if(items.length === 0 && isNew) { grid.innerHTML = `<div class="col-span-3 text-center py-20 text-zinc-600 text-xs">Content not found.</div>`; } 
-                else { renderGrid(items, grid); }
+                else {
+                    // Simpan untuk filter jika ini search result
+                    if (window._isSearchMode) {
+                        window._searchResults = items;
+                        // Isi year filter
+                        const years = [...new Set(items.map(m=>(m.release_date||m.first_air_date||'').split('-')[0]).filter(Boolean))].sort().reverse();
+                        const yrSel = document.getElementById('searchYearFilter');
+                        if (yrSel) yrSel.innerHTML = '<option value="">All Years</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+                        const sfBar = document.getElementById('searchFilterBar');
+                        if (sfBar) sfBar.style.display = 'flex';
+                    }
+                    renderGrid(items, grid);
+                }
             } catch(e) { if(e.name !== 'AbortError') console.error(e); }
             loading = false;
+        }
+
+        function applySearchFilters() {
+            if (!window._searchResults || !window._isSearchMode) return;
+            let filtered = [...window._searchResults];
+            const yr = document.getElementById('searchYearFilter')?.value;
+            const gn = document.getElementById('searchGenreFilter')?.value;
+            const tp = document.getElementById('searchTypeFilter')?.value;
+            if (yr) filtered = filtered.filter(m => (m.release_date||m.first_air_date||'').startsWith(yr));
+            if (gn) filtered = filtered.filter(m => (m.genre_ids||[]).includes(parseInt(gn)));
+            if (tp) filtered = filtered.filter(m => (m.media_type||currentType) === tp);
+            const grid = document.getElementById('feedGrid');
+            if (grid) { grid.innerHTML = ''; renderGrid(filtered, grid); }
         }
 
         function renderGrid(items, grid) { 
@@ -5048,7 +5131,8 @@
                 card.onclick = function() { openModal(m.id, mType); }; 
                 const _rd = m.release_date || m.first_air_date || '';
                 const _nb = isNewRelease(_rd) ? '<div class="badge-new">NEW</div>' : '';
-                card.innerHTML = `<div class="badge-rating">${(m.vote_average||0).toFixed(1)}</div><div class="badge-type">${currentType==='short'?'SHORT':(mType==='tv'?'tv':'movie')}</div>${_nb}<img src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0">`;
+                const _title = m.title || m.name || '';
+                card.innerHTML = `<div class="badge-rating">${(m.vote_average||0).toFixed(1)}</div><div class="badge-type">${currentType==='short'?'SHORT':(mType==='tv'?'TV':'MOVIE')}</div>${_nb}<img src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0"><div class="card-title-overlay"><span class="card-title-text">${_title}</span></div>`;
                 fragment.appendChild(card); 
             });
             grid.appendChild(fragment);
@@ -5107,6 +5191,9 @@
             if(document.getElementById('sideMenu').style.display === 'block') toggleSideMenu();
             document.getElementById('searchGrid').innerHTML = '';
             document.getElementById('searchOverlay').style.display = 'block';
+            window._isSearchMode = false;
+            const sfBar2 = document.getElementById('searchFilterBar');
+            if (sfBar2) sfBar2.style.display = 'none';
             showSearchEmptyState();
             document.getElementById('searchInp').value = '';
             document.getElementById('searchClearBtn').style.display = 'none';
@@ -5917,25 +6004,30 @@
             document.getElementById('seriesControl')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
+        let _epSearchTimer = null;
         function filterEpisodes(val) {
-            if (!val) { renderEpisodePage(); return; }
-            const num = parseInt(val);
-            // Cari episode di semua halaman
-            const ep = _allEpisodes.find(e => e.episode_number === num);
-            if (ep) {
-                const pageIdx = Math.floor((_allEpisodes.indexOf(ep)) / EP_PER_PAGE);
-                _epPage = pageIdx;
-                renderEpisodePage();
-                setTimeout(() => {
-                    const cards = document.querySelectorAll('#episodeGrid .ep-card');
-                    cards.forEach(c => {
-                        const badge = c.querySelector('.ep-badge');
-                        if (badge && badge.innerText === `EP ${num}`) {
-                            c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }
-                    });
-                }, 100);
-            }
+            // Debounce: tunggu user selesai mengetik (500ms)
+            clearTimeout(_epSearchTimer);
+            if (!val || val === '') { renderEpisodePage(); return; }
+            _epSearchTimer = setTimeout(() => {
+                const num = parseInt(val);
+                if (isNaN(num)) return;
+                const ep = _allEpisodes.find(e => e.episode_number === num);
+                if (ep) {
+                    const pageIdx = Math.floor(_allEpisodes.indexOf(ep) / EP_PER_PAGE);
+                    _epPage = pageIdx;
+                    renderEpisodePage();
+                    setTimeout(() => {
+                        const cards = document.querySelectorAll('#episodeGrid .ep-card');
+                        cards.forEach(c => {
+                            const badge = c.querySelector('.ep-badge');
+                            if (badge && badge.innerText === `EP ${num}`) {
+                                c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }
+                        });
+                    }, 150);
+                }
+            }, 500);
         }
 
         function setupSwipe() { 
