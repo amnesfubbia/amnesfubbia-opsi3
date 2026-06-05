@@ -2506,7 +2506,7 @@
                 };
                 renderChips(fallbackChips);
                 // Fetch trending untuk chips yang selalu relevan
-                fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${API_KEY}&language=id-ID`)
+                fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${API_KEY}&language=en-US`)
                     .then(r => r.json())
                     .then(data => {
                         const trendChips = (data.results || []).slice(0, 8).map(m => m.title || m.name).filter(Boolean);
@@ -3735,13 +3735,13 @@
                 if (topWorks.length > 0) {
                     document.getElementById('actorKnownForWrapper').style.display = 'block';
                     document.getElementById('actorKnownFor').innerHTML = topWorks.map(w => `
-                        <div class="actor-hl-item" onclick="openModalFromActor(${w.id}, '${w.media_type}')" style="position:relative;flex:0 0 110px;border-radius:10px;overflow:hidden;background:#111;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.5)">
-                            <img src="https://image.tmdb.org/t/p/w185${w.poster_path}" loading="lazy" style="width:110px;height:165px;object-fit:cover;display:block;opacity:0;transition:opacity 0.3s" onload="this.style.opacity=1">
-                            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.6) 50%,transparent 100%);padding:28px 8px 8px">
-                                <div style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.75);line-height:1.3;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${(()=>{const t=w.title||w.name||'';const o=w.original_title||w.original_name||'';return (t && !/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(t))?t:((o&&!/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(o))?o:t);})()}</div>
-                                <div style="display:flex;align-items:center;gap:4px">
-                                    ${w.vote_average ? `<span style="font-size:10px;color:#f5c518;font-weight:700">★${w.vote_average.toFixed(1)}</span>` : ''}
-                                    ${(w.release_date||w.first_air_date) ? `<span style="font-size:10px;color:rgba(255,255,255,0.5)">${(w.release_date||w.first_air_date).split('-')[0]}</span>` : ''}
+                        <div class="actor-hl-item" onclick="openModalFromActor(${w.id}, '${w.media_type}')" style="position:relative;flex:0 0 75px;border-radius:8px;overflow:hidden;background:#111;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.5)">
+                            <img src="https://image.tmdb.org/t/p/w185${w.poster_path}" loading="lazy" style="width:75px;height:110px;object-fit:cover;display:block;opacity:0;transition:opacity 0.3s" onload="this.style.opacity=1">
+                            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.6) 50%,transparent 100%);padding:20px 5px 5px">
+                                <div style="font-size:9px;font-weight:500;color:rgba(255,255,255,0.75);line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${(()=>{const t=w.title||w.name||'';const o=w.original_title||w.original_name||'';return (t && !/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(t))?t:((o&&!/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(o))?o:t);})()}</div>
+                                <div style="display:flex;align-items:center;gap:3px;margin-top:2px">
+                                    ${w.vote_average ? `<span style="font-size:8px;color:#f5c518;font-weight:700">★${w.vote_average.toFixed(1)}</span>` : ''}
+                                    ${(w.release_date||w.first_air_date) ? `<span style="font-size:8px;color:rgba(255,255,255,0.5)">${(w.release_date||w.first_air_date).split('-')[0]}</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -4845,9 +4845,9 @@
                 const mediaType = calendarMediaType || 'movie';
                 let apiUrl;
                 if (mediaType === 'tv') {
-                    apiUrl = `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=id-ID&sort_by=popularity.desc&first_air_date.gte=${dateStr}&first_air_date.lte=${dateStr}&include_adult=false`;
+                    apiUrl = `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&first_air_date.gte=${dateStr}&first_air_date.lte=${dateStr}&include_adult=false`;
                 } else {
-                    apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=id-ID&sort_by=popularity.desc&primary_release_date.gte=${dateStr}&primary_release_date.lte=${dateStr}&include_adult=false`;
+                    apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&primary_release_date.gte=${dateStr}&primary_release_date.lte=${dateStr}&include_adult=false`;
                 }
                 const res = await fetch(apiUrl);
                 const data = await res.json();
@@ -5083,7 +5083,7 @@
                     url = `https://api.themoviedb.org/3/search/${searchTabType}?query=${encodeURIComponent(searchQuery)}&api_key=${API_KEY}&page=${page}&include_adult=false`;
                 }
             }
-            else if(currentType === 'multi') { url = `https://api.themoviedb.org/3/trending/all/day?api_key=${API_KEY}&language=id-ID&page=${page}`; }
+            else if(currentType === 'multi') { url = `https://api.themoviedb.org/3/trending/all/day?api_key=${API_KEY}&language=en-US&page=${page}`; }
             else {
                 let endpoint = (currentType === 'tv') ? 'discover/tv' : 'discover/movie';
                 url = `https://api.themoviedb.org/3/${endpoint}?api_key=${API_KEY}&language=id-ID&page=${page}&include_adult=false&sort_by=popularity.desc`;
@@ -5154,19 +5154,28 @@
                 const _rd = m.release_date || m.first_air_date || '';
                 const _nb = isNewRelease(_rd) ? '<div class="badge-new">NEW</div>' : '';
                 let _title = m.title || m.name || '';
-                if (isNonLatin(_title)) {
+                // Selalu coba resolve ke EN title
+                {
                     const origT = m.original_title || m.original_name || '';
-                    if (origT && !isNonLatin(origT)) _title = origT;
-                    else {
-                        // Coba ambil EN title dari API
-                        fetchWithCache(`https://api.themoviedb.org/3/${mType}/${m.id}?api_key=${API_KEY}&language=en-US`).then(d => {
-                            const enT = d.title || d.name || '';
-                            const origEN = d.original_title || d.original_name || '';
-                            const finalT = (!isNonLatin(enT) && enT) ? enT : (!isNonLatin(origEN) && origEN) ? origEN : _title;
-                            const titleEl = card.querySelector('.card-title-text');
-                            if (titleEl && finalT !== _title) titleEl.textContent = finalT;
-                        }).catch(()=>{});
+                    // Jika title non-latin, coba original_title dulu
+                    if (isNonLatin(_title)) {
+                        if (origT && !isNonLatin(origT)) {
+                            _title = origT;
+                        } else {
+                            // Fetch EN dari API async, update card setelah render
+                            fetchWithCache(`https://api.themoviedb.org/3/${mType}/${m.id}?api_key=${API_KEY}&language=en-US`).then(d => {
+                                const enT = d.title || d.name || '';
+                                const origEN = d.original_title || d.original_name || '';
+                                const finalT = (enT && !isNonLatin(enT)) ? enT : (origEN && !isNonLatin(origEN)) ? origEN : '';
+                                if (finalT) {
+                                    const titleEl = card.querySelector('.card-title-text');
+                                    if (titleEl) titleEl.textContent = finalT;
+                                }
+                            }).catch(()=>{});
+                        }
                     }
+                    // Juga cek jika title masih dalam bahasa lain (terjemahan Indonesia dll)
+                    // Kita tidak bisa deteksi bahasa secara pasti, tapi original_title lebih aman
                 }
                 const _year = (m.release_date || m.first_air_date || '').split('-')[0];
                 const _rating = m.vote_average ? m.vote_average.toFixed(1) : '';
@@ -6371,8 +6380,8 @@
             try {
                 // Fetch film rilis hari ini (movie + tv)
                 const [movRes, tvRes] = await Promise.allSettled([
-                    fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=id-ID&sort_by=popularity.desc&primary_release_date.gte=${todayStr}&primary_release_date.lte=${todayStr}&include_adult=false`).then(r=>r.json()),
-                    fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=id-ID&sort_by=popularity.desc&first_air_date.gte=${todayStr}&first_air_date.lte=${todayStr}&include_adult=false`).then(r=>r.json()),
+                    fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&primary_release_date.gte=${todayStr}&primary_release_date.lte=${todayStr}&include_adult=false`).then(r=>r.json()),
+                    fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&first_air_date.gte=${todayStr}&first_air_date.lte=${todayStr}&include_adult=false`).then(r=>r.json()),
                 ]);
 
                 const movies = (movRes.status==='fulfilled' ? movRes.value.results||[] : []).map(m=>({...m,_mtype:'movie'}));
@@ -6383,8 +6392,8 @@
                 if (allItems.length === 0) {
                     const prev = new Date(Date.now() - 3*24*60*60*1000).toISOString().split('T')[0];
                     const [m2, t2] = await Promise.allSettled([
-                        fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=id-ID&sort_by=popularity.desc&primary_release_date.gte=${prev}&primary_release_date.lte=${todayStr}&include_adult=false`).then(r=>r.json()),
-                        fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=id-ID&sort_by=popularity.desc&first_air_date.gte=${prev}&first_air_date.lte=${todayStr}&include_adult=false`).then(r=>r.json()),
+                        fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&primary_release_date.gte=${prev}&primary_release_date.lte=${todayStr}&include_adult=false`).then(r=>r.json()),
+                        fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&first_air_date.gte=${prev}&first_air_date.lte=${todayStr}&include_adult=false`).then(r=>r.json()),
                     ]);
                     allItems = [
                         ...(m2.status==='fulfilled'?m2.value.results||[]:[]).map(m=>({...m,_mtype:'movie'})),
