@@ -1091,8 +1091,8 @@
         .reel-year { display: none; }
         .reel-meta-inline {
             display: flex; align-items: center; flex-wrap: wrap; gap: 0;
-            font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.85);
-            margin-bottom: 10px; text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.85);
+            margin-bottom: 8px; text-shadow: 0 1px 4px rgba(0,0,0,0.8);
         }
         .reel-meta-inline .rmi-rating { color: #f5c518; font-weight: 700; margin-right: 8px; }
         .reel-meta-inline .rmi-dot { color: rgba(255,255,255,0.4); margin: 0 6px; }
@@ -1157,7 +1157,7 @@
         .reels-topbar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 9100;
             display: flex; align-items: center; padding: 14px 16px 10px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%);
+            background: #000;
             pointer-events: none;
         }
         .reels-topbar-title {
@@ -4105,9 +4105,9 @@
                         <div class="reel-video-wrap">
                             <iframe src="${embedUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
                             <!-- Tutup header YouTube (atas) solid hitam -->
-                            <div style="position:absolute;top:0;left:0;right:0;height:56px;z-index:2;pointer-events:none;background:#000"></div>
+                            <div style="position:absolute;top:0;left:0;right:0;height:90px;z-index:2;pointer-events:none;background:#000"></div>
                             <!-- Tutup UI bawah YouTube solid hitam -->
-                            <div style="position:absolute;bottom:0;left:0;right:0;height:56px;z-index:2;pointer-events:none;background:#000"></div>
+                            <div style="position:absolute;bottom:0;left:0;right:0;height:70px;z-index:2;pointer-events:none;background:#000"></div>
                         </div>
                         <div class="reel-heart-pop" id="heart-${reel.movieId}"><i class="fa-solid fa-heart"></i></div>
                         <div class="reel-gradient"></div>
@@ -5151,14 +5151,18 @@
 
         function renderGrid(items, grid) { 
             const fragment = document.createDocumentFragment();
-            const _seen = new Set();
+            // Dedup: cek ID yang sudah ada di grid
+            const existingIds = new Set(
+                [...grid.querySelectorAll('[data-id]')].map(el => el.dataset.id)
+            );
             items.forEach(m => { 
                 if(!m.poster_path || m.media_type === 'person') return;
-                if(_seen.has(m.id)) return; _seen.add(m.id); 
+                if(existingIds.has(String(m.id))) return; existingIds.add(String(m.id)); 
                 let mType = m.media_type;
                 if(!mType) { if(currentType === 'tv') mType = 'tv'; else mType = 'movie'; }
                 const card = document.createElement('div'); 
                 card.className = 'post-card'; 
+                card.dataset.id = String(m.id);
                 card.onclick = function() { openModal(m.id, mType); }; 
                 const _rd = m.release_date || m.first_air_date || '';
                 const _nb = isNewRelease(_rd) ? '<div class="badge-new">NEW</div>' : '';
@@ -5171,20 +5175,10 @@
                         if (origT && !isNonLatin(origT)) {
                             _title = origT;
                         } else {
-                            // Fetch EN dari API async, update card setelah render
-                            fetchWithCache(`https://api.themoviedb.org/3/${mType}/${m.id}?api_key=${API_KEY}&language=en-US`).then(d => {
-                                const enT = d.title || d.name || '';
-                                const origEN = d.original_title || d.original_name || '';
-                                const finalT = (enT && !isNonLatin(enT)) ? enT : (origEN && !isNonLatin(origEN)) ? origEN : '';
-                                if (finalT) {
-                                    const titleEl = card.querySelector('.card-title-text');
-                                    if (titleEl) titleEl.textContent = finalT;
-                                }
-                            }).catch(()=>{});
+                            // Gunakan original_title sebagai fallback tanpa extra fetch
+                            _title = m.original_title || m.original_name || m.title || m.name || '';
                         }
                     }
-                    // Juga cek jika title masih dalam bahasa lain (terjemahan Indonesia dll)
-                    // Kita tidak bisa deteksi bahasa secara pasti, tapi original_title lebih aman
                 }
                 const _year = (m.release_date || m.first_air_date || '').split('-')[0];
                 const _rating = m.vote_average ? m.vote_average.toFixed(1) : '';
