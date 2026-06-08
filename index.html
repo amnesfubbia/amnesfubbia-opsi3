@@ -553,19 +553,16 @@
         }
         .actor-topbar-icon { font-size: 20px; color: #fff; cursor: pointer; padding: 6px; }
 
-        /* Cover / backdrop blur area */
+        /* Cover / backdrop AMOLED hitam — tidak ada blur */
         .actor-cover {
             position: relative; height: 90px; overflow: hidden; background: #000000;
         }
         .actor-cover-blur {
-            position: absolute; inset: -20px;
-            background-size: cover; background-position: center top;
-            filter: blur(22px) brightness(0.35) saturate(1.4);
-            transform: scale(1.1);
+            display: none; /* Sembunyikan elemen blur - AMOLED mode */
         }
         .actor-cover-overlay {
             position: absolute; inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%);
+            background: #000000;
         }
 
         /* Profile row on top of cover */
@@ -1156,7 +1153,7 @@
 
         /* Tombol aksi kanan bawah (like, bookmark) */
         .reel-actions {
-            position: absolute; top: 32%; right: 12px;
+            position: absolute; top: 40%; right: 12px;
             transform: translateY(-50%);
             display: flex; flex-direction: column; align-items: center; gap: 18px;
             z-index: 10;
@@ -2022,9 +2019,9 @@
 
             <div id="filterBar">
                 <div class="pill-grid grid-cols-4">
-                    <button class="pill" id="btnCountry" onclick="toggleFilter(event, 'countryDropdown')">Negara <i class="fa-solid fa-caret-down"></i></button>
+                    <button class="pill" id="btnCountry" onclick="toggleFilter(event, 'countryDropdown')">Country <i class="fa-solid fa-caret-down"></i></button>
                     <button class="pill" id="btnGenre" onclick="toggleFilter(event, 'genreDropdown')">Genre <i class="fa-solid fa-caret-down"></i></button>
-                    <button class="pill" id="yearBtn" onclick="toggleFilter(event, 'yearDropdown')">Tahun <i class="fa-solid fa-caret-down"></i></button>
+                    <button class="pill" id="yearBtn" onclick="toggleFilter(event, 'yearDropdown')">Year <i class="fa-solid fa-caret-down"></i></button>
                     <button class="pill" id="btnRating" onclick="toggleFilter(event, 'ratingDropdown')">Rating <i class="fa-solid fa-caret-down"></i></button>
                 </div>
             </div>
@@ -3427,6 +3424,17 @@
             // Movie modal biasa
             if (document.getElementById('movieModal').style.display === 'block') {
                 _closeModalSilent();
+                // Jika film dibuka dari actor modal, kembalikan ke actor modal
+                if (window._actorModalPendingReopen) {
+                    const aid = window._actorModalPendingReopen;
+                    window._actorModalPendingReopen = null;
+                    document.getElementById('actorModal').style.display = 'block';
+                    document.getElementById('actorModal').scrollTop = 0;
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    // Periksa apakah ada actor modal history di stack
+                    window._actorModalPendingReopen = null;
+                }
                 return;
             }
 
@@ -3645,6 +3653,7 @@
 
         async function openActorProfile(actorId) {
             window._currentActorId = actorId;
+            window._currentOpenActorId = actorId; // Simpan untuk back navigation dari film
             lastTrailerSources = [];
             const frames = document.querySelectorAll('#carouselTrack iframe');
             frames.forEach(f => { 
@@ -3759,18 +3768,35 @@
 
                 if (topWorks.length > 0) {
                     document.getElementById('actorKnownForWrapper').style.display = 'block';
-                    document.getElementById('actorKnownFor').innerHTML = topWorks.map(w => `
+                    document.getElementById('actorKnownFor').innerHTML = topWorks.map(w => {
+                        const rawT = w.title || w.name || '';
+                        const rawO = w.original_title || w.original_name || '';
+                        const displayT = (!isNonLatin(rawT)) ? rawT : ((!isNonLatin(rawO)) ? rawO : rawT);
+                        const titleId = `kf-title-${w.id}-${Math.random().toString(36).slice(2,6)}`;
+                        // Fetch EN async jika masih non-Latin
+                        if (isNonLatin(displayT)) {
+                            const mtype = w.media_type === 'tv' ? 'tv' : 'movie';
+                            fetchWithCache(`https://api.themoviedb.org/3/${mtype}/${w.id}?api_key=${API_KEY}&language=en-US`)
+                                .then(d => {
+                                    const enT = d.title || d.name || '';
+                                    if (enT && !isNonLatin(enT)) {
+                                        const el = document.getElementById(titleId);
+                                        if (el) el.textContent = enT;
+                                    }
+                                }).catch(()=>{});
+                        }
+                        return `
                         <div class="actor-hl-item" onclick="openModalFromActor(${w.id}, '${w.media_type}')" style="position:relative;flex:0 0 75px;border-radius:8px;overflow:hidden;background:#111;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.5)">
                             <img src="https://image.tmdb.org/t/p/w185${w.poster_path}" loading="lazy" style="width:75px;height:110px;object-fit:cover;display:block;opacity:0;transition:opacity 0.3s" onload="this.style.opacity=1">
                             <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.6) 50%,transparent 100%);padding:20px 5px 5px">
-                                <div style="font-size:9px;font-weight:500;color:rgba(255,255,255,0.75);line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${(()=>{const t=w.title||w.name||'';const o=w.original_title||w.original_name||'';return (t && !/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(t))?t:((o&&!/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(o))?o:t);})()}</div>
+                                <div id="${titleId}" style="font-size:9px;font-weight:500;color:rgba(255,255,255,0.75);line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${displayT}</div>
                                 <div style="display:flex;align-items:center;gap:3px;margin-top:2px">
                                     ${w.vote_average ? `<span style="font-size:8px;color:#f5c518;font-weight:700">★${w.vote_average.toFixed(1)}</span>` : ''}
                                     ${(w.release_date||w.first_air_date) ? `<span style="font-size:8px;color:rgba(255,255,255,0.5)">${(w.release_date||w.first_air_date).split('-')[0]}</span>` : ''}
                                 </div>
                             </div>
                         </div>
-                    `).join('');
+                    `;}).join('');
                 }
 
                 // Movie grid (movies)
@@ -3784,16 +3810,29 @@
                 const filmGrid = document.getElementById('actorMovieGrid');
                 filmGrid.innerHTML = '';
                 if (movieMovies.length === 0) {
-                    filmGrid.innerHTML = '<div class="col-span-3 py-16 text-center text-zinc-600 text-xs">Tidak ada data film.</div>';
+                    filmGrid.innerHTML = '<div class="col-span-3 py-16 text-center text-zinc-600 text-xs">No movie data.</div>';
                 } else {
                     movieMovies.forEach(m => {
                         const card = document.createElement('div');
                         card.className = 'post-card';
                         card.onclick = () => openModalFromActor(m.id, 'movie');
-                        const _fTitle = (()=>{const t=m.title||m.name||'';const o=m.original_title||m.original_name||'';return (t&&!/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(t))?t:((o&&!/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(o))?o:t);})();
+                        const rawT = m.title || m.name || '';
+                        const rawO = m.original_title || m.original_name || '';
+                        let _fTitle = (!isNonLatin(rawT)) ? rawT : ((!isNonLatin(rawO)) ? rawO : rawT);
                         const _fYear = (m.release_date||'').split('-')[0];
                         const _fRating = m.vote_average ? m.vote_average.toFixed(1) : '';
                         card.innerHTML = `<img src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0"><div class="card-title-overlay"><div class="card-title-text">${_fTitle}</div><div class="card-meta-row"><span class="card-type-label">MOVIE</span>${_fRating?`<span class="card-star">★${_fRating}</span>`:''} ${_fYear?`<span class="card-year">${_fYear}</span>`:''}</div></div>`;
+                        // Jika judul masih non-Latin, fetch EN title async
+                        if (isNonLatin(_fTitle)) {
+                            fetchWithCache(`https://api.themoviedb.org/3/movie/${m.id}?api_key=${API_KEY}&language=en-US`)
+                                .then(d => {
+                                    const enT = d.title || d.name || '';
+                                    if (enT && !isNonLatin(enT)) {
+                                        const el = card.querySelector('.card-title-text');
+                                        if (el) el.textContent = enT;
+                                    }
+                                }).catch(()=>{});
+                        }
                         filmGrid.appendChild(card);
                     });
                 }
@@ -3808,16 +3847,29 @@
                 const tvGrid = document.getElementById('actorTvGrid');
                 tvGrid.innerHTML = '';
                 if (tvMovies.length === 0) {
-                    tvGrid.innerHTML = '<div class="col-span-3 py-16 text-center text-zinc-600 text-xs">Tidak ada data serial.</div>';
+                    tvGrid.innerHTML = '<div class="col-span-3 py-16 text-center text-zinc-600 text-xs">No series data.</div>';
                 } else {
                     tvMovies.forEach(m => {
                         const card = document.createElement('div');
                         card.className = 'post-card';
                         card.onclick = () => openModalFromActor(m.id, 'tv');
-                        const _tTitle = (()=>{const t=m.title||m.name||'';const o=m.original_title||m.original_name||'';return (t&&!/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(t))?t:((o&&!/[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7FF\u0400-\u04FF]/.test(o))?o:t);})();
+                        const rawT = m.title || m.name || '';
+                        const rawO = m.original_title || m.original_name || '';
+                        let _tTitle = (!isNonLatin(rawT)) ? rawT : ((!isNonLatin(rawO)) ? rawO : rawT);
                         const _tYear = (m.first_air_date||'').split('-')[0];
                         const _tRating = m.vote_average ? m.vote_average.toFixed(1) : '';
                         card.innerHTML = `<img src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0"><div class="card-title-overlay"><div class="card-title-text">${_tTitle}</div><div class="card-meta-row"><span class="card-type-label">TV</span>${_tRating?`<span class="card-star">★${_tRating}</span>`:''} ${_tYear?`<span class="card-year">${_tYear}</span>`:''}</div></div>`;
+                        // Jika judul masih non-Latin, fetch EN title async
+                        if (isNonLatin(_tTitle)) {
+                            fetchWithCache(`https://api.themoviedb.org/3/tv/${m.id}?api_key=${API_KEY}&language=en-US`)
+                                .then(d => {
+                                    const enT = d.name || d.title || '';
+                                    if (enT && !isNonLatin(enT)) {
+                                        const el = card.querySelector('.card-title-text');
+                                        if (el) el.textContent = enT;
+                                    }
+                                }).catch(()=>{});
+                        }
                         tvGrid.appendChild(card);
                     });
                 }
@@ -3888,12 +3940,14 @@
         // Buka modal film dari dalam actorModal (poster diklik)
         // Tutup actorModal dulu agar tidak tertutup z-index, lalu buka modal film
         function openModalFromActor(id, type) {
-            // Tutup actorModal tanpa mengubah history (replaceState ke modal)
+            // Simpan actorId yang sedang dibuka agar bisa kembali saat back
+            const currentActorId = window._currentOpenActorId || null;
+            // Sembunyikan actorModal (TANPA pop history — history actor tetap ada)
             document.getElementById('actorModal').style.display = 'none';
-            // Bersihkan lastTrailerSources karena kita buka film baru
             lastTrailerSources = [];
-            // Push state baru untuk film yang akan dibuka
-            // (openModal akan push state sendiri)
+            // Push state modal film — saat back nanti popstate akan:
+            //   1. Tutup movie modal → state actor masih ada → tampilkan kembali actor modal
+            window._actorModalPendingReopen = currentActorId;
             openModal(id, type);
         }
 
@@ -4761,9 +4815,9 @@
             const btnYear = document.getElementById('yearBtn');
             const btnRatingEl = document.getElementById('btnRating');
             if(btnRatingEl) { btnRatingEl.innerHTML = 'Rating <i class="fa-solid fa-caret-down"></i>'; btnRatingEl.classList.remove('active-pill'); }
-            btnCountry.innerHTML = 'Negara <i class="fa-solid fa-caret-down"></i>';
+            btnCountry.innerHTML = 'Country <i class="fa-solid fa-caret-down"></i>';
             btnGenre.innerHTML = 'Genre <i class="fa-solid fa-caret-down"></i>';
-            btnYear.innerHTML = 'Tahun <i class="fa-solid fa-caret-down"></i>';
+            btnYear.innerHTML = 'Year <i class="fa-solid fa-caret-down"></i>';
             document.querySelectorAll('.pill').forEach(p => p.classList.remove('active-pill'));
             document.querySelectorAll('.btn-ig').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.stat-item').forEach(s => s.classList.remove('active-stat'));
@@ -4966,7 +5020,7 @@
 
         function initFilters() { 
             const yD = document.getElementById('yearDropdown'); 
-            let yearHTML = '<div class="filter-item sticky-reset" onclick="setYear(\'\')">All Tahun</div>'; 
+            let yearHTML = '<div class="filter-item sticky-reset" onclick="setYear(\'\')">All Years</div>'; 
             for(let y=2026; y>=1930; y--) yearHTML += `<div class="filter-item" onclick="setYear(${y})">${y}</div>`; 
             yD.innerHTML = yearHTML; 
 
@@ -5058,14 +5112,14 @@
             countries.slice(1).forEach(c => { if (!countrySeen.has(c[0])) { countrySeen.add(c[0]); countriesUniq.push(c); }});
             const countriesFinal = [countriesUniq[0], ...countriesUniq.slice(1).sort((a,b) => a[1].localeCompare(b[1], 'id'))];
             const cD = document.getElementById('countryDropdown'); 
-            let countryHTML = '<div class="filter-item sticky-reset" onclick="setCountry(\'\',\'Negara\')">All Negara</div>'; 
+            let countryHTML = '<div class="filter-item sticky-reset" onclick="setCountry(\'\',\'Country\')">All Countries</div>'; 
             countriesFinal.forEach(c => countryHTML += `<div class="filter-item" onclick="setCountry('${c[0]}','${c[1]}')">${c[1]}</div>`); 
             cD.innerHTML = countryHTML; 
 
             // Rating dropdown - per angka eksak
             const rD = document.getElementById('ratingDropdown');
             if (rD) {
-                let ratingHTML = '<div class="filter-item sticky-reset" onclick="setRating(\'\',\'Rating\')">All Rating</div>';
+                let ratingHTML = '<div class="filter-item sticky-reset" onclick="setRating(\'\',\'Rating\')">All Ratings</div>';
                 [['9','★ 9'],['8','★ 8'],['7','★ 7'],['6','★ 6'],['5','★ 5'],['4','★ 4']].forEach(r =>
                     ratingHTML += `<div class="filter-item" onclick="setRating('${r[0]}','${r[1]}')">${r[1]}</div>`
                 );
@@ -5074,16 +5128,16 @@
 
             // Genre — lengkap, urut abjad (ID TMDb)
             const genres = [
-                [28,'Action'],[12,'Adventure'],[16,'Animasi'],
-                [35,'Komedi'],[80,'Crime'],
-                [99,'Dokumenter'],[18,'Drama'],[10751,'Family'],
+                [28,'Action'],[12,'Adventure'],[16,'Animation'],
+                [35,'Comedy'],[80,'Crime'],
+                [99,'Documentary'],[18,'Drama'],[10751,'Family'],
                 [14,'Fantasy'],[36,'History'],[27,'Horror'],
-                [10402,'Musik'],[9648,'Misteri'],[10749,'Romance'],
+                [10402,'Music'],[9648,'Mystery'],[10749,'Romance'],
                 [878,'Sci-Fi'],[10770,'TV Movie'],[53,'Thriller'],
                 [10752,'War'],[37,'Western']
             ].sort((a,b) => a[1].localeCompare(b[1]));
             const gD = document.getElementById('genreDropdown'); 
-            let genreHTML = '<div class="filter-item sticky-reset" onclick="setGenre(\'\',\'Genre\')">All Genre</div>'; 
+            let genreHTML = '<div class="filter-item sticky-reset" onclick="setGenre(\'\',\'Genre\')">All Genres</div>'; 
             genres.forEach(g => genreHTML += `<div class="filter-item" onclick="setGenre('${g[0]}','${g[1]}')">${g[1]}</div>`); 
             gD.innerHTML = genreHTML; 
         }
@@ -5327,7 +5381,7 @@
         function setYear(y) { 
             currentYear = y; 
             const btn = document.getElementById('yearBtn');
-            btn.innerHTML = (y || 'Tahun') + ' <i class="fa-solid fa-caret-down"></i>'; 
+            btn.innerHTML = (y || 'Year') + ' <i class="fa-solid fa-caret-down"></i>'; 
             y ? btn.classList.add('active-pill') : btn.classList.remove('active-pill');
             if(currentType === 'multi') currentType = 'movie';
             closeD(); loadFeed(true); 
@@ -5536,7 +5590,22 @@
             originalIndoDesc = dId.overview || "";
             globalEnDesc = dEn.overview || "";
             const translateBtn = document.getElementById('mTranslateBtn');
-            if (originalIndoDesc.trim() !== "") { globalFullDesc = originalIndoDesc; translateBtn.innerText = "View original"; translateBtn.classList.remove('hidden'); } else { globalFullDesc = globalEnDesc || "Synopsis belum tersedia."; translateBtn.innerText = "See translation"; if(globalEnDesc) translateBtn.classList.remove('hidden'); }
+            // Default: tampilkan synopsis bahasa Inggris, tombol untuk terjemahkan ke Indonesia
+            if (globalEnDesc.trim() !== "") {
+                globalFullDesc = globalEnDesc;
+                if (originalIndoDesc && originalIndoDesc !== globalEnDesc) {
+                    translateBtn.innerText = "Translate to Indonesian";
+                    translateBtn.classList.remove('hidden');
+                } else {
+                    translateBtn.classList.add('hidden');
+                }
+            } else if (originalIndoDesc.trim() !== "") {
+                globalFullDesc = originalIndoDesc;
+                translateBtn.classList.add('hidden');
+            } else {
+                globalFullDesc = "No synopsis available.";
+                translateBtn.classList.add('hidden');
+            }
             
             const dots = document.getElementById('carouselDots');
             track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
@@ -5669,11 +5738,29 @@
                 } catch(e) { currentDailymotionId = ""; }
             })();
 
-            document.getElementById('castContainer').innerHTML = (dCast.cast || []).slice(0, 10).map(c => {
+            // Render cast dengan nama Latin (fetch person detail jika nama non-Latin)
+            const castRaw = (dCast.cast || []).slice(0, 10);
+            const castItems = await Promise.all(castRaw.map(async c => {
                 const profileImg = c.profile_path ? `<img src="https://image.tmdb.org/t/p/w185${c.profile_path}" loading="lazy" class="rounded-full">` : `<div style="width:100%; height:100%; background:#222; display:flex; align-items:center; justify-content:center; color:#555;"><i class="fa-solid fa-user"></i></div>`;
                 const charName = c.character ? c.character.replace(/\s*\(.*?\)/g,'').trim() : '';
-                return `<div class="cast-item" onclick="openActorProfile(${c.id})"><div class="cast-img-border"><div class="inner-border">${profileImg}</div></div><span class="cast-name">${c.name}</span>${charName ? `<span style="font-size:8px;color:#555;display:block;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65px">${charName}</span>` : ''}</div>`;
-            }).join('');
+                let displayName = c.name || '';
+                // Selalu fetch person detail untuk pastikan nama Latin (en-US)
+                // Ini juga handle nama Korea seperti Kim Moo-yul yang mungkin masih dalam hangul
+                try {
+                    const personData = await fetchWithCache(`https://api.themoviedb.org/3/person/${c.id}?api_key=${API_KEY}&language=en-US`);
+                    const enName = personData.name || '';
+                    if (enName && !isNonLatin(enName)) {
+                        displayName = enName;
+                    } else {
+                        // Coba also_known_as: prioritas yang ada huruf Latin (A-Z) dan ada spasi/tanda hubung
+                        const akaList = personData.also_known_as || [];
+                        const latinAka = akaList.find(n => n && !isNonLatin(n) && /[a-zA-Z]/.test(n));
+                        if (latinAka) displayName = latinAka;
+                    }
+                } catch {}
+                return `<div class="cast-item" onclick="openActorProfile(${c.id})"><div class="cast-img-border"><div class="inner-border">${profileImg}</div></div><span class="cast-name">${displayName}</span>${charName ? `<span style="font-size:8px;color:#555;display:block;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65px">${charName}</span>` : ''}</div>`;
+            }));
+            document.getElementById('castContainer').innerHTML = castItems.join('');
             document.getElementById('mLikeDisplay').innerText = `${Math.floor((dId.vote_average || 0) * 1234).toLocaleString('id-ID')} suka`;
             // Prioritaskan judul en-US agar selalu Latin
             // Jika dEn kosong atau masih non-Latin, coba ambil lagi
@@ -5708,16 +5795,25 @@
             const miReleaseStr = rel2 ? new Date(rel2).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'}) : '—';
             const infoGridEl = document.getElementById('mInfoGrid');
             if (infoGridEl) {
-                // Director
+                // Director & Writer
                 const miCrew = (dCast.crew || []);
                 const miDir = miCrew.find(c => c.job === 'Director');
                 const miDirName = miDir ? miDir.name : (type === 'tv' ? ((dId.created_by && dId.created_by[0]) ? dId.created_by[0].name : '—') : '—');
+                // Writer: cari dari crew (Screenplay, Story, Writer)
+                const miWriters = miCrew.filter(c => ['Writer','Screenplay','Story','Script','Creator'].includes(c.job));
+                const miWriterNames = miWriters.length ? [...new Set(miWriters.map(w => w.name))].slice(0,2).join(', ') : (type === 'tv' && dId.created_by && dId.created_by.length ? dId.created_by.map(c=>c.name).join(', ') : '—');
+                // Budget & Revenue (hanya untuk movie)
+                const miBudget = (type === 'movie' && dId.budget && dId.budget > 0) ? '$' + dId.budget.toLocaleString('en-US') : (type === 'tv' ? '—' : '—');
+                const miRevenue = (type === 'movie' && dId.revenue && dId.revenue > 0) ? '$' + dId.revenue.toLocaleString('en-US') : (type === 'tv' ? '—' : '—');
                 infoGridEl.innerHTML = `
                 <div class="minfo-cell full-width"><span class="minfo-key">Director</span><span class="minfo-val">${miDirName}</span></div>
+                <div class="minfo-cell full-width"><span class="minfo-key">Writer</span><span class="minfo-val">${miWriterNames}</span></div>
                 <div class="minfo-cell"><span class="minfo-key">Release</span><span class="minfo-val">${miReleaseStr}</span></div>
                 <div class="minfo-cell"><span class="minfo-key">Runtime</span><span class="minfo-val">${runTime}</span></div>
                 <div class="minfo-cell"><span class="minfo-key">Country</span><span class="minfo-val">${miCountries}</span></div>
                 <div class="minfo-cell"><span class="minfo-key">Language</span><span class="minfo-val">${miLanguage}</span></div>
+                <div class="minfo-cell"><span class="minfo-key">Budget</span><span class="minfo-val">${miBudget}</span></div>
+                <div class="minfo-cell"><span class="minfo-key">Revenue</span><span class="minfo-val">${miRevenue}</span></div>
                 <div class="minfo-cell full-width"><span class="minfo-key">Studio</span><span class="minfo-val">${miStudios}</span></div>
                 <div class="minfo-cell full-width"><span class="minfo-key">Genre</span><span class="minfo-val">${miGenres}</span></div>`;
                 infoGridEl.style.display = 'grid';
@@ -5750,13 +5846,34 @@
 
         async function handleTranslate() {
             const btn = document.getElementById('mTranslateBtn');
-            if (originalIndoDesc && globalEnDesc) { if (globalFullDesc === originalIndoDesc) { globalFullDesc = globalEnDesc; btn.innerText = "View original"; } else { globalFullDesc = originalIndoDesc; btn.innerText = "View original"; } } 
-            else if (!originalIndoDesc && globalEnDesc) {
-                if(!isTranslated) {
+            // Mode: EN default, toggle ke ID dan balik ke EN
+            if (globalEnDesc && originalIndoDesc && originalIndoDesc !== globalEnDesc) {
+                // Toggle antara EN dan ID (keduanya tersedia)
+                if (globalFullDesc === globalEnDesc) {
+                    globalFullDesc = originalIndoDesc;
+                    btn.innerText = "View in English";
+                } else {
+                    globalFullDesc = globalEnDesc;
+                    btn.innerText = "Translate to Indonesian";
+                }
+            } else if (globalEnDesc && !originalIndoDesc) {
+                // Hanya ada EN, terjemahkan ke ID via Google
+                if (!isTranslated) {
                     const oldText = btn.innerText; btn.innerText = "Translating...";
-                    try { const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(globalEnDesc)}`); const data = await res.json(); globalFullDesc = data[0].map(x => x[0]).join(''); isTranslated = true; btn.innerText = "View original"; } 
-                    catch(e) { btn.innerText = "Translation failed"; setTimeout(()=>btn.innerText=oldText, 2000); }
-                } else { globalFullDesc = globalEnDesc; isTranslated = false; btn.innerText = "See translation"; }
+                    try {
+                        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(globalEnDesc)}`);
+                        const data = await res.json();
+                        const translated = data[0].map(x => x[0]).join('');
+                        originalIndoDesc = translated;
+                        globalFullDesc = translated;
+                        isTranslated = true;
+                        btn.innerText = "View in English";
+                    } catch(e) { btn.innerText = "Translation failed"; setTimeout(()=>btn.innerText=oldText, 2000); }
+                } else {
+                    globalFullDesc = globalEnDesc;
+                    isTranslated = false;
+                    btn.innerText = "Translate to Indonesian";
+                }
             }
             renderSynopsis();
         }
