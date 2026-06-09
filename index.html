@@ -1514,16 +1514,28 @@
         .ep-num { display: none; }
         .ep-title {
             font-size: 14px; font-weight: 700; color: #fff;
-            line-height: 1.3; margin-bottom: 5px;
+            line-height: 1.3; margin-bottom: 4px;
             display: -webkit-box; -webkit-line-clamp: 2;
             -webkit-box-orient: vertical; overflow: hidden;
         }
+        .ep-meta-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+        .ep-rating { display: flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 700; color: #f5c518; }
+        .ep-rating-count { font-size: 10px; color: #555; font-weight: 400; }
         .ep-synopsis {
-            font-size: 12px; color: #8e8e8e; line-height: 1.4;
-            display: -webkit-box; -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px;
+            font-size: 11px; color: #8e8e8e; line-height: 1.45;
+            display: -webkit-box; -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical; overflow: hidden;
         }
-        .ep-date { font-size: 11px; color: #555; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+        .ep-translate-btn {
+            width: 100%; margin-top: 5px;
+            font-size: 10px; font-weight: 600; color: #aaa;
+            background: #151515; border: 1px solid #2a2a2a;
+            border-radius: 6px; padding: 5px 0; cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+        }
+        .ep-translate-btn:active { background: #222; }
+        .ep-date { font-size: 10px; color: #555; font-weight: 500; display: flex; align-items: center; gap: 3px; }
         .ep-card.active-ep .ep-title { color: #fff; }
         .ep-card.active-ep .ep-thumb-wrap { outline: 2px solid #fff; }
         .ep-pagination {
@@ -2063,14 +2075,29 @@
             <div class="search-tab" id="stab-tv" onclick="setSearchTab('tv',this)">Series</div>
         </div>
         <!-- Empty/idle state -->
-        <div id="searchEmptyState" style="padding:40px 20px; text-align:center;">
-            <i class="fa-solid fa-magnifying-glass" style="font-size:40px;color:#222;margin-bottom:16px;display:block"></i>
-            <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px">Search Movies & Shows</div>
+        <div id="searchEmptyState" style="padding:32px 20px 0; text-align:center;">
+            <i class="fa-solid fa-magnifying-glass" style="font-size:36px;color:#222;margin-bottom:14px;display:block"></i>
+            <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:5px">Search Movies & Shows</div>
             <div style="font-size:13px;color:#555;line-height:1.5">Type a title, series name,<br>actor name, or studio</div>
-            <div style="margin-top:28px;text-align:left">
-                <div style="font-size:10px;font-weight:800;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;padding:0 4px">Popular Searches</div>
+            <div style="margin-top:22px;text-align:left">
+                <div style="font-size:10px;font-weight:800;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">Popular Searches</div>
                 <div id="popularChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
             </div>
+        </div>
+
+        <!-- Awards section -->
+        <div id="awardsSection" style="margin-top:24px;">
+            <div style="display:flex;border-bottom:1px solid #1c1c1c;background:#000;position:sticky;top:54px;z-index:89">
+                <div class="search-tab active" id="awdtab-oscar" onclick="setAwardsTab('oscar',this)" style="flex:1;text-align:center">Oscar</div>
+                <div class="search-tab" id="awdtab-emmy" onclick="setAwardsTab('emmy',this)" style="flex:1;text-align:center">Emmy</div>
+                <div class="search-tab" id="awdtab-golden" onclick="setAwardsTab('golden',this)" style="flex:1;text-align:center">Golden Globe</div>
+            </div>
+            <div style="display:flex;gap:10px;padding:12px 16px 8px">
+                <select id="awardsYearSel" onchange="loadAwards()" style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;font-size:12px;padding:8px 10px;border-radius:10px;outline:none;cursor:pointer"></select>
+                <select id="awardsCatSel" onchange="loadAwards()" style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;font-size:12px;padding:8px 10px;border-radius:10px;outline:none;cursor:pointer"></select>
+            </div>
+            <div id="awardsLoading" style="text-align:center;padding:30px 0;color:#333;font-size:13px;display:none"><i class="fa-solid fa-spinner fa-spin"></i></div>
+            <div id="awardsGrid" style="padding:0 16px 24px;"></div>
         </div>
         <!-- Search filter pills -->
         <div id="searchFilterBar" style="display:none;padding:6px 16px 0;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch" class="flex">
@@ -5590,23 +5617,32 @@
             currentImdbId = dExt.imdb_id || ""; 
             originalIndoDesc = dId.overview || "";
             globalEnDesc = dEn.overview || "";
-            const translateBtn = document.getElementById('mTranslateBtn');
-            // Default: tampilkan synopsis bahasa Inggris, tombol untuk terjemahkan ke Indonesia
+            // Default: tampilkan synopsis bahasa Inggris
             if (globalEnDesc.trim() !== "") {
                 globalFullDesc = globalEnDesc;
-                if (originalIndoDesc && originalIndoDesc !== globalEnDesc) {
-                    translateBtn.innerText = "Translate to Indonesian";
-                    translateBtn.classList.remove('hidden');
-                } else {
-                    translateBtn.classList.add('hidden');
-                }
             } else if (originalIndoDesc.trim() !== "") {
                 globalFullDesc = originalIndoDesc;
-                translateBtn.classList.add('hidden');
             } else {
                 globalFullDesc = "No synopsis available.";
-                translateBtn.classList.add('hidden');
             }
+            // Setup tombol terjemahkan — lakukan setelah renderSynopsis selesai
+            const _setupTranslateBtn = () => {
+                const translateBtn = document.getElementById('mTranslateBtn');
+                if (!translateBtn) return;
+                if (globalEnDesc.trim() !== "" && originalIndoDesc.trim() !== "" && originalIndoDesc !== globalEnDesc) {
+                    translateBtn.innerText = "Translate to Indonesian";
+                    translateBtn.style.display = 'inline-block';
+                    translateBtn.classList.remove('hidden');
+                } else if (globalEnDesc.trim() !== "") {
+                    // Hanya EN tersedia — tawarkan terjemahkan via Google
+                    translateBtn.innerText = "Translate to Indonesian";
+                    translateBtn.style.display = 'inline-block';
+                    translateBtn.classList.remove('hidden');
+                } else {
+                    translateBtn.style.display = 'none';
+                    translateBtn.classList.add('hidden');
+                }
+            };
             
             const dots = document.getElementById('carouselDots');
             track.innerHTML = ''; dots.innerHTML = ''; track.style.transform = 'translateX(0)';
@@ -5780,7 +5816,7 @@
             window.currentMediaTitle = displayTitle;
             window.currentMediaYear = (dId.release_date || dId.first_air_date || '').split('-')[0] || '';
             window.currentMediaTitleOriginal = dId.title || dId.name || '';
-            isExpanded = false; renderSynopsis();
+            isExpanded = false; renderSynopsis(); _setupTranslateBtn();
             const relYear = (dId.release_date || dId.first_air_date || "2026").split('-')[0];
             const contentKind = (type === 'tv') ? 'tv' : 'movie';
             const genresArr = (dId.genres || []).map(g => `#${g.name.replace(/[^a-zA-Z0-9]/g, '')}`).slice(0, 3).join(' ');
@@ -5807,8 +5843,8 @@
                 const miBudget = (type === 'movie' && dId.budget && dId.budget > 0) ? '$' + dId.budget.toLocaleString('en-US') : (type === 'tv' ? '—' : '—');
                 const miRevenue = (type === 'movie' && dId.revenue && dId.revenue > 0) ? '$' + dId.revenue.toLocaleString('en-US') : (type === 'tv' ? '—' : '—');
                 infoGridEl.innerHTML = `
-                <div class="minfo-cell full-width"><span class="minfo-key">Director</span><span class="minfo-val">${miDirName}</span></div>
-                <div class="minfo-cell full-width"><span class="minfo-key">Writer</span><span class="minfo-val">${miWriterNames}</span></div>
+                <div class="minfo-cell"><span class="minfo-key">Director</span><span class="minfo-val">${miDirName}</span></div>
+                <div class="minfo-cell"><span class="minfo-key">Writer</span><span class="minfo-val">${miWriterNames}</span></div>
                 <div class="minfo-cell"><span class="minfo-key">Release</span><span class="minfo-val">${miReleaseStr}</span></div>
                 <div class="minfo-cell"><span class="minfo-key">Runtime</span><span class="minfo-val">${runTime}</span></div>
                 <div class="minfo-cell"><span class="minfo-key">Country</span><span class="minfo-val">${miCountries}</span></div>
@@ -6133,17 +6169,19 @@
             const pageEps = episodes.slice(start, start + EP_PER_PAGE);
             const totalPages = Math.ceil(episodes.length / EP_PER_PAGE);
 
-            grid.innerHTML = pageEps.map((ep) => { 
+            grid.innerHTML = pageEps.map((ep) => {
                 const epNum = ep.episode_number;
                 const epTitle = ep.name || `Episode ${epNum}`;
                 const epDate = ep.air_date ? new Date(ep.air_date).toLocaleDateString('en-US', {day:'numeric',month:'short',year:'numeric'}) : '';
                 const epOverview = ep.overview || '';
                 const runtime = ep.runtime ? `${ep.runtime}m` : '';
+                const epRating = ep.vote_average && ep.vote_average > 0 ? ep.vote_average.toFixed(1) : '';
+                const epVotes = ep.vote_count ? (ep.vote_count >= 1000 ? (ep.vote_count/1000).toFixed(1)+'k' : ep.vote_count) : '';
+                const epId = `ep-${epNum}-${ep.season_number||0}`;
 
                 let thumbHTML;
                 if (ep.still_path) {
-                    thumbHTML = `<img class="ep-thumb" src="https://image.tmdb.org/t/p/w300${ep.still_path}" loading="lazy" decoding="async"
-                        onerror="this.src='${seriesPoster ? `https://image.tmdb.org/t/p/w300${seriesPoster}` : ''}'; this.onerror=null;">`;
+                    thumbHTML = `<img class="ep-thumb" src="https://image.tmdb.org/t/p/w300${ep.still_path}" loading="lazy" decoding="async" onerror="this.src='${seriesPoster ? `https://image.tmdb.org/t/p/w300${seriesPoster}` : ''}'; this.onerror=null;">`;
                 } else if (seriesPoster) {
                     thumbHTML = `<img class="ep-thumb" src="https://image.tmdb.org/t/p/w300${seriesPoster}" loading="lazy" decoding="async" style="object-fit:contain">`;
                 } else {
@@ -6151,15 +6189,23 @@
                 }
 
                 return `<div class="ep-card" onclick="changeEpisode(${epNum}, this)">
-                    <div class="ep-thumb-wrap">
-                        ${thumbHTML}
-                        <span class="ep-badge">EP ${epNum}</span>
-                        ${runtime ? `<span class="ep-duration">${runtime}</span>` : ''}
+                    <div style="display:flex;flex-direction:column">
+                        <div class="ep-thumb-wrap">
+                            ${thumbHTML}
+                            <span class="ep-badge">EP ${epNum}</span>
+                            ${runtime ? `<span class="ep-duration">${runtime}</span>` : ''}
+                        </div>
+                        ${epOverview ? `<button class="ep-translate-btn" id="transbtn-${epId}" onclick="translateEpSyn('${epId}',this,event)"><i class="fa-solid fa-language"></i> Translate</button>` : ''}
                     </div>
                     <div class="ep-info">
                         <div class="ep-title">${epTitle}</div>
-                        ${epOverview ? `<div class="ep-synopsis">${epOverview}</div>` : ''}
-                        ${epDate ? `<div class="ep-date"><i class="fa-regular fa-calendar" style="font-size:10px"></i>${epDate}</div>` : ''}
+                        <div class="ep-meta-row">
+                            ${epRating ? `<span class="ep-rating">★ ${epRating}<span class="ep-rating-count">${epVotes ? ` (${epVotes})` : ''}</span></span>` : ''}
+                            ${epDate ? `<span class="ep-date"><i class="fa-regular fa-calendar" style="font-size:9px"></i> ${epDate}</span>` : ''}
+                        </div>
+                        ${epOverview
+                            ? `<div class="ep-synopsis" id="syn-${epId}">${epOverview}</div>`
+                            : `<div class="ep-synopsis" style="color:#333;font-style:italic">No synopsis available.</div>`}
                     </div>
                 </div>`;
             }).join('');
@@ -6189,8 +6235,107 @@
             const totalPages = Math.ceil(_allEpisodes.length / EP_PER_PAGE);
             _epPage = Math.max(0, Math.min(_epPage + dir, totalPages - 1));
             renderEpisodePage();
-            // Scroll ke atas episode list
             document.getElementById('seriesControl')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Terjemahan episode — cache agar tidak fetch ulang
+        const _epTC = {};
+        async function translateEpSyn(epId, btn, event) {
+            event.stopPropagation();
+            const synEl = document.getElementById('syn-' + epId);
+            if (!synEl) return;
+            const orig = synEl.getAttribute('data-orig') || synEl.textContent.trim();
+            if (!synEl.getAttribute('data-orig')) synEl.setAttribute('data-orig', orig);
+            if (btn.getAttribute('data-tr') === '1') {
+                synEl.textContent = orig;
+                btn.innerHTML = '<i class="fa-solid fa-language"></i> Translate';
+                btn.setAttribute('data-tr', '0');
+                return;
+            }
+            if (_epTC[epId]) {
+                synEl.textContent = _epTC[epId];
+                btn.innerHTML = '<i class="fa-solid fa-language"></i> English';
+                btn.setAttribute('data-tr', '1');
+                return;
+            }
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(orig)}`);
+                const d = await r.json();
+                _epTC[epId] = d[0].map(x=>x[0]).join('');
+                synEl.textContent = _epTC[epId];
+                btn.innerHTML = '<i class="fa-solid fa-language"></i> English';
+                btn.setAttribute('data-tr', '1');
+            } catch(e) { btn.innerHTML = '<i class="fa-solid fa-language"></i> Translate'; }
+        }
+
+        // ===== AWARDS =====
+        let _awardsTab = 'oscar';
+        const _awardsCfg = {
+            oscar:  { label:'Academy Awards', years:[2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015], cats:['Best Picture','Best Director','Best Actor','Best Actress','Best Supporting Actor','Best Supporting Actress','Best Animated Feature','Best International Film','Best Original Screenplay','Best Adapted Screenplay'], kw:8828, mt:'movie' },
+            emmy:   { label:'Emmy Awards',    years:[2024,2023,2022,2021,2020,2019,2018,2017], cats:['Drama Series','Comedy Series','Limited Series','Actor in Drama','Actress in Drama','Actor in Comedy','Actress in Comedy','Variety Talk Series'], kw:8866, mt:'tv' },
+            golden: { label:'Golden Globe',   years:[2025,2024,2023,2022,2021,2020,2019,2018], cats:['Best Motion Picture — Drama','Best Motion Picture — Comedy/Musical','Best TV Drama','Best TV Comedy','Best Actor Motion Picture','Best Actress Motion Picture','Best Non-English Language Film'], kw:10987, mt:'movie' }
+        };
+
+        function _fillAwardsSelects(tab) {
+            const c = _awardsCfg[tab];
+            document.getElementById('awardsYearSel').innerHTML = c.years.map(y=>`<option value="${y}">${y}</option>`).join('');
+            document.getElementById('awardsCatSel').innerHTML  = c.cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+        }
+
+        function setAwardsTab(tab, el) {
+            _awardsTab = tab;
+            document.querySelectorAll('#awardsSection .search-tab').forEach(t=>t.classList.remove('active'));
+            el.classList.add('active');
+            _fillAwardsSelects(tab);
+            loadAwards();
+        }
+
+        async function loadAwards() {
+            const grid = document.getElementById('awardsGrid');
+            const load = document.getElementById('awardsLoading');
+            if (!grid||!load) return;
+            const c = _awardsCfg[_awardsTab];
+            const year = document.getElementById('awardsYearSel').value;
+            const cat  = document.getElementById('awardsCatSel').value;
+            grid.innerHTML = ''; load.style.display = 'block';
+            try {
+                const ry = parseInt(year) - 1;
+                const dateKey = c.mt==='movie' ? 'primary_release_year' : 'first_air_date_year';
+                const url = `https://api.themoviedb.org/3/discover/${c.mt}?api_key=${API_KEY}&language=en-US&with_keywords=${c.kw}&${dateKey}=${ry}&sort_by=vote_average.desc&vote_count.gte=30`;
+                const data = await fetchWithCache(url);
+                const items = (data.results||[]).filter(m=>m.poster_path).slice(0,12);
+                load.style.display = 'none';
+                if (!items.length) { grid.innerHTML='<div style="padding:20px;text-align:center;color:#444;font-size:12px">No data for this selection.</div>'; return; }
+                grid.innerHTML = `
+                    <div style="font-size:9px;font-weight:800;color:#444;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">${c.label} · ${year} · ${cat}</div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px">
+                    ${items.map((m,i)=>{
+                        const title  = m.title||m.name||'';
+                        const rating = m.vote_average?m.vote_average.toFixed(1):'';
+                        const yr     = (m.release_date||m.first_air_date||'').split('-')[0];
+                        return `<div onclick="openModal(${m.id},'${c.mt}')" style="cursor:pointer;border-radius:8px;overflow:hidden;background:#111;position:relative">
+                            ${i===0?`<div style="position:absolute;top:5px;left:5px;background:#f5c518;color:#000;font-size:7px;font-weight:800;padding:2px 5px;border-radius:4px;z-index:2">🏆 WINNER</div>`:''}
+                            <img src="https://image.tmdb.org/t/p/w185${m.poster_path}" style="width:100%;display:block" loading="lazy" onerror="this.style.display='none'">
+                            <div style="padding:5px 5px 7px">
+                                <div style="font-size:9px;font-weight:700;color:#fff;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:3px">${title}</div>
+                                <div style="display:flex;gap:4px;align-items:center">
+                                    ${rating?`<span style="font-size:9px;color:#f5c518;font-weight:700">★${rating}</span>`:''}
+                                    ${yr?`<span style="font-size:9px;color:#555">${yr}</span>`:''}
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                    </div>`;
+            } catch(e) { load.style.display='none'; grid.innerHTML='<div style="padding:20px;text-align:center;color:#444;font-size:12px">Failed to load.</div>'; }
+        }
+
+        let _awardsInited = false;
+        function initAwards() {
+            if (_awardsInited) return;
+            _awardsInited = true;
+            _fillAwardsSelects('oscar');
+            loadAwards();
         }
         
         let _epSearchTimer = null;
@@ -6776,52 +6921,62 @@
             const section = document.getElementById('mSimilarSection');
             const scroll = document.getElementById('mSimilarScroll');
             if (!section || !scroll) return;
-            section.style.display = 'none';
-            scroll.innerHTML = '';
+            section.style.display = 'none'; scroll.innerHTML = '';
             try {
                 let items = [];
-                // Coba recommendations dulu
+                const existIds = new Set([parseInt(id)]);
+
+                // 1. TMDb recommendations
                 try {
-                    const recData = await fetchWithCache(
-                        `https://api.themoviedb.org/3/${type}/${id}/recommendations?api_key=${API_KEY}&language=en-US&page=1`
-                    );
-                    items = (recData.results || []).filter(m => m.poster_path && m.id != id);
+                    const recData = await fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}/recommendations?api_key=${API_KEY}&language=en-US&page=1`);
+                    (recData.results || []).filter(m => m.poster_path && !existIds.has(m.id))
+                        .forEach(m => { existIds.add(m.id); items.push({...m, _src:'rec'}); });
                 } catch(e) {}
 
-                // Jika recommendations < 6, fallback ke discover dengan genre yang sama
-                if (items.length < 6 && genreIds && genreIds.length > 0) {
-                    const endpoint = type === 'tv' ? 'discover/tv' : 'discover/movie';
-                    const discData = await fetchWithCache(
-                        `https://api.themoviedb.org/3/${endpoint}?api_key=${API_KEY}&language=en-US&with_genres=${genreIds.join(',')}&sort_by=popularity.desc&vote_count.gte=50&page=1`
-                    );
-                    const discItems = (discData.results || []).filter(m => m.poster_path && m.id != id);
-                    // Merge, hindari duplikat
-                    const existIds = new Set(items.map(m => m.id));
-                    discItems.forEach(m => { if (!existIds.has(m.id)) items.push(m); });
+                // 2. Film dari director yang sama
+                try {
+                    const crewData = await fetchWithCache(`https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${API_KEY}`);
+                    const director = (crewData.crew || []).find(c => c.job === 'Director');
+                    if (director) {
+                        const ep = type === 'tv' ? 'tv_credits' : 'movie_credits';
+                        const dirFilms = await fetchWithCache(`https://api.themoviedb.org/3/person/${director.id}/${ep}?api_key=${API_KEY}&language=en-US`);
+                        (dirFilms.crew || []).filter(m => m.poster_path && !existIds.has(m.id) && (m.vote_average||0) > 5)
+                            .sort((a,b) => (b.vote_average||0)-(a.vote_average||0)).slice(0,5)
+                            .forEach(m => { existIds.add(m.id); items.push({...m, _src:'dir', _dirName:director.name}); });
+                    }
+                } catch(e) {}
+
+                // 3. Fallback discover by genre
+                if (items.length < 8 && genreIds && genreIds.length > 0) {
+                    const ep = type === 'tv' ? 'discover/tv' : 'discover/movie';
+                    const disc = await fetchWithCache(`https://api.themoviedb.org/3/${ep}?api_key=${API_KEY}&language=en-US&with_genres=${genreIds[0]}&sort_by=vote_average.desc&vote_count.gte=200&page=1`);
+                    (disc.results || []).filter(m => m.poster_path && !existIds.has(m.id)).slice(0,8)
+                        .forEach(m => { existIds.add(m.id); items.push({...m, _src:'genre'}); });
                 }
 
-                // Filter: hanya tampilkan yang punya genre overlap dengan film ini
-                if (genreIds && genreIds.length > 0) {
-                    const genreSet = new Set(genreIds);
-                    const withOverlap = items.filter(m => (m.genre_ids || []).some(g => genreSet.has(g)));
-                    if (withOverlap.length >= 4) items = withOverlap;
-                }
-
-                items = items.slice(0, 15);
+                items = items.slice(0, 18);
                 if (!items.length) return;
+
+                const labelEl = section.querySelector('.similar-label');
+                if (labelEl) labelEl.textContent = 'More Like This';
                 section.style.display = 'block';
+
                 scroll.innerHTML = items.map(m => {
                     const r = m.vote_average ? m.vote_average.toFixed(1) : '';
-                    const title = m.title || m.name || '';
+                    const rawT = m.title || m.name || '';
+                    const rawO = m.original_title || m.original_name || '';
+                    const title = (!isNonLatin(rawT)) ? rawT : ((!isNonLatin(rawO)) ? rawO : rawT);
                     const year = (m.release_date || m.first_air_date || '').split('-')[0];
+                    const badge = m._src === 'dir'
+                        ? `<div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.85);color:#ccc;font-size:7px;font-weight:700;padding:2px 5px;border-radius:3px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">By ${m._dirName}</div>` : '';
                     return `<div class="similar-card" onclick="openModal(${m.id}, '${type}')">
-                        <img class="similar-poster" src="https://image.tmdb.org/t/p/w342${m.poster_path}"
-                             loading="lazy" onload="this.classList.add('loaded')">
+                        <img class="similar-poster" src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onload="this.classList.add('loaded')">
+                        ${badge}
                         <div class="similar-card-overlay">
                             <div class="similar-card-title">${title}</div>
                             <div class="similar-card-meta">
-                                <span><i class="fa-solid fa-star similar-card-star"></i>${r || '—'}</span>
-                                <span>${year || ''}</span>
+                                <span><i class="fa-solid fa-star similar-card-star"></i>${r||'—'}</span>
+                                <span>${year||''}</span>
                             </div>
                         </div>
                     </div>`;
