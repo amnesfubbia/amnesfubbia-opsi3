@@ -181,6 +181,13 @@
             transition: color 0.2s, border-color 0.2s;
         }
         .search-tab.active { color: #fff; border-bottom-color: #fff; }
+        .genre-explore-chip {
+            padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+            background: #1a1a1a; border: 1px solid #2a2a2a; color: #666;
+            cursor: pointer; white-space: nowrap; transition: all 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .genre-explore-chip.active { background: #fff; color: #000; border-color: #fff; }
         
         #smartSearchDropdown { position: absolute; top: 100%; left: 0; right: 0; background: #1a1a1a; border-radius: 0 0 10px 10px; border: 1px solid #333; border-top: none; display: none; z-index: 500; max-height: 300px; overflow-y: auto; }
         .smart-item { display: flex; align-items: center; padding: 10px; gap: 12px; border-bottom: 1px solid #262626; cursor: pointer; }
@@ -1583,15 +1590,25 @@
             -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px;
         }
         .ep-synopsis.expanded { -webkit-line-clamp: unset; display: block; }
-        .ep-translate-btn {
-            display: block; margin-top: 5px;
-            font-size: 10px; font-weight: 700; color: #fff;
-            background: #1a1a1a; border: 1px solid #2a2a2a;
-            border-radius: 6px; padding: 5px 6px; cursor: pointer;
-            text-align: center; width: 100%;
-            -webkit-tap-highlight-color: transparent;
+        .ep-action-row {
+            display: flex; gap: 6px;
+            padding: 0 0 10px 0;
+            margin-top: -2px;
+            width: 100%;
         }
-        .ep-translate-btn:active { background: #222; }
+        .ep-action-btn {
+            flex: 1; padding: 8px 4px;
+            border-radius: 8px; font-size: 10px; font-weight: 700;
+            text-align: center; cursor: pointer; border: 1px solid #2a2a2a;
+            background: #1a1a1a; color: #fff;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+        }
+        .ep-action-btn:active { background: #2a2a2a; }
+        .ep-btn-watch { background: #1a1a1a; border-color: #3a3a3a; }
+        .ep-btn-download { background: #1a1a1a; border-color: #3a3a3a; }
+        .ep-btn-translate { background: #1a1a1a; border-color: #3a3a3a; font-size: 9px; }
         .ep-date { font-size: 11px; color: #555; font-weight: 500; display: flex; align-items: center; gap: 4px; }
         .ep-card.active-ep .ep-title { color: #fff; }
         .ep-card.active-ep .ep-thumb-wrap { outline: 2px solid #fff; }
@@ -2170,13 +2187,27 @@
             <div class="search-tab" id="stab-tv" onclick="setSearchTab('tv',this)">Series</div>
         </div>
         <!-- Empty/idle state -->
-        <div id="searchEmptyState" style="padding:40px 20px; text-align:center;">
-            <i class="fa-solid fa-magnifying-glass" style="font-size:40px;color:#222;margin-bottom:16px;display:block"></i>
-            <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px">Search Movies & Shows</div>
-            <div style="font-size:13px;color:#555;line-height:1.5">Type a title, series name,<br>actor name, or studio</div>
-            <div style="margin-top:28px;text-align:left">
-                <div style="font-size:10px;font-weight:800;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;padding:0 4px">Popular Searches</div>
-                <div id="popularChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <div id="searchEmptyState" style="padding:28px 16px 40px;">
+            <div style="text-align:center;margin-bottom:24px">
+                <i class="fa-solid fa-magnifying-glass" style="font-size:36px;color:#222;margin-bottom:12px;display:block"></i>
+                <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:5px">Search Movies & Shows</div>
+                <div style="font-size:12px;color:#444;line-height:1.5">Title, series name, actor, or studio</div>
+            </div>
+            <!-- Popular chips -->
+            <div style="margin-bottom:24px">
+                <div style="font-size:10px;font-weight:800;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Popular</div>
+                <div id="popularChips" style="display:flex;flex-wrap:wrap;gap:7px"></div>
+            </div>
+            <!-- Trending / Genres tabs -->
+            <div>
+                <div style="display:flex;border-bottom:1px solid #1c1c1c;margin-bottom:14px">
+                    <div id="exploreTab-trending" class="search-tab active" style="flex:1;font-size:13px;font-weight:700;padding-bottom:10px" onclick="switchExploreTab('trending',this)">Trending</div>
+                    <div id="exploreTab-genres" class="search-tab" style="flex:1;font-size:13px;font-weight:700;padding-bottom:10px" onclick="switchExploreTab('genres',this)">Genres</div>
+                </div>
+                <!-- Genre filter row (hidden until Genres tab active) -->
+                <div id="genreChipsRow" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
+                <!-- Landscape grid: 2 columns -->
+                <div id="exploreGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
             </div>
         </div>
         <!-- Search filter pills -->
@@ -3042,6 +3073,11 @@
             // Tutup semua overlay yang mungkin aktif
             if (document.getElementById('reelsModal').style.display === 'block') {
                 _closeReelsSilent();
+            }
+            // Tutup actorModal jika sedang terbuka
+            const actorModal = document.getElementById('actorModal');
+            if (actorModal && actorModal.style.display === 'block') {
+                actorModal.style.display = 'none';
             }
             // Simpan state tvModal agar back bisa kembali ke sana
             const wasTvOpen = document.getElementById('tvModal').style.display === 'block';
@@ -5446,6 +5482,7 @@
             const sfBar2 = document.getElementById('searchFilterBar');
             if (sfBar2) sfBar2.style.display = 'none';
             showSearchEmptyState();
+            initExploreSection();
             document.getElementById('searchInp').value = '';
             document.getElementById('searchClearBtn').style.display = 'none';
             document.getElementById('searchInp').focus();
@@ -5735,12 +5772,12 @@
                 const translateBtn = document.getElementById('mTranslateBtn');
                 if (!translateBtn) return;
                 if (globalEnDesc.trim() !== "" && originalIndoDesc.trim() !== "" && originalIndoDesc !== globalEnDesc) {
-                    translateBtn.innerText = "Translate to Indonesian";
+                    translateBtn.innerText = "See Translation";
                     translateBtn.style.display = 'inline-block';
                     translateBtn.classList.remove('hidden');
                 } else if (globalEnDesc.trim() !== "") {
                     // Hanya EN tersedia — tawarkan terjemahkan via Google
-                    translateBtn.innerText = "Translate to Indonesian";
+                    translateBtn.innerText = "See Translation";
                     translateBtn.style.display = 'inline-block';
                     translateBtn.classList.remove('hidden');
                 } else {
@@ -5993,10 +6030,10 @@
                 // Toggle antara EN dan ID (keduanya tersedia)
                 if (globalFullDesc === globalEnDesc) {
                     globalFullDesc = originalIndoDesc;
-                    btn.innerText = "View in English";
+                    btn.innerText = "See Original";
                 } else {
                     globalFullDesc = globalEnDesc;
-                    btn.innerText = "Translate to Indonesian";
+                    btn.innerText = "See Translation";
                 }
             } else if (globalEnDesc && !originalIndoDesc) {
                 // Hanya ada EN, terjemahkan ke ID via Google
@@ -6009,12 +6046,12 @@
                         originalIndoDesc = translated;
                         globalFullDesc = translated;
                         isTranslated = true;
-                        btn.innerText = "View in English";
+                        btn.innerText = "See Original";
                     } catch(e) { btn.innerText = "Translation failed"; setTimeout(()=>btn.innerText=oldText, 2000); }
                 } else {
                     globalFullDesc = globalEnDesc;
                     isTranslated = false;
-                    btn.innerText = "Translate to Indonesian";
+                    btn.innerText = "See Translation";
                 }
             }
             renderSynopsis();
@@ -6299,24 +6336,32 @@
                     ? `<div class="ep-synopsis" id="syn-${epId}">${epOverview}</div>`
                     : `<div class="ep-synopsis" style="color:#333;font-style:italic">No synopsis available.</div>`;
 
-                const translateBtnHTML = epOverview
-                    ? `<span class="ep-translate-btn" id="transbtn-${epId}" onclick="translateEpSynopsis('${epId}', this, event)">Translate to Indonesian</span>`
-                    : '';
+                const actionRowHTML = '';
 
-                return `<div class="ep-card" onclick="changeEpisode(${epNum}, this)">
-                    <div class="ep-thumb-wrap">
-                        ${thumbHTML}
-                        <span class="ep-badge">EP ${epNum}</span>
-                        ${runtime ? `<span class="ep-duration">${runtime}</span>` : ''}
-                        ${translateBtnHTML ? `<div style="padding:4px 0 0">${translateBtnHTML}</div>` : ''}
-                    </div>
-                    <div class="ep-info">
-                        <div class="ep-title">${epTitle}</div>
-                        <div class="ep-meta-row">
-                            ${epRating ? `<span class="ep-rating">★ ${epRating}<span class="ep-rating-count">${epVotes ? ` (${epVotes})` : ''}</span></span>` : ''}
-                            ${epDate ? `<span class="ep-date"><i class="fa-regular fa-calendar" style="font-size:9px"></i>${epDate}</span>` : ''}
+                return `<div class="ep-card" style="flex-direction:column;padding-bottom:0" onclick="changeEpisode(${epNum}, this)">
+                    <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0 4px">
+                        <div class="ep-thumb-wrap">
+                            ${thumbHTML}
+                            <span class="ep-badge">EP ${epNum}</span>
+                            ${runtime ? `<span class="ep-duration">${runtime}</span>` : ''}
                         </div>
-                        ${synopsisHTML}
+                        <div class="ep-info" style="padding:2px 0">
+                            <div class="ep-title">${epTitle}</div>
+                            <div class="ep-meta-row">
+                                ${epRating ? `<span class="ep-rating">★ ${epRating}<span class="ep-rating-count">${epVotes ? ` (${epVotes})` : ''}</span></span>` : ''}
+                                ${epDate ? `<span class="ep-date"><i class="fa-regular fa-calendar" style="font-size:9px"></i>${epDate}</span>` : ''}
+                            </div>
+                            ${synopsisHTML}
+                        </div>
+                    </div>
+                    <div class="ep-action-row" onclick="event.stopPropagation()">
+                        <button class="ep-action-btn ep-btn-watch" onclick="changeEpisode(${epNum}, this.closest('.ep-card')); document.getElementById('movieModal').scrollTo({top:0,behavior:'smooth'})">
+                            <i class="fa-solid fa-play" style="font-size:8px"></i> Watch
+                        </button>
+                        <button class="ep-action-btn ep-btn-download" onclick="(function(){const id=window.currentMediaId,s=document.getElementById('seasonSel').value||1;window.open('https://vidvault.ru/tv/'+id+'/'+s+'/${epNum}','_blank')})()">
+                            <i class="fa-solid fa-download" style="font-size:8px"></i> Download
+                        </button>
+                        ${epOverview ? `<button class="ep-action-btn ep-btn-translate" id="transbtn-${epId}" onclick="translateEpSynopsis('${epId}', this, event)">See Translation</button>` : ''}
                     </div>
                 </div>`;
             }).join('');
@@ -6352,7 +6397,7 @@
             // Toggle: jika sudah diterjemahkan, balik ke EN
             if (btn.getAttribute('data-translated') === '1') {
                 synEl.textContent = originalText;
-                btn.textContent = 'Translate to Indonesian';
+                btn.textContent = 'See Translation';
                 btn.setAttribute('data-translated', '0');
                 return;
             }
@@ -6361,7 +6406,7 @@
             // Cek cache
             if (_epTranslateCache[epId]) {
                 synEl.textContent = _epTranslateCache[epId];
-                btn.textContent = 'View in English';
+                btn.textContent = 'See Original';
                 btn.setAttribute('data-translated', '1');
                 return;
             }
@@ -6372,10 +6417,10 @@
                 const translated = data[0].map(x => x[0]).join('');
                 _epTranslateCache[epId] = translated;
                 synEl.textContent = translated;
-                btn.textContent = 'View in English';
+                btn.textContent = 'See Original';
                 btn.setAttribute('data-translated', '1');
             } catch(e) {
-                btn.textContent = 'Translate to Indonesian';
+                btn.textContent = 'See Translation';
             }
         }
 
@@ -7102,6 +7147,265 @@
                     <i class="fa-solid fa-star"></i>~${imdbEst} IMDb
                 </span>`;
             bar.style.display = 'flex';
+        }
+
+        // ===== EXPLORE SECTION (Search Empty State) =====
+        let _currentExploreTab = 'trending';
+        let _currentGenreId = null;
+        let _exploreLoading = false;
+
+        const EXPLORE_GENRES_MOVIE = [
+            {id:28,name:'Action'},{id:35,name:'Comedy'},{id:18,name:'Drama'},
+            {id:27,name:'Horror'},{id:10749,name:'Romance'},{id:878,name:'Sci-Fi'},
+            {id:53,name:'Thriller'},{id:16,name:'Animation'},{id:12,name:'Adventure'},
+            {id:80,name:'Crime'},{id:14,name:'Fantasy'},{id:99,name:'Documentary'}
+        ];
+
+        function initExploreSection() {
+            _currentExploreTab = 'trending';
+            _currentGenreId = null;
+            document.querySelectorAll('[id^="exploreTab-"]').forEach(t => t.classList.remove('active'));
+            const tt = document.getElementById('exploreTab-trending');
+            if (tt) tt.classList.add('active');
+            document.getElementById('genreChipsRow').style.display = 'none';
+            loadExploreTrending();
+        }
+
+        function switchExploreTab(tab, el) {
+            _currentExploreTab = tab;
+            document.querySelectorAll('[id^="exploreTab-"]').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            if (tab === 'trending') {
+                document.getElementById('genreChipsRow').style.display = 'none';
+                loadExploreTrending();
+            } else {
+                buildGenreChips();
+                document.getElementById('genreChipsRow').style.display = 'flex';
+                if (!_currentGenreId) _currentGenreId = EXPLORE_GENRES_MOVIE[0].id;
+                loadExploreGenre(_currentGenreId);
+            }
+        }
+
+        function buildGenreChips() {
+            const row = document.getElementById('genreChipsRow');
+            if (!row || row.dataset.built) return;
+            row.dataset.built = '1';
+            row.innerHTML = EXPLORE_GENRES_MOVIE.map(g =>
+                `<div class="genre-explore-chip ${g.id === (_currentGenreId || EXPLORE_GENRES_MOVIE[0].id) ? 'active' : ''}"
+                      id="gc-${g.id}" onclick="selectExploreGenre(${g.id}, this)">${g.name}</div>`
+            ).join('');
+        }
+
+        function selectExploreGenre(gid, el) {
+            _currentGenreId = gid;
+            document.querySelectorAll('.genre-explore-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            loadExploreGenre(gid);
+        }
+
+        async function loadExploreTrending() {
+            if (_exploreLoading) return;
+            _exploreLoading = true;
+            const grid = document.getElementById('exploreGrid');
+            if (!grid) { _exploreLoading = false; return; }
+            grid.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#333;font-size:11px">Loading...</div>`;
+            try {
+                const data = await fetchWithCache(`https://api.themoviedb.org/3/trending/all/week?api_key=${API_KEY}&language=en-US`);
+                const items = (data.results || []).filter(m => m.backdrop_path && (m.media_type === 'movie' || m.media_type === 'tv'));
+                renderExploreGrid(grid, items.slice(0, 12));
+            } catch(e) {
+                grid.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#333;font-size:11px">Failed to load.</div>`;
+            }
+            _exploreLoading = false;
+        }
+
+        async function loadExploreGenre(gid) {
+            if (_exploreLoading) return;
+            _exploreLoading = true;
+            const grid = document.getElementById('exploreGrid');
+            if (!grid) { _exploreLoading = false; return; }
+            grid.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#333;font-size:11px">Loading...</div>`;
+            try {
+                const data = await fetchWithCache(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&with_genres=${gid}&page=1`);
+                const items = (data.results || []).filter(m => m.backdrop_path);
+                renderExploreGrid(grid, items.slice(0, 12), 'movie');
+            } catch(e) {
+                grid.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#333;font-size:11px">Failed to load.</div>`;
+            }
+            _exploreLoading = false;
+        }
+
+        function renderExploreGrid(grid, items, forceType) {
+            if (!items.length) {
+                grid.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#333;font-size:11px">No results.</div>`;
+                return;
+            }
+            grid.innerHTML = items.map(m => {
+                const type = forceType || m.media_type || 'movie';
+                const title = m.title || m.name || '';
+                const rating = m.vote_average ? m.vote_average.toFixed(1) : '';
+                return `<div onclick="openModal(${m.id},'${type}');closeSearch()" style="position:relative;border-radius:10px;overflow:hidden;cursor:pointer;background:#111;aspect-ratio:16/9">
+                    <img src="https://image.tmdb.org/t/p/w300${m.backdrop_path}" loading="lazy"
+                         onload="this.style.opacity=1"
+                         style="opacity:0;width:100%;height:100%;object-fit:cover;transition:opacity 0.3s">
+                    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.1) 55%,transparent 100%)"></div>
+                    <div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px">
+                        <div style="font-size:10px;font-weight:700;color:#fff;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div>
+                        ${rating ? `<div style="font-size:9px;color:#f5c518;font-weight:700;margin-top:1px">★ ${rating}</div>` : ''}
+                    </div>
+                    ${type === 'tv' ? `<div style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.6);border-radius:4px;font-size:8px;font-weight:700;color:#aaa;padding:2px 5px">TV</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        // ===== DUMMY stub — keep for safety if anything still calls old award fns =====
+        function initAwardFilters() {}
+        function loadAwardNominees() {}
+        function switchAwardTab() {}
+
+        // ===== OLD AWARD DATA (removed) — kept as empty to avoid reference errors =====
+        const AWARD_CONFIG = {
+            oscar: {
+                years: [2024, 2023, 2022, 2021, 2020, 2019, 2018],
+                categories: [
+                    {label:'Best Picture', keyword:'Best Picture'},
+                    {label:'Best Director', keyword:'Best Director'},
+                    {label:'Best Actor', keyword:'Best Actor'},
+                    {label:'Best Actress', keyword:'Best Actress'},
+                    {label:'Best Animated', keyword:'Best Animated Feature'},
+                    {label:'Best Foreign', keyword:'Best International Feature'},
+                ]
+            },
+            emmy: {
+                years: [2024, 2023, 2022, 2021, 2020, 2019, 2018],
+                categories: [
+                    {label:'Drama Series', keyword:'Outstanding Drama Series'},
+                    {label:'Comedy Series', keyword:'Outstanding Comedy Series'},
+                    {label:'Limited Series', keyword:'Outstanding Limited Series'},
+                    {label:'Lead Drama Actor', keyword:'Outstanding Lead Actor Drama'},
+                    {label:'Lead Drama Actress', keyword:'Outstanding Lead Actress Drama'},
+                ]
+            },
+            globe: {
+                years: [2024, 2023, 2022, 2021, 2020, 2019, 2018],
+                categories: [
+                    {label:'Best Picture Drama', keyword:'Best Motion Picture Drama'},
+                    {label:'Best Picture Comedy', keyword:'Best Motion Picture Comedy'},
+                    {label:'Best TV Drama', keyword:'Best TV Series Drama'},
+                    {label:'Best TV Comedy', keyword:'Best TV Series Comedy'},
+                    {label:'Best Director', keyword:'Best Director Motion Picture'},
+                ]
+            }
+        };
+
+        // Map award year+category keyword → list of TMDB movie/tv IDs (curated)
+        const AWARD_DATA = {
+            // OSCAR 2024
+            'oscar|2024|Best Picture': [{id:792307,type:'movie'},{id:466420,type:'movie'},{id:872585,type:'movie'},{id:906126,type:'movie'},{id:508883,type:'movie'},{id:945961,type:'movie'}],
+            'oscar|2024|Best Director': [{id:872585,type:'movie'},{id:466420,type:'movie'},{id:792307,type:'movie'},{id:508883,type:'movie'},{id:324552,type:'movie'}],
+            'oscar|2024|Best Actor': [{id:792307,type:'movie'},{id:872585,type:'movie'},{id:466420,type:'movie'},{id:906126,type:'movie'},{id:1052590,type:'movie'}],
+            'oscar|2024|Best Actress': [{id:508883,type:'movie'},{id:792307,type:'movie'},{id:466420,type:'movie'},{id:906126,type:'movie'},{id:945961,type:'movie'}],
+            'oscar|2024|Best Animated Feature': [{id:1022789,type:'movie'},{id:894205,type:'movie'},{id:1099873,type:'movie'},{id:976573,type:'movie'}],
+            'oscar|2024|Best International Feature': [{id:985939,type:'movie'},{id:1105372,type:'movie'},{id:998484,type:'movie'},{id:840430,type:'movie'}],
+            // OSCAR 2023
+            'oscar|2023|Best Picture': [{id:545611,type:'movie'},{id:361743,type:'movie'},{id:674324,type:'movie'},{id:804150,type:'movie'},{id:817758,type:'movie'},{id:507089,type:'movie'}],
+            'oscar|2023|Best Director': [{id:545611,type:'movie'},{id:674324,type:'movie'},{id:361743,type:'movie'},{id:804150,type:'movie'}],
+            'oscar|2023|Best Actor': [{id:545611,type:'movie'},{id:361743,type:'movie'},{id:674324,type:'movie'},{id:804150,type:'movie'}],
+            'oscar|2023|Best Actress': [{id:674324,type:'movie'},{id:545611,type:'movie'},{id:804150,type:'movie'},{id:817758,type:'movie'}],
+            'oscar|2023|Best Animated Feature': [{id:508947,type:'movie'},{id:590706,type:'movie'},{id:529203,type:'movie'}],
+            'oscar|2023|Best International Feature': [{id:753342,type:'movie'},{id:804150,type:'movie'},{id:809194,type:'movie'}],
+            // OSCAR 2022
+            'oscar|2022|Best Picture': [{id:284053,type:'movie'},{id:370172,type:'movie'},{id:603,type:'movie'},{id:512195,type:'movie'},{id:522831,type:'movie'}],
+            'oscar|2022|Best Director': [{id:512195,type:'movie'},{id:370172,type:'movie'},{id:284053,type:'movie'},{id:522831,type:'movie'}],
+            'oscar|2022|Best Animated Feature': [{id:508947,type:'movie'},{id:438695,type:'movie'},{id:877703,type:'movie'}],
+            'oscar|2022|Best International Feature': [{id:522831,type:'movie'},{id:637649,type:'movie'},{id:628562,type:'movie'}],
+            // EMMY 2024
+            'emmy|2024|Outstanding Drama Series': [{id:1396,type:'tv'},{id:1399,type:'tv'},{id:60735,type:'tv'},{id:84958,type:'tv'},{id:95396,type:'tv'}],
+            'emmy|2024|Outstanding Comedy Series': [{id:2316,type:'tv'},{id:66732,type:'tv'},{id:76479,type:'tv'},{id:37854,type:'tv'}],
+            'emmy|2024|Outstanding Limited Series': [{id:119051,type:'tv'},{id:108978,type:'tv'},{id:83867,type:'tv'}],
+            'emmy|2024|Outstanding Lead Actor Drama': [{id:1396,type:'tv'},{id:1399,type:'tv'},{id:95396,type:'tv'}],
+            'emmy|2024|Outstanding Lead Actress Drama': [{id:84958,type:'tv'},{id:66732,type:'tv'},{id:1396,type:'tv'}],
+            'emmy|2023|Outstanding Drama Series': [{id:87108,type:'tv'},{id:1396,type:'tv'},{id:60735,type:'tv'},{id:95396,type:'tv'}],
+            'emmy|2023|Outstanding Comedy Series': [{id:2316,type:'tv'},{id:66732,type:'tv'},{id:1421,type:'tv'}],
+            'emmy|2023|Outstanding Limited Series': [{id:119051,type:'tv'},{id:108978,type:'tv'}],
+            // GOLDEN GLOBE 2024
+            'globe|2024|Best Motion Picture Drama': [{id:872585,type:'movie'},{id:945961,type:'movie'},{id:466420,type:'movie'},{id:792307,type:'movie'},{id:1022789,type:'movie'}],
+            'globe|2024|Best Motion Picture Comedy': [{id:792307,type:'movie'},{id:508883,type:'movie'},{id:840430,type:'movie'},{id:924023,type:'movie'}],
+            'globe|2024|Best TV Series Drama': [{id:87108,type:'tv'},{id:95396,type:'tv'},{id:84958,type:'tv'},{id:60625,type:'tv'}],
+            'globe|2024|Best TV Series Comedy': [{id:2316,type:'tv'},{id:66732,type:'tv'},{id:37854,type:'tv'},{id:76479,type:'tv'}],
+            'globe|2024|Best Director Motion Picture': [{id:872585,type:'movie'},{id:466420,type:'movie'},{id:792307,type:'movie'}],
+            'globe|2023|Best Motion Picture Drama': [{id:545611,type:'movie'},{id:674324,type:'movie'},{id:361743,type:'movie'},{id:804150,type:'movie'}],
+            'globe|2023|Best Motion Picture Comedy': [{id:545611,type:'movie'},{id:674324,type:'movie'},{id:507089,type:'movie'}],
+            'globe|2023|Best TV Series Drama': [{id:87108,type:'tv'},{id:1396,type:'tv'},{id:60735,type:'tv'}],
+            'globe|2023|Best TV Series Comedy': [{id:2316,type:'tv'},{id:66732,type:'tv'},{id:1421,type:'tv'}],
+        };
+
+        function switchAwardTab(tab, el) {
+            _currentAwardTab = tab;
+            document.querySelectorAll('[id^="awardTab-"]').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            initAwardFilters();
+            loadAwardNominees();
+        }
+
+        function initAwardFilters() {
+            const tab = _currentAwardTab;
+            const config = AWARD_CONFIG[tab];
+            const yearSel = document.getElementById('awardYearSel');
+            const catSel = document.getElementById('awardCatSel');
+            if (!yearSel || !catSel) return;
+            yearSel.innerHTML = config.years.map(y => `<option value="${y}">${y}</option>`).join('');
+            catSel.innerHTML = config.categories.map(c => `<option value="${c.keyword}">${c.label}</option>`).join('');
+        }
+
+        async function loadAwardNominees() {
+            const tab = _currentAwardTab;
+            const year = document.getElementById('awardYearSel')?.value;
+            const cat = document.getElementById('awardCatSel')?.value;
+            const grid = document.getElementById('awardGrid');
+            if (!grid || !year || !cat) return;
+
+            const key = `${tab}|${year}|${cat}`;
+            const nominees = AWARD_DATA[key];
+
+            if (!nominees || nominees.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1;padding:24px;text-align:center;color:#333;font-size:12px">No data for this selection.</div>`;
+                return;
+            }
+
+            grid.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;color:#333;font-size:10px;animation:pulse 1s infinite">Loading...</div>`;
+
+            try {
+                const items = await Promise.all(nominees.map(n =>
+                    fetchWithCache(`https://api.themoviedb.org/3/${n.type}/${n.id}?api_key=${API_KEY}&language=en-US`)
+                        .then(d => ({...d, _type: n.type}))
+                        .catch(() => null)
+                ));
+
+                const valid = items.filter(m => m && m.poster_path);
+                if (!valid.length) {
+                    grid.innerHTML = `<div style="grid-column:1/-1;padding:24px;text-align:center;color:#333;font-size:12px">No data available.</div>`;
+                    return;
+                }
+
+                grid.innerHTML = valid.map(m => {
+                    const title = m.title || m.name || '';
+                    const year2 = (m.release_date || m.first_air_date || '').split('-')[0];
+                    const rating = m.vote_average ? m.vote_average.toFixed(1) : '';
+                    return `<div class="post-card" onclick="openModal(${m.id},'${m._type}'); closeSearch()">
+                        <img src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0;width:100%;height:100%;object-fit:cover">
+                        <div class="card-title-overlay">
+                            <div class="card-title-text">${title}</div>
+                            <div class="card-meta-row">
+                                ${rating ? `<span class="card-star">★ ${rating}</span>` : ''}
+                                ${year2 ? `<span class="card-year">${year2}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch(e) {
+                grid.innerHTML = `<div style="grid-column:1/-1;padding:24px;text-align:center;color:#333;font-size:12px">Failed to load data.</div>`;
+            }
         }
 
         // ===== PULL TO REFRESH =====
