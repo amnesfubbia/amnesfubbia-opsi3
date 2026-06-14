@@ -2316,25 +2316,6 @@
             </div>
         </div>
         <!-- Search filter pills -->
-        <div id="searchFilterBar" style="display:none;padding:10px 16px;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:#000;border-bottom:1px solid #1c1c1c;position:sticky;top:54px;z-index:89;" class="flex no-scrollbar">
-            <select id="searchYearFilter" onchange="applySearchFilters()" style="flex:0 0 auto;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;outline:none;cursor:pointer">
-                <option value="">All Years</option>
-            </select>
-            <select id="searchGenreFilter" onchange="applySearchFilters()" style="flex:0 0 auto;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;outline:none;cursor:pointer">
-                <option value="">All Genres</option>
-                <option value="28">Action</option><option value="12">Adventure</option>
-                <option value="16">Animation</option><option value="35">Comedy</option>
-                <option value="80">Crime</option><option value="18">Drama</option>
-                <option value="14">Fantasy</option><option value="27">Horror</option>
-                <option value="10749">Romance</option><option value="878">Sci-Fi</option>
-                <option value="53">Thriller</option>
-            </select>
-            <select id="searchTypeFilter" onchange="applySearchFilters()" style="flex:0 0 auto;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;outline:none;cursor:pointer">
-                <option value="">All Types</option>
-                <option value="movie">Movie</option>
-                <option value="tv">Series</option>
-            </select>
-        </div>
         <div id="searchContent" style="display:none; flex-direction:column;">
             <div id="calendarHeader" class="hidden sticky-wrapper"></div>
             <div id="searchGrid" class="movie-grid"></div>
@@ -3842,6 +3823,16 @@
             if(castContainer && videoArea) { castContainer.after(videoArea); }
             if (document.exitFullscreen && document.fullscreenElement) { document.exitFullscreen(); }
             if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
+
+            // Scroll modal kembali ke atas agar tidak tampak hitam
+            const modal = document.getElementById('movieModal');
+            if (modal) modal.scrollTo({ top: 0, behavior: 'instant' });
+
+            // Force repaint agar carousel kembali ke ukuran normal segera
+            if (videoArea) {
+                videoArea.style.display = 'none';
+                requestAnimationFrame(() => { videoArea.style.display = ''; });
+            }
         }
 
         function toggleLsUI() {
@@ -5263,11 +5254,19 @@
                 // Untuk setiap item, pastikan judul Latin
                 const renderItems = data.results.map(async m => {
                     let title = m.title || m.name || '';
+                    const origTitle = m.original_title || m.original_name || '';
                     if (isNonLatin(title)) {
-                        try {
-                            const enM = await fetchWithCache(`https://api.themoviedb.org/3/${mediaType}/${m.id}?api_key=${API_KEY}&language=en-US`);
-                            title = enM.title || enM.name || title;
-                        } catch {}
+                        if (origTitle && !isNonLatin(origTitle)) {
+                            title = origTitle;
+                        } else {
+                            try {
+                                const enM = await fetchWithCache(`https://api.themoviedb.org/3/${mediaType}/${m.id}?api_key=${API_KEY}&language=en-US`);
+                                const enT = enM.title || enM.name || '';
+                                const enOrig = enM.original_title || enM.original_name || '';
+                                if (enT && !isNonLatin(enT)) title = enT;
+                                else if (enOrig && !isNonLatin(enOrig)) title = enOrig;
+                            } catch {}
+                        }
                     }
                     const releaseDate = m.release_date || m.first_air_date || '';
                     const year = releaseDate.split('-')[0];
@@ -7005,14 +7004,19 @@
                 // Resolve latin titles async
                 const resolveTitle = async (m) => {
                     let title = m.title || m.name || '';
+                    const origTitle = m.original_title || m.original_name || '';
                     if (isNonLatin(title)) {
-                        try {
-                            const en = await fetchWithCache(`https://api.themoviedb.org/3/${m._mtype}/${m.id}?api_key=${API_KEY}&language=en-US`);
-                            const enT = en.title || en.name || '';
-                            const origT = en.original_title || en.original_name || '';
-                            if (enT && !isNonLatin(enT)) title = enT;
-                            else if (origT && !isNonLatin(origT)) title = origT;
-                        } catch {}
+                        if (origTitle && !isNonLatin(origTitle)) {
+                            title = origTitle;
+                        } else {
+                            try {
+                                const en = await fetchWithCache(`https://api.themoviedb.org/3/${m._mtype}/${m.id}?api_key=${API_KEY}&language=en-US`);
+                                const enT = en.title || en.name || '';
+                                const enOrig = en.original_title || en.original_name || '';
+                                if (enT && !isNonLatin(enT)) title = enT;
+                                else if (enOrig && !isNonLatin(enOrig)) title = enOrig;
+                            } catch {}
+                        }
                     }
                     return { ...m, _resolvedTitle: title };
                 };
@@ -7530,12 +7534,6 @@
         ];
 
         function handleSearchFilterBtn() {
-            // Jika sedang mode search hasil → toggle filter bar biasa
-            if (window._isSearchMode) {
-                toggleSearchFilterBar();
-                return;
-            }
-            // Jika idle → buka decade modal
             openDecadeModal();
         }
 
