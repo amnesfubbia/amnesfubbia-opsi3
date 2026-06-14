@@ -2759,12 +2759,170 @@
 
         window.onload = () => {
             initFilters(); initHighlights(); loadFeed(); setupSwipe(); initSmartSearch(); initTvChannels();
-            // Pre-load YouTube IFrame API agar sudah siap saat reels dibuka
             loadYTApi();
             window.addEventListener('scroll', () => { 
                 document.getElementById('backToTop').style.display = window.scrollY > 500 ? 'flex' : 'none'; 
-            }); 
+            });
+            initModalSwipeGestures();
         };
+
+        // ===== SWIPE GESTURES FOR MODALS =====
+        // Swipe helper — threshold 25px, ratio 2.0
+        function addSwipe(el, onLeft, onRight, onUp, onDown, minDist = 25, maxRatio = 2.0) {
+            if (!el) return;
+            let sx = 0, sy = 0;
+            el.addEventListener('touchstart', e => {
+                if (e.touches.length !== 1) return;
+                sx = e.touches[0].clientX;
+                sy = e.touches[0].clientY;
+            }, { passive: true });
+            el.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].clientX - sx;
+                const dy = e.changedTouches[0].clientY - sy;
+                const adx = Math.abs(dx), ady = Math.abs(dy);
+                if (adx >= minDist && adx >= ady * maxRatio) {
+                    if (dx < 0 && onLeft) onLeft();
+                    else if (dx > 0 && onRight) onRight();
+                } else if (ady >= minDist && ady >= adx * maxRatio) {
+                    if (dy < 0 && onUp) onUp();
+                    else if (dy > 0 && onDown) onDown();
+                }
+            }, { passive: true });
+        }
+
+        // ── HOME TAB STATE ────────────────────────────────────────────────
+        const HOME_TABS = ['grid','likes','bookmarks'];
+        const HOME_IDS  = ['tabGrid','tabLikes','tabBookmark'];
+        let _curHomeTab = 'grid';
+
+        function setHomeTab(mode) {
+            if (!HOME_TABS.includes(mode)) return;
+            _curHomeTab = mode;
+            // update tab indicator
+            HOME_IDS.forEach((id, i) => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('active', HOME_TABS[i] === mode);
+            });
+            // selalu matikan semua highlight border
+            document.querySelectorAll('.highlight-item').forEach(i => i.classList.remove('active-hl'));
+        }
+
+        function initModalSwipeGestures() {
+            // Calendar: di-attach setelah render — lihat openCalendarModal()
+
+            // ── DECADE ────────────────────────────────────────────────────
+            const dcSwL = () => { const b = document.getElementById('dcTypeTV');    if (b && !b.classList.contains('active')) b.click(); };
+            const dcSwR = () => { const b = document.getElementById('dcTypeMovie'); if (b && !b.classList.contains('active')) b.click(); };
+            addSwipe(document.getElementById('dcTypeMovie')?.parentElement, dcSwL, dcSwR);
+            addSwipe(document.getElementById('decadeGrid'), dcSwL, dcSwR);
+
+            // ── SEARCH EXPLORE ────────────────────────────────────────────
+            const ETABS = ['trending','genres','new'];
+            const exL = () => { const c=ETABS.indexOf(_currentExploreTab||'trending'); if(c<ETABS.length-1){const n=ETABS[c+1];switchExploreTab(n,document.getElementById('exploreTab-'+n));} };
+            const exR = () => { const c=ETABS.indexOf(_currentExploreTab||'trending'); if(c>0){const p=ETABS[c-1];switchExploreTab(p,document.getElementById('exploreTab-'+p));} };
+            addSwipe(document.getElementById('exploreGrid'), exL, exR);
+            addSwipe(document.querySelector('#searchEmptyState .search-tabs'), exL, exR);
+
+            // ── ACTOR ─────────────────────────────────────────────────────
+            const acSwL = () => { if (!document.getElementById('actorTabReels').classList.contains('active')) switchActorTab('tv'); };
+            const acSwR = () => { if (!document.getElementById('actorTabGrid').classList.contains('active'))  switchActorTab('grid'); };
+            const actorModal = document.getElementById('actorModal');
+            let _acExclude = false;
+            actorModal.addEventListener('touchstart', e => {
+                _acExclude = !!e.target.closest('#actorKnownForWrapper');
+            }, { passive: true });
+            addSwipe(actorModal,
+                () => { if (!_acExclude) acSwL(); },
+                () => { if (!_acExclude) acSwR(); }
+            );
+
+            // ── HOME ──────────────────────────────────────────────────────
+            // Satu touchstart listener, satu touchend listener, di mainProfile
+            const mainProfile = document.getElementById('mainProfile');
+            let _hsx = 0, _hsy = 0, _hSkip = false;
+
+            mainProfile.addEventListener('touchstart', e => {
+                if (e.touches.length !== 1) { _hSkip = true; return; }
+                _hsx = e.touches[0].clientX;
+                _hsy = e.touches[0].clientY;
+                // skip jika touch di area yang tidak relevan
+                _hSkip =
+                    !!e.target.closest('#highlightList') ||
+                    !!e.target.closest('#recentlyViewedWrapper') ||
+                    !!e.target.closest('#filterBar') ||
+                    document.getElementById('movieModal').style.display === 'block' ||
+                    document.getElementById('searchOverlay').style.display === 'block' ||
+                    document.getElementById('actorModal').classList.contains('open');
+            }, { passive: true });
+
+            mainProfile.addEventListener('touchend', e => {
+                if (_hSkip) return;
+                const dx = e.changedTouches[0].clientX - _hsx;
+                const dy = e.changedTouches[0].clientY - _hsy;
+                const adx = Math.abs(dx), ady = Math.abs(dy);
+                if (adx >= 25 && adx >= ady * 2.0) {
+                    const c = HOME_TABS.indexOf(_curHomeTab);
+                    if (dx < 0 && c < HOME_TABS.length - 1) {
+                        document.getElementById(HOME_IDS[c + 1]).click();
+                    } else if (dx > 0 && c > 0) {
+                        document.getElementById(HOME_IDS[c - 1]).click();
+                    }
+                }
+            }, { passive: true });
+
+            // ── LIVE TV: swipe kiri/kanan ganti channel (di movieModal tv-mode) ──
+            const movieModal = document.getElementById('movieModal');
+            let _tvSwipeExclude = false;
+            movieModal.addEventListener('touchstart', e => {
+                _tvSwipeExclude = !!e.target.closest('#tvChannelSwitcher') || !movieModal.classList.contains('tv-mode');
+            }, { passive: true });
+            function _tvSwipeChange(dir) {
+                if (_tvSwipeExclude) return;
+                const allCh = [];
+                tvCategories.forEach(cat => cat.channels.forEach(ch => allCh.push(ch)));
+                const curTitle = (document.getElementById('mTitle')?.innerText || '').replace('● LIVE: ','').trim();
+                const idx = allCh.findIndex(c => c.name === curTitle);
+                const nextIdx = idx + dir;
+                if (nextIdx < 0 || nextIdx >= allCh.length) return;
+                const ch = allCh[nextIdx];
+                document.getElementById('mTitle').innerText = '● LIVE: ' + ch.name;
+                document.querySelectorAll('.tv-switcher-btn-new').forEach(b => {
+                    b.classList.toggle('active-ch', b.querySelector('.tv-switcher-name-new')?.textContent === ch.name);
+                });
+                // rebuild schedule
+                const switcher = document.getElementById('tvChannelSwitcher');
+                if (switcher) {
+                    const newSchedHTML = buildScheduleHTML(ch.name);
+                    let html = `<div id="tvChannelSwitcher">`;
+                    if (newSchedHTML) html += newSchedHTML;
+                    tvCategories.forEach(cat => {
+                        html += `<div class="tv-switcher-section-title">${cat.label}</div><div class="tv-switcher-grid-new">`;
+                        cat.channels.forEach(c2 => {
+                            html += `<div class="tv-switcher-btn-new ${c2.name===ch.name?'active-ch':''}" onclick="switchTvChannel('${c2.name}','${c2.url}',this)"><div class="tv-switcher-logo-new">${c2.logo}</div><div class="tv-switcher-name-new">${c2.name}</div></div>`;
+                        });
+                        html += `</div>`;
+                    });
+                    html += `</div>`;
+                    document.querySelector('#movieModal .ig-post-content').innerHTML = html;
+                }
+                playVid(ch.url);
+            }
+            addSwipe(movieModal,
+                () => _tvSwipeChange(1),
+                () => _tvSwipeChange(-1)
+            );
+
+            // highlight diklik → matikan tab indicator saja, swipe TETAP aktif
+            document.getElementById('highlightList').addEventListener('click', e => {
+                if (!e.target.closest('.highlight-item')) return;
+                HOME_IDS.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.remove('active');
+                });
+                // reset _curHomeTab ke grid agar swipe berikutnya mulai dari awal
+                _curHomeTab = 'grid';
+            });
+        }
 
         // --- TV MODAL LOGIC ---
         const tvCategories = [
@@ -3661,11 +3819,12 @@
             // Landscape overlay
             if (document.getElementById('landscapeOverlay').style.display === 'block') {
                 closeLandscapeSilently();
-                // pastikan modal film tetap visible setelah keluar landscape
+                // Pastikan modal film tetap tampil setelah keluar landscape
                 const movieModal = document.getElementById('movieModal');
-                if (movieModal && movieModal.style.display !== 'block') {
+                if (movieModal) {
                     movieModal.style.display = 'block';
                     document.body.style.overflow = 'hidden';
+                    document.body.classList.remove('landscape-active');
                 }
                 return;
             }
@@ -5233,6 +5392,41 @@
             headerHTML += '</div>';
             calendarHeader.innerHTML = headerHTML;
             filterByDate(new Date().toISOString().split('T')[0]);
+            // Swipe pada TAB BAR (Movie/Series) → ganti tab
+            const _calTabParent = document.getElementById('calTabMovie')?.parentElement;
+            addSwipe(_calTabParent,
+                () => { const tv = document.getElementById('calTabTv'); if (tv && !tv.classList.contains('active')) tv.click(); },
+                () => { const mv = document.getElementById('calTabMovie'); if (mv && !mv.classList.contains('active')) mv.click(); }
+            );
+            // Swipe pada AREA KONTEN (bawah date strip) → ganti tab juga
+            const _calList = document.getElementById('calendarList');
+            addSwipe(_calList,
+                () => { const tv = document.getElementById('calTabTv'); if (tv && !tv.classList.contains('active')) tv.click(); },
+                () => { const mv = document.getElementById('calTabMovie'); if (mv && !mv.classList.contains('active')) mv.click(); }
+            );
+            // Swipe pada DATE STRIP → hanya geser highlight chip, TIDAK load konten
+            // Konten baru load saat chip di-TAP
+            const _calDateStrip = document.getElementById('calDateStrip');
+            addSwipe(_calDateStrip,
+                () => { // kiri → highlight chip berikutnya (tanpa load)
+                    const chips = [...document.querySelectorAll('.date-chip')];
+                    const cur = chips.findIndex(c => c.classList.contains('active-date'));
+                    if (cur < chips.length - 1) {
+                        chips.forEach(c => c.classList.remove('active-date'));
+                        chips[cur + 1].classList.add('active-date');
+                        chips[cur + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                },
+                () => { // kanan → highlight chip sebelumnya (tanpa load)
+                    const chips = [...document.querySelectorAll('.date-chip')];
+                    const cur = chips.findIndex(c => c.classList.contains('active-date'));
+                    if (cur > 0) {
+                        chips.forEach(c => c.classList.remove('active-date'));
+                        chips[cur - 1].classList.add('active-date');
+                        chips[cur - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                }
+            );
         }
 
         function switchCalTab(type, el) {
@@ -6725,8 +6919,13 @@
         function toggleLib(k) { let items = JSON.parse(localStorage.getItem(k) || '[]'); const idx = items.findIndex(x => x.id == window.currentMediaId); idx > -1 ? items.splice(idx,1) : items.push({id: window.currentMediaId, type: window.currentMediaType}); localStorage.setItem(k, JSON.stringify(items)); updateLibButtons(window.currentMediaId); }
         async function switchTab(mode, el) { 
             closeModal(); closeSearch(); closeActorModal(); closeTvModal(); 
-            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active')); 
-            if(el) el.classList.add('active'); 
+            // setHomeTab handles tab indicator + highlight border clear
+            if (typeof setHomeTab === 'function' && HOME_TABS.includes(mode)) {
+                setHomeTab(mode);
+            } else {
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                if (el) el.classList.add('active');
+            }
             if(mode === 'bookmarks') updateActiveNav(document.getElementById('bookmarkBtnNav')); 
             else updateActiveNav(document.getElementById('homeBtnNav'));
             const grid = document.getElementById('feedGrid'); grid.innerHTML = ''; 
@@ -7308,26 +7507,52 @@
                 if (labelEl) labelEl.textContent = 'More Like This';
 
                 section.style.display = 'block';
-                scroll.innerHTML = items.map(m => {
+                const similarFragment = document.createElement('div');
+                similarFragment.style.display = 'contents';
+                scroll.innerHTML = '';
+
+                for (const m of items) {
                     const r = m.vote_average ? m.vote_average.toFixed(1) : '';
                     const rawT = m.title || m.name || '';
                     const rawO = m.original_title || m.original_name || '';
-                    const title = (!isNonLatin(rawT)) ? rawT : ((!isNonLatin(rawO)) ? rawO : rawT);
+                    let title = (!isNonLatin(rawT)) ? rawT : ((!isNonLatin(rawO)) ? rawO : rawT);
                     const year = (m.release_date || m.first_air_date || '').split('-')[0];
                     const badge = m._src === 'director'
                         ? `<div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.85);color:#ccc;font-size:7px;font-weight:700;padding:2px 5px;border-radius:3px;line-height:1.3;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">By ${m._dirName}</div>` : '';
-                    return `<div class="similar-card" onclick="openModal(${m.id}, '${type}')">
-                        <img class="similar-poster" src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onload="this.classList.add('loaded')">
+                    const cardEl = document.createElement('div');
+                    cardEl.className = 'similar-card';
+                    cardEl.onclick = () => openModal(m.id, type);
+                    cardEl.innerHTML = `<img class="similar-poster" src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onload="this.classList.add('loaded')">
                         ${badge}
                         <div class="similar-card-overlay">
-                            <div class="similar-card-title">${title}</div>
+                            <div class="similar-card-title" id="sct-${m.id}">${title}</div>
                             <div class="similar-card-meta">
                                 <span><i class="fa-solid fa-star similar-card-star"></i>${r || '—'}</span>
                                 <span>${year || ''}</span>
                             </div>
-                        </div>
-                    </div>`;
-                }).join('');
+                        </div>`;
+                    scroll.appendChild(cardEl);
+                    // async resolve non-latin
+                    if (isNonLatin(title)) {
+                        fetchWithCache(`https://api.themoviedb.org/3/${type}/${m.id}?api_key=${API_KEY}&language=en-US&append_to_response=translations`)
+                            .then(d => {
+                                const enT = d.title || d.name || '';
+                                const origT = d.original_title || d.original_name || '';
+                                let resolved = '';
+                                if (enT && !isNonLatin(enT)) resolved = enT;
+                                else if (origT && !isNonLatin(origT)) resolved = origT;
+                                else if (d.translations?.translations) {
+                                    const en = d.translations.translations.find(t => t.iso_639_1 === 'en');
+                                    const enName = en && (en.data.title || en.data.name);
+                                    if (enName && !isNonLatin(enName)) resolved = enName;
+                                }
+                                if (resolved) {
+                                    const el = document.getElementById(`sct-${m.id}`);
+                                    if (el) el.textContent = resolved;
+                                }
+                            }).catch(() => {});
+                    }
+                }
             } catch(e) {}
         }
 
