@@ -2462,7 +2462,7 @@
         </div>
     </div>
 
-    <div id="actorModal" class="actor-modal">
+    <div id="actorModal" class="actor-modal" style="display:none">
         <!-- Back to top button inside actor modal -->
         <div id="actorBackToTop" onclick="document.getElementById('actorModal').scrollTo({top:0,behavior:'smooth'})"
              style="display:none;position:fixed;bottom:90px;right:20px;z-index:8600;
@@ -5360,9 +5360,24 @@
         }
 
         let calendarMediaType = 'movie';
+        // Cache genre map agar tidak fetch ulang setiap ganti tanggal/tab
+        const _calGenreCache = { movie: null, tv: null };
+        async function getGenreMap(type) {
+            if (_calGenreCache[type]) return _calGenreCache[type];
+            try {
+                const res = await fetch(`https://api.themoviedb.org/3/genre/${type}/list?api_key=${API_KEY}&language=en-US`);
+                const data = await res.json();
+                const map = {};
+                data.genres.forEach(g => map[g.id] = g.name);
+                _calGenreCache[type] = map;
+                return map;
+            } catch (_) { return {}; }
+        }
 
         async function openComingSoon() {
             calendarMediaType = 'movie'; // reset tiap buka
+            // prefetch genre map movie+tv sekaligus agar tidak fetch saat ganti tab
+            getGenreMap('movie'); getGenreMap('tv');
             const overlay = document.getElementById('searchOverlay');
             const calendarHeader = document.getElementById('calendarHeader');
             overlay.style.display = 'block';
@@ -5442,6 +5457,7 @@
         async function filterByDate(dateStr, el) {
             if(el) { document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active-date')); el.classList.add('active-date'); }
             const list = document.getElementById('calendarList');
+            if (!list) return;
             list.innerHTML = skeletonListCard(4);
             try {
                 const mediaType = calendarMediaType || 'movie';
@@ -5451,8 +5467,7 @@
                 } else {
                     apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&primary_release_date.gte=${dateStr}&primary_release_date.lte=${dateStr}&include_adult=false`;
                 }
-                const res = await fetch(apiUrl);
-                const data = await res.json();
+                const data = await fetchWithCache(apiUrl);
 
                 if (!data.results || data.results.length === 0) {
                     const typeLabel = mediaType === 'tv' ? 'serial' : 'film';
@@ -5464,18 +5479,15 @@
                     return;
                 }
 
+                // genre map — dari cache, tidak fetch ulang jika sudah ada
                 const gEndpoint = mediaType === 'tv' ? 'tv' : 'movie';
-                const gRes = await fetch(`https://api.themoviedb.org/3/genre/${gEndpoint}/list?api_key=${API_KEY}&language=en-US`);
-                const gData = await gRes.json();
-                const genreMap = {}; gData.genres.forEach(g => genreMap[g.id] = g.name);
+                const genreMap = await getGenreMap(gEndpoint);
 
                 list.innerHTML = '';
-                // Untuk setiap item, pastikan judul Latin
                 const renderItems = data.results.map(async m => {
                     let title = m.title || m.name || '';
                     const origLocal = m.original_title || m.original_name || '';
                     if (isNonLatin(title)) {
-                        // cek original_title dari objek lokal dulu
                         if (origLocal && !isNonLatin(origLocal)) {
                             title = origLocal;
                         } else {
@@ -5485,7 +5497,7 @@
                                 const origT = enM.original_title || enM.original_name || '';
                                 if (enT && !isNonLatin(enT)) title = enT;
                                 else if (origT && !isNonLatin(origT)) title = origT;
-                            } catch {}
+                            } catch (_) {}
                         }
                     }
                     const releaseDate = m.release_date || m.first_air_date || '';
@@ -5518,7 +5530,10 @@
                     list.appendChild(item);
                 });
                 await Promise.allSettled(renderItems);
-            } catch (e) { list.innerHTML = '<div class="text-center py-10 text-zinc-600 text-xs">Failed to load data.</div>'; }
+            } catch (e) {
+                const list2 = document.getElementById('calendarList');
+                if (list2) list2.innerHTML = '<div class="text-center py-10 text-zinc-600 text-xs">Failed to load data.</div>';
+            }
         }
 
         function searchByCast(castId) { 
@@ -5531,7 +5546,7 @@
             showSearchResults();
             document.body.style.overflow='hidden'; 
             history.pushState({view: 'search'}, "");
-            loadFeed(true); 
+
         }
 
         function initHighlights() { 
@@ -6436,9 +6451,10 @@
             const _genreIds = (dId.genres || []).map(g => g.id);
             loadSimilarMovies(id, type, _genreIds);
 
-            // Collection/Franchise (movie only)
-            if (type === 'movie' && dId.belongs_to_collection) {
-                loadCollection(dId.belongs_to_collection.id, id);
+            // Collection/Franchise (movie only) — gunakan dEn karena belongs_to_collection hanya ada di en-US
+            if (type === 'movie' && (dEn.belongs_to_collection || dId.belongs_to_collection)) {
+                const collData = dEn.belongs_to_collection || dId.belongs_to_collection;
+                loadCollection(collData.id, id);
             }
 
             // Poster gallery (non-blocking)
@@ -6717,7 +6733,7 @@
 
         let _allEpisodes = [];
         let _epPage = 0;
-        const EP_PER_PAGE = 10;
+        const EP_PER_PAGE = 15;
 
         async function loadEpisodes() { 
             activeSeason = document.getElementById('seasonSel').value;
@@ -7255,7 +7271,7 @@
                             <img class="notif-poster" src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1">
                             <div class="notif-info">
                                 <div class="notif-title">${m._resolvedTitle}</div>
-                                <div class="notif-meta">Movie · Released today</div>
+                                <div class="notif-meta">Movie · Released today${rating > 0 ? ' · <span style="color:#f5c518;font-weight:700">★ ' + rating + '</span>' : ''}</div>
                             </div>
                             </div>`;
                     }).join('');
@@ -7268,7 +7284,7 @@
                             <img class="notif-poster" src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1">
                             <div class="notif-info">
                                 <div class="notif-title">${m._resolvedTitle}</div>
-                                <div class="notif-meta">Series · Airing today</div>
+                                <div class="notif-meta">Series · Airing today${rating > 0 ? ' · <span style="color:#f5c518;font-weight:700">★ ' + rating + '</span>' : ''}</div>
                             </div>
                             </div>`;
                     }).join('');
@@ -7869,13 +7885,6 @@
                 grid.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#666;font-size:11px">Failed to load.</div>`;
             }
         }
-
-        // ===== DUMMY stubs — keep for safety =====
-        function initAwardFilters() {}
-        function loadAwardNominees() {}
-        function switchAwardTab() {}
-
-        const AWARD_CONFIG = {};
 
         // ===== COLLECTION / FRANCHISE =====
         async function loadCollection(collectionId, currentMovieId) {
