@@ -2355,6 +2355,7 @@
             <div class="search-tab active" id="stab-all" onclick="setSearchTab('multi',this)">All</div>
             <div class="search-tab" id="stab-movie" onclick="setSearchTab('movie',this)">Movie</div>
             <div class="search-tab" id="stab-tv" onclick="setSearchTab('tv',this)">Series</div>
+            <div class="search-tab" id="stab-person" onclick="setSearchTab('person',this)">Actor</div>
         </div>
         <!-- Empty/idle state -->
         <div id="searchEmptyState" style="padding:0 0 40px;">
@@ -2933,6 +2934,30 @@
             const exR = () => { const c=ETABS.indexOf(_currentExploreTab||'trending'); if(c>0){const p=ETABS[c-1];switchExploreTab(p,document.getElementById('exploreTab-'+p));} };
             addSwipe(document.getElementById('exploreGrid'), exL, exR);
             addSwipe(document.querySelector('#searchEmptyState .search-tabs'), exL, exR);
+
+            // ── SEARCH TYPE TABS swipe (All/Movie/Series/Actor) ──────────────
+            const STAB_IDS    = ['stab-all','stab-movie','stab-tv','stab-person'];
+            const STAB_TYPES  = ['multi','movie','tv','person'];
+            let _stabSx = 0, _stabSy = 0;
+            const searchTypeTabs = document.getElementById('searchTypeTabs');
+            const searchOverlay  = document.getElementById('searchOverlay');
+            searchOverlay.addEventListener('touchstart', e => {
+                if (!window._isSearchMode) return;
+                _stabSx = e.touches[0].clientX;
+                _stabSy = e.touches[0].clientY;
+            }, { passive: true });
+            searchOverlay.addEventListener('touchend', e => {
+                if (!window._isSearchMode) return;
+                const dx = e.changedTouches[0].clientX - _stabSx;
+                const dy = e.changedTouches[0].clientY - _stabSy;
+                const adx = Math.abs(dx), ady = Math.abs(dy);
+                if (adx < 20 || adx < ady * 1.2) return;
+                const cur = STAB_TYPES.indexOf(searchTabType);
+                let next = dx < 0 ? cur + 1 : cur - 1;
+                if (next < 0 || next >= STAB_TYPES.length) return;
+                const el = document.getElementById(STAB_IDS[next]);
+                if (el) setSearchTab(STAB_TYPES[next], el);
+            }, { passive: true });
 
             // ── ACTOR ─────────────────────────────────────────────────────
             const acSwL = () => { if (!document.getElementById('actorTabReels').classList.contains('active')) switchActorTab('tv'); };
@@ -4015,6 +4040,14 @@
             }
 
             // Actor modal
+            if (window._actorManualClose) {
+                window._actorManualClose = false;
+                // Restore movieModal jika actor dibuka dari film
+                if (document.getElementById('movieModal').style.display === 'block') {
+                    document.body.style.overflow = 'hidden';
+                }
+                return;
+            }
             if (document.getElementById('actorModal').style.display === 'block') {
                 _closeActorModalSilent();
                 return;
@@ -4033,7 +4066,25 @@
                 return;
             }
 
-            // Movie modal biasa
+            // closeModal() tombol ← layar sudah handle — skip agar tidak double
+            if (window._modalManualClose) {
+                window._modalManualClose = false;
+                // Restore actor/movieografi jika perlu
+                if (window._fromMovieografi) {
+                    window._fromMovieografi = false;
+                    document.getElementById('movieografiModal').style.display = 'block';
+                    document.getElementById('movieografiModal').scrollTop = 0;
+                    document.body.style.overflow = 'hidden';
+                } else if (window._actorModalPendingReopen) {
+                    window._actorModalPendingReopen = null;
+                    document.getElementById('actorModal').style.display = 'block';
+                    document.getElementById('actorModal').scrollTop = 0;
+                    document.body.style.overflow = 'hidden';
+                }
+                return;
+            }
+
+            // Movie modal biasa (hardware back)
             if (document.getElementById('movieModal').style.display === 'block') {
                 _closeModalSilent();
                 // Jika film dibuka dari movieografi → kembalikan ke movieografi
@@ -4585,6 +4636,7 @@
         }
 
         function closeActorModal() {
+            window._actorManualClose = true; // flag agar popstate tidak double-handle
             document.getElementById('actorModal').style.display = 'none';
             if (document.getElementById('movieModal').style.display === 'block') {
                 const track = document.getElementById('carouselTrack');
@@ -4597,12 +4649,11 @@
                         track.appendChild(slide);
                     }
                 });
-                // body tetap hidden karena movieModal masih buka
-                history.replaceState({view: 'modal'}, '');
+                document.body.style.overflow = 'hidden';
             } else {
                 document.body.style.overflow = 'auto';
-                history.replaceState({view: 'home'}, '');
             }
+            history.back(); // pop state 'actor' agar stack bersih
         }
 
         // Buka modal film dari dalam actorModal (poster diklik)
@@ -6050,7 +6101,9 @@
             let url;
             if(currentCastId) { url = `https://api.themoviedb.org/3/person/${currentCastId}/combined_credits?api_key=${API_KEY}&language=en-US`; }
             else if(searchQuery) { 
-                if (searchTabType === 'multi' || searchTabType === 'person') {
+                if (searchTabType === 'person') {
+                    url = `https://api.themoviedb.org/3/search/person?query=${encodeURIComponent(searchQuery)}&api_key=${API_KEY}&page=${page}&include_adult=false`;
+                } else if (searchTabType === 'multi') {
                     url = `https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(searchQuery)}&api_key=${API_KEY}&page=${page}&include_adult=false`;
                 } else {
                     url = `https://api.themoviedb.org/3/search/${searchTabType}?query=${encodeURIComponent(searchQuery)}&api_key=${API_KEY}&page=${page}&include_adult=false`;
@@ -6139,7 +6192,33 @@
             // Dedup: kumpulkan ID yang sudah ada di grid
             const existingIds = new Set();
             grid.querySelectorAll('.post-card[data-id]').forEach(c => existingIds.add(c.dataset.id));
-            items.forEach(m => { 
+            items.forEach(m => {
+                // Tab Actor (HANYA saat search mode aktif & tab person)
+                if (window._isSearchMode && searchTabType === 'person') {
+                    if (!m.profile_path && !m.poster_path) return;
+                    if (existingIds.has(String(m.id))) return;
+                    existingIds.add(String(m.id));
+                    const card = document.createElement('div');
+                    card.className = 'post-card';
+                    card.dataset.id = m.id;
+                    card.onclick = function() { openActorProfile(m.id); };
+                    const imgSrc = m.profile_path
+                        ? `https://image.tmdb.org/t/p/w185${m.profile_path}`
+                        : `https://image.tmdb.org/t/p/w185${m.poster_path}`;
+                    const dept = m.known_for_department || 'Acting';
+                    let knownFor = '';
+                    if (m.known_for && m.known_for.length) {
+                        knownFor = m.known_for.map(k => k.title || k.name || '').filter(Boolean).slice(0,2).join(', ');
+                    }
+                    card.innerHTML = `<img src="${imgSrc}" loading="lazy" onload="this.style.opacity=1" style="opacity:0">
+                        <div class="card-title-overlay">
+                            <div class="card-title-text">${m.name || ''}</div>
+                            <div class="card-meta-row"><span class="card-type-label">${dept}</span></div>
+                            ${knownFor ? `<div style="font-size:9px;color:#aaa;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${knownFor}</div>` : ''}
+                        </div>`;
+                    fragment.appendChild(card);
+                    return;
+                }
                 if(!m.poster_path || m.media_type === 'person') return;
                 if(existingIds.has(String(m.id))) return; // skip duplikat
                 existingIds.add(String(m.id));
@@ -6210,6 +6289,11 @@
             document.getElementById('searchTypeTabs').style.display = 'none';
             window._isSearchMode = false;
             searchQuery = '';
+            // Reset tab ke All agar tidak persist ke home
+            searchTabType = 'multi';
+            document.querySelectorAll('#searchTypeTabs .search-tab').forEach(t => t.classList.remove('active'));
+            const stabAll = document.getElementById('stab-all');
+            if (stabAll) stabAll.classList.add('active');
         }
 
         function showSearchResults() {
@@ -6504,6 +6588,16 @@
             document.getElementById('mToggleBtn').classList.add('hidden');
             document.getElementById('mTranslateBtn').style.display = 'none';
             document.getElementById('seriesControl').classList.add('hidden');
+
+            // ── Clear semua section async agar tidak tampil data film sebelumnya ──
+            const _cs2 = document.getElementById('mCollectionSection'); if (_cs2) { _cs2.style.display='none'; const _csc=document.getElementById('mCollectionScroll'); if(_csc) _csc.innerHTML=''; }
+            const _ss2 = document.getElementById('mSimilarSection');    if (_ss2) _ss2.style.display='none';
+            const _pg2 = document.getElementById('mPosterGallery');     if (_pg2) { _pg2.style.display='none'; const _ps=document.getElementById('mPosterScroll'); if(_ps) _ps.innerHTML=''; }
+            const _rb2 = document.getElementById('mRatingBar');         if (_rb2) { _rb2.style.display='none'; _rb2.innerHTML=''; }
+            const _ig2 = document.getElementById('mInfoGrid');          if (_ig2) { _ig2.style.display='none'; _ig2.innerHTML=''; }
+            const _eg2 = document.getElementById('episodeGrid');        if (_eg2) _eg2.innerHTML='';
+            const _ep2 = document.getElementById('episodePagination'); if (_ep2) _ep2.innerHTML='';
+
             document.getElementById('movieModal').style.display = 'block'; 
             document.getElementById('movieModal').scrollTop = 0;
             document.getElementById('smartSearchDropdown').style.display = 'none'; 
@@ -6799,7 +6893,11 @@
             const _genreIds = (dId.genres || []).map(g => g.id);
             loadSimilarMovies(id, type, _genreIds);
 
-            // Collection/Franchise (movie only) — gunakan dEn karena belongs_to_collection hanya ada di en-US
+            // Collection/Franchise (movie only) — clear dulu sebelum load baru
+            const _csSec = document.getElementById('mCollectionSection');
+            const _csScr = document.getElementById('mCollectionScroll');
+            if (_csSec) { _csSec.style.display = 'none'; }
+            if (_csScr) { _csScr.innerHTML = ''; }
             if (type === 'movie' && (dEn.belongs_to_collection || dId.belongs_to_collection)) {
                 const collData = dEn.belongs_to_collection || dId.belongs_to_collection;
                 loadCollection(collData.id, id);
@@ -6859,7 +6957,8 @@
             }
         }
 
-        function closeModal() { 
+        function closeModal() {
+            window._modalManualClose = true; // flag agar popstate tidak double-handle
             const track = document.getElementById('carouselTrack'); 
             if(track) { 
                 track.querySelectorAll('iframe').forEach(f => { f.src = ""; f.remove(); }); 
@@ -6872,7 +6971,9 @@
             const _ig2 = document.getElementById('mInfoGrid'); if(_ig2){ _ig2.style.display='none'; _ig2.innerHTML=''; }
             const modal = document.getElementById('movieModal');
             modal.classList.remove('tv-mode');
-            modal.style.display = 'none'; 
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            history.back(); // pop state 'modal' agar stack bersih
             // Restore ig-post-content ke struktur asli jika sebelumnya TV mode
             const postContent = document.querySelector('#movieModal .ig-post-content');
             if (postContent && document.getElementById('tvChannelSwitcher')) {
@@ -8148,12 +8249,7 @@
         ];
 
         function handleSearchFilterBtn() {
-            // Jika sedang mode search hasil → toggle filter bar biasa
-            if (window._isSearchMode) {
-                toggleSearchFilterBar();
-                return;
-            }
-            // Jika idle → buka decade modal
+            // Selalu buka decade modal (baik saat idle maupun saat ada hasil search)
             openDecadeModal();
         }
 
