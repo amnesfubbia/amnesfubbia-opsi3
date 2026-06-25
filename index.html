@@ -2994,7 +2994,7 @@
             document.getElementById('livesportIframe').src = '';
             document.getElementById('livesportModal').style.display = 'none';
             document.body.style.overflow = 'hidden'; // tvModal masih terbuka
-            // Tidak replaceState — biarkan history kembali ke tvModal
+            history.replaceState({view: 'tv'}, '');
         }
         // Edit di sini saja untuk ubah semua nav sekaligus
         const NAV_ITEMS = [
@@ -3917,8 +3917,7 @@
             document.getElementById('mToggleBtn').classList.add('hidden');
             document.getElementById('mTranslateBtn').style.display = 'none';
             document.body.style.overflow = 'hidden';
-            // Push 2 state: tvModal sebagai "previous", lalu modal TV channel
-            if (wasTvOpen) history.pushState({view: 'tv'}, '');
+            // Push satu state saja — back langsung kembali ke tv
             history.pushState({view: 'tvChannel'}, '');
 
             const postContent = document.querySelector('#movieModal .ig-post-content');
@@ -4431,10 +4430,11 @@
                 _closeModalSilent();
                 document.getElementById('tvSearchInp').value = '';
                 document.getElementById('tvSearchBox').style.display = 'none';
-                renderTvList('');
+                renderTvList('', _currentTvTab || 'nasional');
                 document.getElementById('tvModal').style.display = 'block';
                 document.getElementById('tvModal').scrollTop = 0;
                 document.body.style.overflow = 'hidden';
+                history.replaceState({view: 'tv'}, '');
                 return;
             }
 
