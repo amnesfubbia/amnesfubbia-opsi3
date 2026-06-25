@@ -941,7 +941,7 @@
             flex: 1; font-size: 14px; font-weight: 800; color: #fff; letter-spacing: -0.3px;
         }
         .tv-live-dot {
-            width: 7px; height: 7px; border-radius: 50%; background: #ff3b30;
+            width: 7px; height: 7px; border-radius: 50%; background: #1a73e8;
             animation: livePulse 1.5s ease-in-out infinite; flex-shrink: 0;
         }
         @keyframes livePulse {
@@ -989,18 +989,63 @@
         /* LIVE badge on active channel */
         .tv-ch-live-badge {
             position: absolute; top: 5px; right: 5px;
-            background: #ff3b30; color: #fff;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: #fff;
             font-size: 6px; font-weight: 900; letter-spacing: 0.5px;
             padding: 1px 4px; border-radius: 3px;
             display: none;
         }
         .tv-ch-card.active-ch .tv-ch-live-badge { display: block; }
 
-        /* TV Player - full fit iframe, no clip hack */
-        .tv-mode #mainVideoArea { 
-            overflow: hidden; background: #000; 
-            aspect-ratio: 16/9; 
-            position: relative;
+        /* Sembunyikan modal controls saat landscape aktif — landscape punya controls sendiri */
+        .landscape-active #modalVideoControls { display: none !important; }
+        .tv-tab-bar {
+            display: flex; background: #000;
+            border-bottom: 1px solid #1a1a1a;
+            position: sticky; top: 54px; z-index: 199;
+        }
+        .tv-tab-item {
+            flex: 1; text-align: center; padding: 10px 4px;
+            font-size: 11px; font-weight: 700; color: #555;
+            cursor: pointer; border-bottom: 2px solid transparent;
+            transition: all 0.2s; letter-spacing: 0.2px;
+        }
+        .tv-tab-item.active-tv-tab {
+            color: #fff; border-bottom-color: #fff;
+        }
+        /* LiveSport full embed */
+        #tvLiveSportPane {
+            display: none;
+            position: fixed;
+            top: 108px;
+            left: 0; right: 0;
+            bottom: 64px;
+            background: #0a0a0a;
+            z-index: 9601;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        /* Channel pane wrapper */
+        #tvChannelPane {
+            display: block;
+        }
+        /* Sticky video player */
+        #tvPlayerArea {
+            display: none;
+            position: sticky;
+            top: 108px; /* topbar + tabbar */
+            z-index: 150;
+            background: #000;
+            width: 100%;
+            aspect-ratio: 16/9;
+        }
+        #tvPlayerArea iframe {
+            width: 100%; height: 100%; border: none; display: block;
+        }
+        /* Channel list scrolls independently below player */
+        #tvChannelList {
+            padding-bottom: 80px;
         }
         .tv-mode .carousel-slide { 
             overflow: hidden; position: relative; 
@@ -1135,7 +1180,14 @@
         }
         .tv-switcher-name-new { font-size: 8px; font-weight: 700; color: #ccc; }
 
-        /* TV Modal bottom nav - selaras dengan bottom-nav utama */
+        /* Universal nav item */
+        .nav-item-wrap {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; padding: 8px 0; color: #555; transition: color 0.2s;
+        }
+        .nav-item-wrap.nav-active i, .nav-item-wrap:active i { color: #fff; }
+        .tv-bottom-nav .nav-item-wrap { color: #555; }
+        .tv-bottom-nav .nav-item-wrap.nav-active i { color: #fff; }
         .tv-bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #000; border-top: 1px solid #1c1c1c;
@@ -1767,8 +1819,8 @@
             position: absolute; top: 6px; right: 6px;
             padding: 3px 8px; border-radius: 6px;
             font-size: 8px; font-weight: 900; z-index: 5; letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #ff416c, #ff4b2b);
-            color: #fff; box-shadow: 0 2px 8px rgba(255,65,108,0.5);
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: #fff; box-shadow: 0 2px 8px rgba(26,115,232,0.5);
             animation: pulse-new 2s infinite;
         }
         @keyframes pulse-new {
@@ -2025,16 +2077,34 @@
                 </div>
             </div>
 
-            <!-- BOTTOM: controls + server -->
+            <!-- BOTTOM: progress + controls -->
             <div class="ls-bottom-area">
-                <div class="ls-controls-row">
-                    <div class="ls-controls-left">
-                        <i class="fa-solid fa-rotate-right ls-btn ls-btn-sm" onclick="event.stopPropagation(); replayTrailerLs()" title="Replay"></i>
-                        <span class="ls-server-pill" id="lsServerPill" onclick="event.stopPropagation(); toggleLsServerPanel()">Server 1</span>
+                <!-- progress bar -->
+                <div id="lsProgressRow" style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                    <span id="lsTime" style="font-size:11px;color:#fff;min-width:40px">0:00</span>
+                    <div style="flex:1;height:3px;background:rgba(255,255,255,0.25);border-radius:2px;cursor:pointer" onclick="event.stopPropagation()">
+                        <div id="lsProgress" style="width:0%;height:100%;background:#fff;border-radius:2px;transition:width 0.5s linear"></div>
                     </div>
-                    <div class="ls-controls-right">
-                        <i class="fa-solid fa-expand ls-btn ls-btn-sm" onclick="event.stopPropagation(); tryFullscreen()" title="Fullscreen"></i>
+                    <span id="lsDuration" style="font-size:11px;color:#aaa;min-width:40px;text-align:right">0:00</span>
+                </div>
+                <!-- controls row -->
+                <div id="lsControlsRow" style="display:flex;justify-content:space-around;align-items:center">
+                    <i class="fa-solid fa-backward-step ls-btn ls-btn-sm" onclick="event.stopPropagation(); lsCarouselNav(-1)" title="Prev"></i>
+                    <div class="ls-seek-btn" style="position:relative;display:inline-flex;align-items:center">
+                        <i class="fa-solid fa-rotate-left ls-btn ls-btn-sm" onclick="event.stopPropagation(); lsSeek(-10)" title="-10s"></i>
+                        <span style="font-size:8px;color:#fff;font-weight:700;position:absolute;bottom:2px;right:-2px">10</span>
                     </div>
+                    <i id="lsPlayBtn" class="fa-solid fa-pause ls-btn" style="font-size:26px;border:2px solid #fff;border-radius:50%;padding:10px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;box-sizing:border-box" onclick="event.stopPropagation(); lsPlayPause()" title="Play/Pause"></i>
+                    <div class="ls-seek-btn" style="position:relative;display:inline-flex;align-items:center">
+                        <i class="fa-solid fa-rotate-right ls-btn ls-btn-sm" onclick="event.stopPropagation(); lsSeek(10)" title="+10s"></i>
+                        <span style="font-size:8px;color:#fff;font-weight:700;position:absolute;bottom:2px;right:-2px">10</span>
+                    </div>
+                    <i class="fa-solid fa-forward-step ls-btn ls-btn-sm" onclick="event.stopPropagation(); lsCarouselNav(1)" title="Next"></i>
+                    <i class="fa-solid fa-expand ls-btn ls-btn-sm" onclick="event.stopPropagation(); tryFullscreen()" title="Fullscreen"></i>
+                </div>
+                <!-- server pill -->
+                <div style="display:flex;justify-content:center;margin-top:8px">
+                    <span class="ls-server-pill" id="lsServerPill" onclick="event.stopPropagation(); toggleLsServerPanel()">Server 1</span>
                 </div>
                 <div class="ls-hint">Tap screen to hide controls</div>
             </div>
@@ -2479,8 +2549,54 @@
                     <div class="reel-heart-pop" id="modalHeartPop"><i class="fa-solid fa-heart"></i></div>
                     <div class="swipe-overlay" id="swipeOverlay"></div>
                     <div class="carousel-track" id="carouselTrack"></div>
-                    <div id="carouselDots" class="flex justify-center gap-2 py-2"></div>
+                    <!-- Video controls overlay -->
+                    <div id="modalVideoControls" onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.9));padding:6px 0 8px;z-index:50;opacity:1;transition:opacity 0.3s">
+                        <!-- progress bar -->
+                        <div style="display:flex;align-items:center;gap:8px;padding:0 14px;margin-bottom:10px">
+                            <span id="mvcTime" style="font-size:11px;color:#fff;min-width:38px;font-weight:600">0:00</span>
+                            <div id="mvcTrack" style="flex:1;height:3px;background:rgba(255,255,255,0.25);border-radius:2px;cursor:pointer;position:relative">
+                                <div id="mvcProgress" style="width:0%;height:100%;background:#fff;border-radius:2px;transition:width 0.5s linear"></div>
+                                <div id="mvcThumb" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%);width:12px;height:12px;background:#1a73e8;border-radius:50%;transition:left 0.5s linear"></div>
+                            </div>
+                            <span id="mvcDuration" style="font-size:11px;color:#aaa;min-width:38px;text-align:right">0:00</span>
+                        </div>
+                        <!-- controls row -->
+                        <div style="display:flex;align-items:center;justify-content:space-around;padding:0 6px">
+                            <!-- lock -->
+                            <button onclick="lockScreen()" style="background:none;border:none;color:#fff;font-size:18px;padding:4px 8px;cursor:pointer" title="Lock">
+                                <i class="fa-solid fa-lock-open"></i>
+                            </button>
+                            <!-- prev slide -->
+                            <button onclick="modalVideoCmd('prev')" style="background:none;border:none;color:#fff;font-size:20px;padding:4px 8px;cursor:pointer" title="Prev">
+                                <i class="fa-solid fa-backward-step"></i>
+                            </button>
+                            <!-- rewind 10s -->
+                            <button onclick="modalVideoCmd('back10')" style="background:none;border:none;color:#fff;font-size:20px;padding:4px 8px;cursor:pointer;position:relative" title="-10s">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                <span style="font-size:8px;font-weight:800;position:absolute;bottom:2px;right:4px">10</span>
+                            </button>
+                            <!-- play/pause utama -->
+                            <button id="mvPlayBtn" onclick="modalVideoCmd('playpause')" style="background:none;border:2px solid #fff;border-radius:50%;color:#fff;font-size:22px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" title="Play/Pause">
+                                <i class="fa-solid fa-pause"></i>
+                            </button>
+                            <!-- forward 10s -->
+                            <button onclick="modalVideoCmd('fwd10')" style="background:none;border:none;color:#fff;font-size:20px;padding:4px 8px;cursor:pointer;position:relative" title="+10s">
+                                <i class="fa-solid fa-rotate-right"></i>
+                                <span style="font-size:8px;font-weight:800;position:absolute;bottom:2px;right:4px">10</span>
+                            </button>
+                            <!-- next slide -->
+                            <button onclick="modalVideoCmd('next')" style="background:none;border:none;color:#fff;font-size:20px;padding:4px 8px;cursor:pointer" title="Next">
+                                <i class="fa-solid fa-forward-step"></i>
+                            </button>
+                            <!-- fullscreen / landscape -->
+                            <button onclick="enterLandscape()" style="background:none;border:none;color:#fff;font-size:18px;padding:4px 8px;cursor:pointer" title="Fullscreen">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
+                <!-- Dots indicator slide trailer — di luar mainVideoArea agar tidak tertutup controls -->
+                <div id="carouselDots" style="display:flex;justify-content:center;gap:6px;padding:6px 0 2px;background:#000"></div>
 
                 <div class="px-4 py-3 flex justify-between items-center bg-black">
                     <div class="flex gap-4 items-center">
@@ -2653,34 +2769,42 @@
         <div class="tv-topbar">
             <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer;padding:6px" onclick="closeTvModal()"></i>
             <div class="tv-live-dot"></div>
-            <div class="tv-topbar-title">Live TV Indonesia</div>
-            <i class="fa-solid fa-magnifying-glass" style="font-size:16px;color:#8e8e8e;cursor:pointer;padding:6px" onclick="focusTvSearch()"></i>
+            <div class="tv-topbar-title" id="tvTopbarTitle">Nasional</div>
+            <i class="fa-solid fa-magnifying-glass" style="font-size:16px;color:#8e8e8e;cursor:pointer;padding:6px" id="tvSearchIcon" onclick="focusTvSearch()"></i>
         </div>
+
+        <!-- Tab bar — 3 tab -->
+        <div class="tv-tab-bar" id="tvTabBar">
+            <div class="tv-tab-item active-tv-tab" id="tvTabNasional" onclick="switchTvTab('nasional')">Nasional</div>
+            <div class="tv-tab-item" id="tvTabLokal" onclick="switchTvTab('lokal')">Lokal</div>
+            <div class="tv-tab-item" id="tvTabBerita" onclick="switchTvTab('berita')">Berita</div>
+        </div>
+
+        <!-- Search box -->
         <div class="tv-search-box" id="tvSearchBox" style="display:none">
             <i class="fa-solid fa-magnifying-glass text-zinc-500 text-xs"></i>
             <input type="text" id="tvSearchInp" placeholder="Search TV channels..." autocomplete="off" oninput="filterTvChannels(this.value)">
             <i class="fa-solid fa-xmark" style="color:#8e8e8e;font-size:14px;cursor:pointer;padding:2px 0 2px 4px" onclick="closeTvSearch()"></i>
         </div>
-        <div id="tvChannelList" style="padding-bottom:70px"></div>
 
-        <!-- Bottom nav khusus TV - selaras ukuran & posisi dengan nav utama -->
-        <nav class="tv-bottom-nav">
-            <div class="tv-bottom-item" onclick="closeTvModal(); updateActiveNav(document.getElementById('homeBtnNav')); backToHome()">
-                <i class="fa-solid fa-house cursor-pointer"></i>
+        <!-- Channel pane -->
+        <div id="tvChannelPane">
+            <!-- sticky video player -->
+            <div id="tvPlayerArea">
+                <iframe id="tvPlayerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
             </div>
-            <div class="tv-bottom-item tv-bottom-search" onclick="closeTvModal(); openSearch()">
-                <i class="fa-solid fa-magnifying-glass cursor-pointer"></i>
+            <!-- tombol LiveSport di antara video dan channel list -->
+            <div style="padding:10px 16px 4px">
+                <button onclick="openLivesportModal()" style="width:100%;background:linear-gradient(135deg,#1a73e8,#0d47a1);border:none;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px rgba(26,115,232,0.35)">
+                    <i class="fa-solid fa-signal-stream"></i> Live Sport — Dami TV
+                </button>
             </div>
-            <div class="tv-bottom-item" onclick="closeTvModal(); updateActiveNav(document.getElementById('reelsBtnNav')); openReels()">
-                <i class="fa-solid fa-clapperboard cursor-pointer"></i>
-            </div>
-            <div class="tv-bottom-item tv-bottom-active">
-                <i class="fa-solid fa-tv cursor-pointer"></i>
-            </div>
-            <div class="tv-bottom-item" onclick="closeTvModal(); updateActiveNav(document.getElementById('bookmarkBtnNav')); switchTab('bookmarks', document.getElementById('tabBookmark'))">
-                <i class="fa-regular fa-bookmark cursor-pointer"></i>
-            </div>
-        </nav>
+            <!-- scrollable channel list -->
+            <div id="tvChannelList"></div>
+        </div>
+
+        <!-- Bottom nav khusus TV -->
+        <nav class="tv-bottom-nav" id="tvBottomNav"></nav>
     </div>
 
 
@@ -2703,23 +2827,8 @@
         </div>
     </div>
 
-    <!-- Bottom nav reels — terpisah dari reelsModal agar tidak tertutup overlay -->
     <nav class="reels-bottom-nav" id="reelsBottomNav" style="display:none">
-        <div class="reels-bottom-item" onclick="closeReelDetail(); closeReels(); updateActiveNav(document.getElementById('homeBtnNav')); backToHome()">
-            <i class="fa-solid fa-house"></i>
-        </div>
-        <div class="reels-bottom-item" onclick="closeReelDetail(); closeReels(); openSearch()">
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </div>
-        <div class="reels-bottom-item active-reel-nav">
-            <i class="fa-solid fa-clapperboard"></i>
-        </div>
-        <div class="reels-bottom-item" onclick="closeReelDetail(); closeReels(); updateActiveNav(document.getElementById('tvBtnNav')); openTvModal()">
-            <i class="fa-solid fa-tv"></i>
-        </div>
-        <div class="reels-bottom-item" onclick="openBookmarksFromReels()">
-            <i class="fa-regular fa-bookmark"></i>
-        </div>
+        <div id="reelsBottomNavInner" style="display:contents"></div>
     </nav>
 
     <!-- ===== REEL DETAIL BOTTOM SHEET ===== -->
@@ -2795,9 +2904,10 @@
             <div class="notif-topbar-title">New Movies Today</div>
             <span class="notif-date-badge" id="notifDateBadge"></span>
         </div>
-        <div id="notifContent">
+        <div id="notifContent" style="padding-bottom:70px">
             <div class="notif-empty"><i class="fa-solid fa-film"></i>Loading...</div>
         </div>
+        <nav class="bottom-nav" id="notifBottomNav" style="position:fixed;bottom:0;left:0;right:0;z-index:10001"></nav>
     </div>
 
     <!-- ===== FOTO PEMERAN ===== -->
@@ -2811,13 +2921,18 @@
     </div>
 
 
-    <nav class="bottom-nav">
-        <i class="fa-solid fa-house cursor-pointer text-xl active-nav" id="homeBtnNav" onclick="closeActorPhotos(); updateActiveNav(this); backToHome()"></i>
-        <i class="fa-solid fa-magnifying-glass cursor-pointer text-xl" id="searchBtnNav" onclick="closeActorPhotos(); updateActiveNav(this); openSearch()"></i>
-        <i class="fa-solid fa-clapperboard cursor-pointer text-xl" id="reelsBtnNav" onclick="closeActorPhotos(); updateActiveNav(this); openReels()"></i>
-        <i class="fa-solid fa-tv cursor-pointer text-xl" id="tvBtnNav" onclick="closeActorPhotos(); updateActiveNav(this); openTvModal()"></i>
-        <i class="fa-regular fa-bookmark cursor-pointer text-xl" id="bookmarkBtnNav" onclick="closeActorPhotos(); updateActiveNav(this); switchTab('bookmarks', document.getElementById('tabBookmark'))"></i>
-    </nav>
+    <!-- ===== LIVESPORT MODAL ===== -->
+    <div id="livesportModal" style="display:none;position:fixed;inset:0;z-index:9700;background:#0a0a0a;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#000;position:sticky;top:0;z-index:10">
+            <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer" onclick="closeLivesportModal()"></i>
+            <span style="font-size:17px;font-weight:800;color:#fff">Live Sport</span>
+        </div>
+        <iframe id="livesportIframe" src="" style="flex:1;width:100%;border:none;display:block" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        <nav class="bottom-nav" id="livesportBottomNav" style="position:sticky;bottom:0"></nav>
+    </div>
+
+    <!-- ===== UNIVERSAL BOTTOM NAV ===== -->
+    <nav class="bottom-nav" id="globalBottomNav"></nav>
 
     <script>
         const API_KEY = 'bfa7df5310c9974f62f26c6789a8c00d';
@@ -2861,9 +2976,165 @@
                 document.getElementById('backToTop').style.display = window.scrollY > 500 ? 'flex' : 'none'; 
             });
             initModalSwipeGestures();
+            initTvModalSwipe();
+            renderAllNavs();
         };
 
-        // ===== SWIPE GESTURES FOR MODALS =====
+        // Video controls modal film
+        let _modalPlaying = true;
+        // ===== LIVESPORT MODAL =====
+        function openLivesportModal() {
+            document.getElementById('livesportModal').style.display = 'flex';
+            document.getElementById('livesportIframe').src = 'https://dami-tv.pro/';
+            document.body.style.overflow = 'hidden';
+            history.pushState({view:'livesport'}, '');
+            renderBottomNav('livesportBottomNav', 'sport', null);
+        }
+        function closeLivesportModal() {
+            document.getElementById('livesportIframe').src = '';
+            document.getElementById('livesportModal').style.display = 'none';
+            document.body.style.overflow = 'hidden'; // tvModal masih terbuka
+            // Tidak replaceState — biarkan history kembali ke tvModal
+        }
+        // Edit di sini saja untuk ubah semua nav sekaligus
+        const NAV_ITEMS = [
+            { id: 'homeBtnNav',   icon: 'fa-solid fa-house',          action: 'home'   },
+            { id: 'searchBtnNav', icon: 'fa-solid fa-magnifying-glass',action: 'search' },
+            { id: 'reelsBtnNav',  icon: 'fa-solid fa-clapperboard',    action: 'reels'  },
+            { id: 'tvBtnNav',     icon: 'fa-solid fa-tv',              action: 'tv'     },
+            { id: 'musicBtnNav',  icon: 'fa-solid fa-music',           action: 'music'  },
+        ];
+
+        function renderBottomNav(containerId, activeAction, closeFunc) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            el.innerHTML = NAV_ITEMS.map(item => {
+                const isActive = item.action === activeAction;
+                // Active item: tidak perlu closeFunc (sudah di sini)
+                const onclick = (closeFunc && !isActive)
+                    ? `${closeFunc}(); _navAction('${item.action}')`
+                    : `_navAction('${item.action}')`;
+                return `<div class="nav-item-wrap ${isActive ? 'nav-active' : ''}" onclick="${onclick}">
+                    <i class="${item.icon} cursor-pointer" style="font-size:20px"></i>
+                </div>`;
+            }).join('');
+        }
+
+        function renderAllNavs() {
+            renderBottomNav('globalBottomNav', 'home', null);
+            renderBottomNav('tvBottomNav', 'tv', 'closeTvModal');
+            renderBottomNav('reelsBottomNavInner', 'reels', 'closeReelDetail(); closeReels');
+            renderBottomNav('notifBottomNav', 'home', 'closeNotif');
+            renderBottomNav('livesportBottomNav', 'sport', null);
+        }
+        function _navAction(target) {
+            // Tutup semua modal yang mungkin terbuka
+            try { if(document.getElementById('tvModal').style.display==='block'){ document.getElementById('tvPlayerFrame').src=''; document.getElementById('tvModal').style.display='none'; document.body.style.overflow='auto'; }} catch(e){}
+            try { if(document.getElementById('livesportModal')&&document.getElementById('livesportModal').style.display==='flex') closeLivesportModal(); } catch(e){}
+            try { if(document.getElementById('reelsModal')&&document.getElementById('reelsModal').style.display==='block') _closeReelsSilent(); } catch(e){}
+            try { if(document.getElementById('movieModal').style.display==='block') _closeModalSilent(); } catch(e){}
+            try { if(document.getElementById('actorModal').classList.contains('open')) _closeActorModalSilent(); } catch(e){}
+            try { if(document.getElementById('searchOverlay').style.display==='block') _closeSearchSilent(); } catch(e){}
+            try { closeReelDetail && closeReelDetail(); } catch(e){}
+
+            switch(target) {
+                case 'home':   updateActiveNav(document.getElementById('homeBtnNav'));   backToHome();    break;
+                case 'search': updateActiveNav(document.getElementById('searchBtnNav')); openSearch();    break;
+                case 'reels':  updateActiveNav(document.getElementById('reelsBtnNav'));  openReels();     break;
+                case 'tv':     updateActiveNav(document.getElementById('tvBtnNav'));     openTvModal();   break;
+                case 'music':  window.open('https://hayasaka.8man.in/','_blank'); break;
+            }
+        }
+
+        let _modalMuted = false;
+        function modalVideoCmd(cmd) {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const iframe = document.getElementById(`vid-${currentIdx}`);
+            function postMsg(fn, args) {
+                try { iframe && iframe.contentWindow.postMessage(JSON.stringify({event:'command',func:fn,args:args||''}), '*'); } catch(e) {}
+            }
+            if (cmd === 'playpause') {
+                if (_modalPlaying) {
+                    postMsg('pauseVideo');
+                    _modalPlaying = false;
+                    document.querySelector('#mvPlayBtn i').className = 'fa-solid fa-play';
+                    document.getElementById('lsPlayBtn').className = 'fa-solid fa-play ls-btn';
+                } else {
+                    postMsg('playVideo');
+                    _modalPlaying = true;
+                    document.querySelector('#mvPlayBtn i').className = 'fa-solid fa-pause';
+                    document.getElementById('lsPlayBtn').className = 'fa-solid fa-pause ls-btn';
+                }
+            } else if (cmd === 'back10') {
+                postMsg('seekBy', [-10]);
+            } else if (cmd === 'fwd10') {
+                postMsg('seekBy', [10]);
+            } else if (cmd === 'prev' || cmd === 'next') {
+                const dir = cmd === 'next' ? 1 : -1;
+                const newIdx = currentIdx + dir;
+                if (newIdx < 0 || newIdx >= slides.length) return;
+                // pause current
+                slides.forEach(s => {
+                    const f = s.querySelector('iframe');
+                    if (f) try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
+                    s.classList.remove('playing');
+                });
+                currentIdx = newIdx;
+                document.getElementById('carouselTrack').style.transform = `translateX(-${currentIdx * 100}%)`;
+                document.querySelectorAll('.dot').forEach((d,i) => { d.className = `dot w-1.5 h-1.5 rounded-full ${i===currentIdx?'bg-blue-500':'bg-zinc-700'}`; });
+                const newVid = document.getElementById(`vid-${currentIdx}`);
+                if (newVid) {
+                    try { newVid.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
+                    newVid.closest('.carousel-slide')?.classList.add('playing');
+                }
+                _modalPlaying = true;
+                document.querySelector('#mvPlayBtn i').className = 'fa-solid fa-pause';
+            }
+        }
+
+        // Landscape play/pause
+        let _lsPaused = false;
+        let _lsPausedSrc = '';
+
+        function lsPlayPause() {
+            const icon = document.getElementById('lsPlayBtn');
+            if (activeServerIdx === 99) {
+                // Trailer (YouTube) — pakai postMessage
+                modalVideoCmd('playpause');
+                _modalPlaying = !_modalPlaying;
+                icon.className = _modalPlaying ? 'fa-solid fa-pause ls-btn' : 'fa-solid fa-play ls-btn';
+                icon.style.cssText = 'font-size:26px;border:2px solid #fff;border-radius:50%;padding:10px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;box-sizing:border-box';
+            } else {
+                // Streaming — pause = kosongkan src, play = kembalikan src
+                const iframe = document.querySelector('#carouselTrack iframe') || document.querySelector('#mainVideoArea iframe');
+                if (!iframe) return;
+                if (!_lsPaused) {
+                    _lsPausedSrc = iframe.src || _lsPausedSrc;
+                    if (!_lsPausedSrc) {
+                        // Fallback: rebuild URL
+                        _lsPausedSrc = buildEmbedUrl(window.currentMediaType, window.currentMediaId, activeSeason, activeEpisode, activeServerIdx);
+                    }
+                    iframe.src = 'about:blank';
+                    _lsPaused = true;
+                    icon.className = 'fa-solid fa-play ls-btn';
+                } else {
+                    iframe.src = _lsPausedSrc;
+                    _lsPaused = false;
+                    icon.className = 'fa-solid fa-pause ls-btn';
+                }
+                icon.style.cssText = 'font-size:26px;border:2px solid #fff;border-radius:50%;padding:10px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;box-sizing:border-box';
+            }
+        }
+
+        function lsSeek(sec) {
+            if (activeServerIdx === 99) {
+                // Trailer (YouTube) — seek via postMessage
+                const iframe = document.getElementById(`vid-${currentIdx}`);
+                try { iframe && iframe.contentWindow.postMessage(JSON.stringify({event:'command',func:'seekBy',args:[sec]}), '*'); } catch(e) {}
+            }
+            // Streaming — seek tidak bisa, abaikan
+        }
+        function lsCarouselNav(dir) { modalVideoCmd(dir > 0 ? 'next' : 'prev'); }
         // Swipe helper — threshold 25px, ratio 2.0
         function addSwipe(el, onLeft, onRight, onUp, onDown, minDist = 25, maxRatio = 2.0) {
             if (!el) return;
@@ -3178,6 +3449,12 @@
                     { name: 'TVRI SUMUT', url: 'https://m.vidio.com/live/6447-tvri-sumatera-utara', logo: 'SMU' },
                     { name: 'TVRI KALTIM', url: 'https://m.vidio.com/live/6457-tvri-kalimantan-timur', logo: 'KLT' },
                 ]
+            },
+            {
+                label: 'Sports',
+                channels: [
+                    { name: 'Sports Live', url: 'https://dami-tv.pro/', logo: '⚽' },
+                ]
             }
         ];
 
@@ -3444,16 +3721,107 @@
             return nowBarHTML + schedHTML;
         }
 
-        function renderTvList(filter) {
+        let _currentTvTab = 'nasional';
+        let _tvMuted = false;
+
+        function switchTvTab(tab) {
+            _currentTvTab = tab;
+            document.querySelectorAll('.tv-tab-item').forEach(t => t.classList.remove('active-tv-tab'));
+            const tabEl = document.getElementById('tvTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (tabEl) tabEl.classList.add('active-tv-tab');
+
+            const tvTitle = document.getElementById('tvTopbarTitle');
+            const frame   = document.getElementById('tvPlayerFrame');
+            const tvModal = document.getElementById('tvModal');
+
+            // Stop audio channel sebelumnya
+            if (frame && frame.src) frame.src = '';
+            document.getElementById('tvPlayerArea').style.display = 'none';
+
+            const labels = { nasional: 'Nasional', lokal: 'Lokal & Regional', berita: 'Berita' };
+            tvTitle.textContent = labels[tab] || 'Live TV';
+            tvModal.scrollTop = 0;
+            renderTvList('', tab);
+
+            // auto-play channel pertama
+            const tabMap = { nasional: 'Nasional', lokal: 'Lokal & Regional', berita: 'Berita' };
+            const cat = tvCategories.find(c => c.label === tabMap[tab]);
+            if (cat && cat.channels.length > 0) {
+                setTimeout(() => playTvChannelInPane(cat.channels[0].name, cat.channels[0].url), 150);
+            }
+        }
+
+        // Video controls auto-hide — portrait mode
+        let _ctrlHideTimer = null;
+        function showVideoControls() {
+            const ctrl = document.getElementById('modalVideoControls');
+            if (!ctrl) return;
+            ctrl.style.opacity = '1';
+            ctrl.style.pointerEvents = 'auto';
+            clearTimeout(_ctrlHideTimer);
+            _ctrlHideTimer = setTimeout(() => hideVideoControls(), 4000);
+        }
+        function hideVideoControls() {
+            const ctrl = document.getElementById('modalVideoControls');
+            if (!ctrl) return;
+            ctrl.style.opacity = '0';
+            ctrl.style.pointerEvents = 'none';
+        }
+        // Tap area video → toggle controls
+        document.addEventListener('DOMContentLoaded', () => {
+            const area = document.getElementById('mainVideoArea');
+            if (!area) return;
+            area.addEventListener('click', e => {
+                if (e.target.closest('#modalVideoControls')) return;
+                const ctrl = document.getElementById('modalVideoControls');
+                if (!ctrl) return;
+                if (ctrl.style.opacity === '0' || ctrl.style.opacity === '') showVideoControls();
+                else hideVideoControls();
+            });
+        });
+
+        // ── TV MODAL SWIPE — reliable, attach ke tvModal + sportPane ─────────
+        function initTvModalSwipe() {
+            const TV_TABS = ['nasional', 'lokal', 'berita'];
+            const tvModal = document.getElementById('tvModal');
+            if (!tvModal) return;
+
+            let sx = 0, sy = 0, skip = false;
+
+            tvModal.addEventListener('touchstart', e => {
+                if (e.touches.length !== 1) return;
+                sx = e.touches[0].clientX;
+                sy = e.touches[0].clientY;
+                skip = !!e.target.closest('#tvSearchInp');
+            }, { passive: true });
+
+            tvModal.addEventListener('touchend', e => {
+                if (skip) return;
+                const dx = e.changedTouches[0].clientX - sx;
+                const dy = e.changedTouches[0].clientY - sy;
+                const adx = Math.abs(dx), ady = Math.abs(dy);
+                if (adx >= 30 && adx > ady) {
+                    const c = TV_TABS.indexOf(_currentTvTab);
+                    if (dx < 0 && c < TV_TABS.length - 1) switchTvTab(TV_TABS[c + 1]);
+                    else if (dx > 0 && c > 0) switchTvTab(TV_TABS[c - 1]);
+                }
+            }, { passive: true });
+        }
+        function renderTvList(filter, tab) {
             const cont = document.getElementById('tvChannelList');
             const q = (filter || '').toLowerCase();
+            const activeTab = tab || _currentTvTab;
+            const tabMap = { nasional: 'Nasional', lokal: 'Lokal & Regional', berita: 'Berita' };
+            const catLabel = tabMap[activeTab];
             let html = '';
             tvCategories.forEach(cat => {
+                if (catLabel && cat.label !== catLabel) return;
+                if (cat.label === 'Sports') return; // Sports hanya di tab LiveSport
                 const filtered = cat.channels.filter(ch => ch.name.toLowerCase().includes(q));
                 if (filtered.length === 0) return;
                 html += `<div class="tv-category-label">${cat.label}</div><div class="tv-channel-grid">`;
                 filtered.forEach(ch => {
-                    html += `<div class="tv-ch-card" onclick="playTvChannel('${ch.name}', '${ch.url}')">
+                    html += `<div class="tv-ch-card" id="tvch-${ch.name.replace(/\s/g,'_')}" onclick="playTvChannelInPane('${ch.name}', '${ch.url}')">
                         <div class="tv-ch-live-badge">LIVE</div>
                         <div class="tv-ch-logo-box">${ch.logo}</div>
                         <div class="tv-ch-name">${ch.name}</div>
@@ -3465,50 +3833,57 @@
             cont.innerHTML = html;
         }
 
-        function initTvChannels() { renderTvList(''); }
-        function filterTvChannels(q) { renderTvList(q); }
+        function playTvChannelInPane(name, url) {
+            // highlight active channel card
+            document.querySelectorAll('.tv-ch-card').forEach(c => c.classList.remove('active-ch'));
+            const card = document.getElementById('tvch-' + name.replace(/\s/g,'_'));
+            if (card) {
+                card.classList.add('active-ch');
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+            // load player — sticky di atas, tidak perlu scroll
+            const playerArea = document.getElementById('tvPlayerArea');
+            const frame = document.getElementById('tvPlayerFrame');
+            playerArea.style.display = 'block';
+            frame.src = url;
+        }
+
+        function initTvChannels() { /* channels di-render saat switchTvTab dipanggil */ }
+        function filterTvChannels(q) { renderTvList(q, _currentTvTab); }
 
         function focusTvSearch() {
+            if (_currentTvTab === 'sport') return;
             const box = document.getElementById('tvSearchBox');
-            const inp = document.getElementById('tvSearchInp');
             box.style.display = 'flex';
-            inp.focus();
-            // highlight search icon in bottom nav
-            document.querySelectorAll('.tv-bottom-item').forEach(el => el.classList.remove('tv-bottom-active'));
-            document.querySelector('.tv-bottom-search').classList.add('tv-bottom-active');
+            document.getElementById('tvSearchInp').focus();
         }
 
         function closeTvSearch() {
             const box = document.getElementById('tvSearchBox');
-            const inp = document.getElementById('tvSearchInp');
             box.style.display = 'none';
-            inp.value = '';
-            renderTvList('');
-            // restore TV active
-            document.querySelectorAll('.tv-bottom-item').forEach(el => el.classList.remove('tv-bottom-active'));
-            document.querySelector('.tv-bottom-item:nth-child(3)').classList.add('tv-bottom-active');
+            document.getElementById('tvSearchInp').value = '';
+            renderTvList('', _currentTvTab);
         }
 
         function openTvModal() {
             closeModal(); closeSearch();
-            // Tutup reels jika aktif
-            if (document.getElementById('reelsModal').style.display === 'block') {
-                _closeReelsSilent();
-            }
+            if (document.getElementById('reelsModal').style.display === 'block') _closeReelsSilent();
             document.getElementById('tvSearchInp').value = '';
             document.getElementById('tvSearchBox').style.display = 'none';
-            renderTvList('');
+            document.getElementById('tvPlayerArea').style.display = 'none';
+            document.getElementById('tvPlayerFrame').src = '';
             document.getElementById('tvModal').style.display = 'block';
             document.getElementById('tvModal').scrollTop = 0;
             document.body.style.overflow = 'hidden';
             history.pushState({view: 'tv'}, "");
+            switchTvTab('nasional');
         }
 
         function closeTvModal() {
+            document.getElementById('tvPlayerFrame').src = '';
             document.getElementById('tvModal').style.display = 'none';
             document.body.style.overflow = 'auto';
             updateActiveNav(document.getElementById('homeBtnNav'));
-            // Ganti state ke home tanpa push (agar back tidak loop)
             history.replaceState({view: 'home'}, '');
         }
 
@@ -3983,6 +4358,11 @@
                 return;
             }
 
+            // LiveSport modal
+            if (document.getElementById('livesportModal').style.display === 'flex') {
+                closeLivesportModal(); return;
+            }
+
             // Notifikasi
             if (document.getElementById('notifModal') && document.getElementById('notifModal').style.display === 'block') {
                 closeNotif();
@@ -4111,15 +4491,24 @@
             const lsTitle = document.getElementById('lsTitle');
             const lsSub = document.getElementById('lsSubtitle');
             lsTitle.innerText = document.getElementById('mTitle').innerText;
-
-            // Subtitle: server info
-            lsSub.innerText = `Server ${activeServerIdx} · amnesfubbia`;
+            lsSub.innerText = activeServerIdx === 99 ? `Trailer · amnesfubbia` : `Server ${activeServerIdx} · amnesfubbia`;
 
             document.body.classList.add('landscape-active');
             overlay.style.display = 'block';
-
-            // Rebuild server list in landscape panel
             buildLsServerList();
+
+            // Tampilkan semua kontrol kita untuk semua server
+            const lsControlsRow = document.getElementById('lsControlsRow');
+            const lsProgressArea = document.getElementById('lsProgressRow');
+            if (lsControlsRow) lsControlsRow.style.display = 'flex';
+            if (lsProgressArea) lsProgressArea.style.display = 'flex';
+            // Seek hanya untuk trailer
+            const _isTrailer = activeServerIdx === 99;
+            document.querySelectorAll('.ls-seek-btn').forEach(b => b.style.display = _isTrailer ? 'inline-flex' : 'none');
+            // Reset pause state
+            _lsPaused = false; _lsPausedSrc = '';
+            const _lspi = document.getElementById('lsPlayBtn');
+            if (_lspi) _lspi.className = 'fa-solid fa-pause ls-btn';
 
             const videoArea = document.getElementById('mainVideoArea');
             overlay.appendChild(videoArea); 
@@ -4140,7 +4529,7 @@
         function buildLsServerList() {
             const scroll = document.getElementById('lsServerScroll');
             let html = '';
-            for (let i = 1; i <= 31; i++) {
+            for (let i = 1; i <= 28; i++) {
                 const active = (i === activeServerIdx) ? 'active-link' : '';
                 html += `<div class="ls-srv-btn ${active}" onclick="event.stopPropagation(); lsChangeServer(${i}, this)">Server ${i}</div>`;
             }
@@ -4166,22 +4555,28 @@
 
         function lsChangeServer(srvIdx, el) {
             activeServerIdx = srvIdx;
-            // update main server list
             document.querySelectorAll('.server-btn').forEach((b, i) => {
                 b.classList.remove('active-link');
                 if (i + 1 === srvIdx) b.classList.add('active-link');
             });
-            // update ls panel
             document.querySelectorAll('.ls-srv-btn').forEach(b => b.classList.remove('active-link'));
             el.classList.add('active-link');
-            // update pill text
             document.getElementById('lsServerPill').innerText = srvIdx === 99 ? 'Trailer' : `Server ${srvIdx}`;
-            // update subtitle
-            document.getElementById('lsSubtitle').innerText = `Server ${srvIdx} · amnesfubbia`;
-            // play
+            document.getElementById('lsSubtitle').innerText = srvIdx === 99 ? 'Trailer · amnesfubbia' : `Server ${srvIdx} · amnesfubbia`;
             const url = buildEmbedUrl(window.currentMediaType, window.currentMediaId, activeSeason, activeEpisode, activeServerIdx);
             playVid(url);
-            // close panel
+            // Selalu tampilkan kontrol kita untuk semua server
+            const lsControlsRow = document.getElementById('lsControlsRow');
+            const lsProgressArea = document.getElementById('lsProgressRow');
+            if (lsControlsRow) lsControlsRow.style.display = 'flex';
+            if (lsProgressArea) lsProgressArea.style.display = 'flex';
+            // Reset pause state saat ganti server
+            _lsPaused = false; _lsPausedSrc = '';
+            const lsPlayIcon = document.getElementById('lsPlayBtn');
+            if (lsPlayIcon) { lsPlayIcon.className = 'fa-solid fa-pause ls-btn'; }
+            // Sembunyikan tombol seek (±10s) untuk streaming — hanya untuk trailer
+            const isTrailer = srvIdx === 99;
+            document.querySelectorAll('.ls-seek-btn').forEach(b => b.style.display = isTrailer ? 'inline-flex' : 'none');
             const panel = document.getElementById('lsServerPanel');
             panel.classList.remove('open');
             panel.style.display = 'none';
@@ -4844,18 +5239,15 @@
                 _reelsData.push(...newReels);
                 _reelsLoaded = true;
 
-                newReels.forEach(reel => {
+                newReels.forEach((reel, reelIdx) => {
                     const lib = getReelLibStatus(reel.movieId);
                     const slide = document.createElement('div');
                     slide.className = 'reel-slide';
                     slide.dataset.movieId = reel.movieId;
                     slide.dataset.type = reel.type;
 
-                    // autoplay=1 agar langsung main saat slide pertama dimuat
-                    // js_api diaktifkan agar bisa pause via postMessage
-                    // enablejsapi=1 wajib agar YT.Player onStateChange bekerja
-                    // controls=1 dibiarkan agar event state change tidak diblokir
-                    const isFirstReel = isNew && _reelsData.length === 1;
+                    // autoplay=1 hanya untuk reel pertama saat load awal
+                    const isFirstReel = isNew && reelIdx === 0;
                     const embedUrl = `https://www.youtube.com/embed/${reel.videoKey}?enablejsapi=1&autoplay=${isFirstReel?1:0}&rel=0&modestbranding=1&showinfo=0&playsinline=1&iv_load_policy=3&mute=0&controls=0&origin=${encodeURIComponent(location.origin || location.href.split('/').slice(0,3).join('/'))}`;
                     const typeLabel = reel.type === 'movie' ? 'Movie' : 'Series';
                     const ratingStr = reel.rating ? `· ★${reel.rating}` : '';
@@ -5060,44 +5452,81 @@
             }
         }
 
-        // Stop semua video saat tab/app ditutup atau disembunyikan
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                // Pause semua iframe YouTube yang aktif
-                document.querySelectorAll('iframe[src*="youtube.com"]').forEach(f => {
+        // YouTube postMessage → update progress bar modal & landscape
+        window.addEventListener('message', e => {
+            try {
+                const d = JSON.parse(e.data);
+                if (d.event !== 'infoDelivery' || !d.info) return;
+                const cur = d.info.currentTime, dur = d.info.duration;
+                if (!dur || dur <= 0) return;
+                const pct = (cur / dur * 100).toFixed(2);
+                const fmt = t => { const m=Math.floor(t/60),s=Math.floor(t%60); return `${m}:${s<10?'0':''}${s}`; };
+                // modal controls
+                const mp = document.getElementById('mvcProgress');
+                const mt = document.getElementById('mvcThumb');
+                const mTime = document.getElementById('mvcTime');
+                const mDur = document.getElementById('mvcDuration');
+                if (mp) mp.style.width = pct + '%';
+                if (mt) mt.style.left = pct + '%';
+                if (mTime) mTime.textContent = fmt(cur);
+                if (mDur) mDur.textContent = fmt(dur);
+                // landscape controls
+                const lp = document.getElementById('lsProgress');
+                const lTime = document.getElementById('lsTime');
+                const lDur = document.getElementById('lsDuration');
+                if (lp) lp.style.width = pct + '%';
+                if (lTime) lTime.textContent = fmt(cur);
+                if (lDur) lDur.textContent = fmt(dur);
+            } catch(e2) {}
+        });
+        // Stop video/streaming saat tab disembunyikan — tapi BUKAN music iframe
+        function stopNonMusicIframes() {
+            document.querySelectorAll('iframe').forEach(f => {
+                // Jangan hentikan music iframe
+                if (f.id === 'musicIframe') return;
+                const src = f.src || '';
+                if (src.includes('youtube.com') || src.includes('youtu.be')) {
                     try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
-                });
-                // Pause via YT.Player API juga
-                Object.values(window._ytPlayers || {}).forEach(p => {
-                    try { if (p && p.pauseVideo) p.pauseVideo(); } catch(e) {}
-                });
-            }
+                } else if (src && src !== 'about:blank') {
+                    // Streaming iframe — kosongkan src untuk stop
+                    f.dataset.pausedSrc = src;
+                    f.src = '';
+                }
+            });
+            Object.values(window._ytPlayers || {}).forEach(p => {
+                try { if (p && p.pauseVideo) p.pauseVideo(); } catch(e) {}
+            });
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopNonMusicIframes();
+        });
+
+        // Stop SEMUA iframe (termasuk music) saat app benar-benar ditutup
+        window.addEventListener('pagehide', () => {
+            document.querySelectorAll('iframe').forEach(f => { try { f.src = ''; } catch(e) {} });
+        });
+
+        window.addEventListener('beforeunload', () => {
+            document.querySelectorAll('iframe').forEach(f => { try { f.src = ''; } catch(e) {} });
         });
 
         // Tambah reels ke popstate handler
         function updateActiveNav(el) {
-            document.querySelectorAll('.bottom-nav i').forEach(i => {
-                i.classList.remove('active-nav');
-                // Bookmark: outline saat tidak aktif, solid saat aktif
-                if (i.id === 'bookmarkBtnNav') {
-                    i.className = i.className.replace('fa-solid', 'fa-regular').replace('active-nav', '');
-                    i.classList.add('fa-regular', 'fa-bookmark', 'cursor-pointer', 'text-xl');
-                }
-            });
+            document.querySelectorAll('.nav-item-wrap').forEach(w => w.classList.remove('nav-active'));
             if (el) {
-                el.classList.add('active-nav');
-                // Jika bookmark aktif, ganti ke solid
-                if (el.id === 'bookmarkBtnNav') {
-                    el.classList.remove('fa-regular');
-                    el.classList.add('fa-solid');
-                }
+                // Cari nav-item-wrap yang action-nya cocok
+                const action = (el.id||'').replace('BtnNav','').toLowerCase();
+                document.querySelectorAll('.nav-item-wrap').forEach(w => {
+                    const oc = w.getAttribute('onclick') || '';
+                    if (oc.includes(`'${action}'`)) w.classList.add('nav-active');
+                });
             }
-            // Tutup movieografi + actor modal jika nav bawah diklik (loncat langsung)
+            // Tutup movieografi + actor modal jika nav bawah diklik
             const mvg = document.getElementById('movieografiModal');
             if (mvg && mvg.style.display === 'block') {
                 mvg.style.display = 'none';
                 window._mvgFromActorId = null;
-                // Tutup juga actor modal agar tidak muncul di belakang
                 document.getElementById('actorModal').style.display = 'none';
                 document.body.style.overflow = 'auto';
             }
@@ -5291,7 +5720,7 @@
             document.getElementById('mainProfile').style.display = 'block';
 
             // Update nav & tab
-            updateActiveNav(document.getElementById('bookmarkBtnNav'));
+            updateActiveNav(document.getElementById('homeBtnNav'));
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
             document.getElementById('tabBookmark').classList.add('active');
             document.getElementById('tabLikes').classList.remove('active');
@@ -6167,8 +6596,8 @@
             const existingIds = new Set();
             grid.querySelectorAll('.post-card[data-id]').forEach(c => existingIds.add(c.dataset.id));
             items.forEach(m => {
-                // Tab Actor (HANYA saat search mode aktif & tab person)
-                if (window._isSearchMode && searchTabType === 'person') {
+                // Tab Actor (HANYA saat search mode aktif & tab person & ada query)
+                if (window._isSearchMode && searchTabType === 'person' && searchQuery) {
                     if (!m.profile_path && !m.poster_path) return;
                     if (existingIds.has(String(m.id))) return;
                     existingIds.add(String(m.id));
@@ -6225,8 +6654,13 @@
                 }
                 const _year = (m.release_date || m.first_air_date || '').split('-')[0];
                 const _rating = m.vote_average ? m.vote_average.toFixed(1) : '';
-                const _typeLabel = currentType==='short' ? 'SHORT' : (mType==='tv' ? 'TV' : 'MOVIE');
-                card.innerHTML = `${_nb ? _nb.replace('badge-new', 'badge-new" style="position:absolute;top:6px;right:6px;bottom:auto;left:auto') : ''}<img src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0"><div class="card-title-overlay"><div class="card-title-text">${_title}</div><div class="card-meta-row">${_rating ? `<span class="card-star">★ ${_rating}</span>` : ''}<span class="card-type-label">${_typeLabel}</span>${_year ? `<span class="card-year">${_year}</span>` : ''}</div></div>`;
+                // Type label: pakai searchTabType saat search agar Series/Movie akurat
+                let _typeLabel;
+                if (currentType === 'short') _typeLabel = 'SHORT';
+                else if (window._isSearchMode && searchTabType === 'tv') _typeLabel = 'SERIES';
+                else if (window._isSearchMode && searchTabType === 'movie') _typeLabel = 'MOVIE';
+                else _typeLabel = mType === 'tv' ? 'SERIES' : 'MOVIE';
+                card.innerHTML = `${_nb ? `<div class="badge-new" style="position:absolute;top:6px;right:6px;z-index:2">NEW</div>` : ''}<img src="https://image.tmdb.org/t/p/w185${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0"><div class="card-title-overlay"><div class="card-title-text">${_title}</div><div class="card-meta-row">${_rating ? `<span class="card-star">★ ${_rating}</span>` : ''}<span class="card-type-label">${_typeLabel}</span>${_year ? `<span class="card-year">${_year}</span>` : ''}</div></div>`;
                 fragment.appendChild(card); 
             });
             grid.appendChild(fragment);
@@ -6310,9 +6744,16 @@
             document.getElementById('calendarHeader').classList.add('hidden');
             document.body.style.overflow = 'auto'; 
             searchQuery = ''; currentCastId = '';
+            window._isSearchMode = false;
+            searchTabType = 'multi';
             document.getElementById('searchInp').value = '';
             document.getElementById('searchClearBtn').style.display = 'none';
             document.getElementById('smartSearchDropdown').style.display = 'none';
+            // Reset tab pencarian ke All
+            document.querySelectorAll('#searchTypeTabs .search-tab').forEach(t => t.classList.remove('active'));
+            const stabAll = document.getElementById('stab-all');
+            if (stabAll) stabAll.classList.add('active');
+            document.getElementById('searchTypeTabs').style.display = 'none';
             // Reset filter bar
             const filterBar = document.getElementById('searchFilterBar');
             if (filterBar) filterBar.style.display = 'none';
@@ -6577,6 +7018,8 @@
             document.getElementById('smartSearchDropdown').style.display = 'none'; 
             document.body.style.overflow = 'hidden'; 
             currentIdx = 0; isTranslated = false;
+            // tampilkan controls sebentar lalu auto-hide
+            setTimeout(() => showVideoControls(), 500);
             
             history.pushState({view: 'modal'}, "");
 
@@ -6849,7 +7292,7 @@
             // tanggal dihapus dari modal (sudah ada di info grid)
             
             let serverButtonsHTML = '';
-            for(let i=1; i<=31; i++) {
+            for(let i=1; i<=28; i++) {
                 serverButtonsHTML += `<button class="server-btn" onclick="changeServer(${i}, this)">Server ${i}</button>`;
             }
             document.getElementById('serverList').innerHTML = serverButtonsHTML;
@@ -7138,31 +7581,28 @@
                 case 4:  url = `https://vidrock.net/embed/${type}/${id}${seriesSuffix}`; break;
                 case 5:  url = `https://vidup.to/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true`; break;
                 case 6:  url = `https://vidcore.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true`; break;
-                case 7:  url = `https://player.vidzee.wtf/embed/${type}/${id}${seriesSuffix}`; break;
-                case 8:  url = `https://vidstorm.ru/embed/${type}/${id}${seriesSuffix}`; break;
-                case 9:  url = `https://vidsync.xyz/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true${type==='tv'?'&autoNext=true':''}`; break;
-                case 10: url = `https://vixsrc.to/${type}/${id}${type==='tv'?`/${s}/${e}`:''}/`; break;
-                case 11: url = `https://vidking.net/embed/${type}/${id}${seriesSuffix}`; break;
-                case 12: url = `https://vidlux.xyz/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 13: url = `https://111movies.com/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 14: url = `https://vidnest.fun/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 15: url = `https://vidsrc.wtf/1/${type}/${id}${seriesSuffix}`; break;
-                case 16: url = `https://nontongo.win/embed/${type}/${id}${seriesSuffix}`; break;
-                case 17: url = `https://cinesrc.st/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 18: url = `https://111movies.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 19: url = `https://vidfast.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 20: url = `https://vidsrcme.ru/embed/${type}/${id}${seriesSuffix}`; break;
-                case 21: url = `https://multiembed.mov/?video_id=${id}&tmdb=1${type==='tv'?`&s=${s}&e=${e}`:''}`; break;
-                case 22: url = `https://2embed.cc/embed/${type}/${id}${seriesSuffix}`; break;
-                case 23: url = `https://vidsrc.ru/${type}/${currentImdbId || id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
-                case 24: url = `https://player.vidify.top/embed/${type}/${id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
-                case 25: url = `https://warezcdn.site/${type==='tv'?'serie':'filme'}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 26: url = `https://player.cinezo.live/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 27: url = `https://mgeb.top/embed/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 28: url = `https://vidsrc.cc/v2/embed/${type}/${id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
-                case 29: url = `https://vidsrc.me/embed/${type}?tmdb=${id}${type==='tv'?`&s=${s}&e=${e}`:''}`; break;
-                case 30: url = `https://embed.smashystream.com/playere.php?tmdb=${id}${type==='tv'?`&season=${s}&episode=${e}`:''}`; break;
-                case 31: url = `https://anyembed.xyz/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 7:  url = `https://vidstorm.ru/embed/${type}/${id}${seriesSuffix}`; break;
+                case 8:  url = `https://vidsync.xyz/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true${type==='tv'?'&autoNext=true':''}`; break;
+                case 9:  url = `https://vixsrc.to/${type}/${id}${type==='tv'?`/${s}/${e}`:''}/`; break;
+                case 10: url = `https://vidfast.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 11: url = `https://mgeb.top/embed/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 12: url = `https://embed.smashystream.com/playere.php?tmdb=${id}${type==='tv'?`&season=${s}&episode=${e}`:''}`; break;
+                case 13: url = `https://vidsrcme.ru/embed/${type}/${id}${seriesSuffix}`; break;
+                case 14: url = `https://111movies.com/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 15: url = `https://111movies.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 16: url = `https://vidsrc.me/embed/${type}?tmdb=${id}${type==='tv'?`&s=${s}&e=${e}`:''}`; break;
+                case 17: url = `https://player.vidzee.wtf/embed/${type}/${id}${seriesSuffix}`; break;
+                case 18: url = `https://vidnest.fun/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 19: url = `https://vidlux.xyz/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 20: url = `https://nontongo.win/embed/${type}/${id}${seriesSuffix}`; break;
+                case 21: url = `https://cinesrc.st/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 22: url = `https://player.vidify.top/embed/${type}/${id}${type==='tv'?`?s=${s}&e=${e}`:''}`; break;
+                case 23: url = `https://vidking.net/embed/${type}/${id}${seriesSuffix}`; break;
+                case 24: url = `https://2embed.cc/embed/${type}/${id}${seriesSuffix}`; break;
+                case 25: url = `https://streamrip.fun/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 26: url = `https://warezcdn.site/${type==='tv'?'serie':'filme'}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 27: url = `https://vidsrc.wtf/1/${type}/${id}${seriesSuffix}`; break;
+                case 28: url = `https://player.cinezo.live/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
                 case 99: url = `https://www.dailymotion.com/embed/video/${currentDailymotionId}`; break;     default: url = `https://player.videasy.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`;
             }
             return url.replace("http://", "https://");
@@ -7400,7 +7840,7 @@
                 document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
                 if (el) el.classList.add('active');
             }
-            if(mode === 'bookmarks') updateActiveNav(document.getElementById('bookmarkBtnNav')); 
+            if(mode === 'bookmarks') updateActiveNav(document.getElementById('homeBtnNav')); 
             else updateActiveNav(document.getElementById('homeBtnNav'));
             const grid = document.getElementById('feedGrid'); grid.innerHTML = ''; 
             if(mode === 'likes' || mode === 'bookmarks') { 
@@ -7441,7 +7881,14 @@
                 card.className = 'post-card';
                 const mType = m._savedType || m.media_type || 'movie';
                 card.onclick = function() { openModal(m.id, mType); };
-                card.innerHTML = `<div class="badge-rating">${(m.vote_average||0).toFixed(1)}</div><div class="badge-type">${mType === 'tv' ? 'tv' : 'movie'}</div><img src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0">`;
+                let _libTitle = m.title || m.name || '';
+                const _libOrigT = m.original_title || m.original_name || '';
+                if (isNonLatin(_libTitle) && _libOrigT && !isNonLatin(_libOrigT)) _libTitle = _libOrigT;
+                const _libYear   = (m.release_date || m.first_air_date || '').split('-')[0];
+                const _libRating = m.vote_average ? m.vote_average.toFixed(1) : '';
+                const _libType   = mType === 'tv' ? 'SERIES' : 'MOVIE';
+                const _libNb     = isNewRelease(m.release_date || m.first_air_date || '') ? `<div class="badge-new" style="position:absolute;top:6px;right:6px;z-index:2">NEW</div>` : '';
+                card.innerHTML = `${_libNb}<img src="https://image.tmdb.org/t/p/w342${m.poster_path}" loading="lazy" onload="this.style.opacity=1" style="opacity:0"><div class="card-title-overlay"><div class="card-title-text">${_libTitle}</div><div class="card-meta-row">${_libRating ? `<span class="card-star">★ ${_libRating}</span>` : ''}<span class="card-type-label">${_libType}</span>${_libYear ? `<span class="card-year">${_libYear}</span>` : ''}</div></div>`;
                 grid.appendChild(card);
             });
         }
@@ -8300,7 +8747,7 @@
                     const title = m.title || m.name || '';
                     const rating = m.vote_average ? m.vote_average.toFixed(1) : '';
                     const year = (m.release_date || m.first_air_date || '').split('-')[0];
-                    return `<div onclick="closeDecadeModal(); openModal(${m.id},'${_decadeType}'); closeSearch()" style="position:relative;border-radius:10px;overflow:hidden;cursor:pointer;background:#111;aspect-ratio:16/9">
+                    return `<div onclick="closeDecadeModal(); openModal(${m.id},'${_decadeType}')" style="position:relative;border-radius:10px;overflow:hidden;cursor:pointer;background:#111;aspect-ratio:16/9">
                         <img src="https://image.tmdb.org/t/p/w300${m.backdrop_path}" loading="lazy"
                              onload="this.style.opacity=1"
                              style="opacity:0;width:100%;height:100%;object-fit:cover;transition:opacity 0.3s">
