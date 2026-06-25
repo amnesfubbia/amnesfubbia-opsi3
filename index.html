@@ -2987,7 +2987,8 @@
             document.getElementById('livesportModal').style.display = 'flex';
             document.getElementById('livesportIframe').src = 'https://dami-tv.pro/';
             document.body.style.overflow = 'hidden';
-            history.pushState({view:'livesport'}, '');
+            // replaceState bukan pushState — agar back langsung ke tvModal
+            history.replaceState({view:'livesport'}, '');
             renderBottomNav('livesportBottomNav', 'sport', null);
         }
         function closeLivesportModal() {
@@ -4357,11 +4358,6 @@
                 return;
             }
 
-            // LiveSport modal
-            if (document.getElementById('livesportModal').style.display === 'flex') {
-                closeLivesportModal(); return;
-            }
-
             // Notifikasi
             if (document.getElementById('notifModal') && document.getElementById('notifModal').style.display === 'block') {
                 closeNotif();
@@ -4457,8 +4453,12 @@
                 return;
             }
 
-            // TV modal
+            // TV modal — cek livesport dulu jika terbuka di atas TV
             if (document.getElementById('tvModal').style.display === 'block') {
+                if (document.getElementById('livesportModal').style.display === 'flex') {
+                    closeLivesportModal();
+                    return;
+                }
                 _closeTvModalSilent();
                 return;
             }
