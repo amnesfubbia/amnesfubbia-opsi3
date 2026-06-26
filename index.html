@@ -2987,15 +2987,15 @@
             document.getElementById('livesportModal').style.display = 'flex';
             document.getElementById('livesportIframe').src = 'https://dami-tv.pro/';
             document.body.style.overflow = 'hidden';
-            // replaceState bukan pushState — agar back langsung ke tvModal
-            history.replaceState({view:'livesport'}, '');
+            // pushState di atas tv — back akan kembali ke state tv
+            history.pushState({view:'livesport'}, '');
             renderBottomNav('livesportBottomNav', 'sport', null);
         }
         function closeLivesportModal() {
             document.getElementById('livesportIframe').src = '';
             document.getElementById('livesportModal').style.display = 'none';
             document.body.style.overflow = 'hidden'; // tvModal masih terbuka
-            history.replaceState({view: 'tv'}, '');
+            // Tidak perlu replaceState — history.back() sudah kembalikan ke state tv
         }
         // Edit di sini saja untuk ubah semua nav sekaligus
         const NAV_ITEMS = [
@@ -3918,8 +3918,8 @@
             document.getElementById('mToggleBtn').classList.add('hidden');
             document.getElementById('mTranslateBtn').style.display = 'none';
             document.body.style.overflow = 'hidden';
-            // Push satu state saja — back langsung kembali ke tv
-            history.pushState({view: 'tvChannel'}, '');
+            // replaceState bukan pushState — agar back cukup sekali dari tvModal
+            history.replaceState({view: 'tvChannel'}, '');
 
             const postContent = document.querySelector('#movieModal .ig-post-content');
 
@@ -4358,6 +4358,12 @@
                 return;
             }
 
+            // LiveSport modal (di atas tvModal)
+            if (document.getElementById('livesportModal').style.display === 'flex') {
+                closeLivesportModal();
+                return;
+            }
+
             // Notifikasi
             if (document.getElementById('notifModal') && document.getElementById('notifModal').style.display === 'block') {
                 closeNotif();
@@ -4453,12 +4459,8 @@
                 return;
             }
 
-            // TV modal — cek livesport dulu jika terbuka di atas TV
+            // TV modal
             if (document.getElementById('tvModal').style.display === 'block') {
-                if (document.getElementById('livesportModal').style.display === 'flex') {
-                    closeLivesportModal();
-                    return;
-                }
                 _closeTvModalSilent();
                 return;
             }
