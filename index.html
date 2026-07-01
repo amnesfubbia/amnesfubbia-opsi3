@@ -3070,9 +3070,6 @@
 
                 <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;position:relative">
                     <img id="musicFullArt" src="" style="width:78%;max-width:300px;aspect-ratio:1;border-radius:14px;object-fit:cover;box-shadow:0 20px 50px rgba(0,0,0,0.5);background:#222">
-                    <div id="musicVideoContainer" style="display:none;width:100%;max-width:380px;aspect-ratio:16/9;border-radius:14px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.5);background:#000">
-                        <iframe id="musicVideoFrame" src="" style="width:100%;height:100%;border:none" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-                    </div>
                 </div>
 
                 <div style="padding:0 28px 8px">
@@ -3086,7 +3083,7 @@
                 </div>
 
                 <!-- Progress -->
-                <div id="musicProgressSection" style="padding:6px 28px">
+                <div style="padding:6px 28px">
                     <div id="musicFullProgressBar" onclick="musicSeek(event)" style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;cursor:pointer;position:relative">
                         <div id="musicFullProgress" style="height:100%;background:#fff;border-radius:2px;width:0%;position:relative"></div>
                         <div id="musicFullThumb" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%);width:13px;height:13px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>
@@ -3098,7 +3095,7 @@
                 </div>
 
                 <!-- Main controls -->
-                <div id="musicMainControls" style="display:flex;align-items:center;justify-content:space-around;padding:14px 20px">
+                <div style="display:flex;align-items:center;justify-content:space-around;padding:14px 20px">
                     <i id="musicShuffleBtn" class="fa-solid fa-shuffle" onclick="musicToggleShuffle()" style="color:#888;font-size:18px;cursor:pointer;padding:8px"></i>
                     <i class="fa-solid fa-backward-step" onclick="musicPrev()" style="color:#fff;font-size:24px;cursor:pointer;padding:8px"></i>
                     <div id="musicFullPlayBtn" onclick="musicTogglePlay()" style="width:62px;height:62px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer">
@@ -3112,7 +3109,6 @@
                 <div style="display:flex;align-items:center;justify-content:space-around;padding:6px 24px 10px">
                     <i class="fa-solid fa-quote-left" onclick="musicShowPanel('lyrics')" style="color:#888;font-size:15px;cursor:pointer;padding:8px" title="Lirik"></i>
                     <i class="fa-solid fa-list-ul" onclick="musicShowPanel('queue')" style="color:#888;font-size:15px;cursor:pointer;padding:8px" title="Antrian"></i>
-                    <i id="musicVideoToggleBtn" class="fa-brands fa-youtube" onclick="musicToggleVideoMode()" style="color:#888;font-size:16px;cursor:pointer;padding:8px" title="Music Video"></i>
                     <i class="fa-solid fa-sliders" onclick="musicShowPanel('eq')" style="color:#888;font-size:15px;cursor:pointer;padding:8px" title="Equalizer"></i>
                     <i class="fa-solid fa-download" onclick="musicDownload()" style="color:#888;font-size:15px;cursor:pointer;padding:8px" title="Download"></i>
                 </div>
@@ -3201,8 +3197,6 @@
         // Video controls modal film
         let _modalPlaying = true;
         // ===== MUSIC MODAL =====
-        const YT_KEY = 'AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY';
-
         // ============================================================
         // MUSIC MODULE — iTunes Search API
         // ============================================================
@@ -3469,8 +3463,6 @@
             document.getElementById('musicFullLikeBtn').className = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
             document.getElementById('musicFullLikeBtn').style.color = isLiked ? '#1a73e8' : '#fff';
             document.getElementById('musicFullPlayerBg').style.backgroundImage = `url('${t.artwork}')`;
-            // Jika mode video aktif, otomatis load video untuk lagu baru
-            if (_musicVideoMode) musicLoadVideoForCurrentTrack();
         }
 
         function musicTogglePlay() {
@@ -3633,8 +3625,6 @@
         function musicCloseFullPlayer() {
             document.getElementById('musicFullPlayer').style.display = 'none';
             musicClosePanel();
-            // Keluar dari video mode saat full player ditutup — kembali ke audio iTunes
-            if (_musicVideoMode) musicExitVideoMode();
         }
         function musicRestoreMiniPlayer() {
             if (_musicCurrentTrack) {
@@ -3659,7 +3649,10 @@
                 try {
                     const artist = encodeURIComponent(_musicCurrentTrack.artist);
                     const titleClean = encodeURIComponent(_musicCurrentTrack.title.replace(/\(.*?\)/g, '').trim());
-                    const r = await fetch(`https://api.lyrics.ovh/v1/${artist}/${titleClean}`);
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 5000);
+                    const r = await fetch(`https://api.lyrics.ovh/v1/${artist}/${titleClean}`, { signal: controller.signal });
+                    clearTimeout(timeout);
                     const d = await r.json();
                     if (d.lyrics && d.lyrics.trim()) {
                         body.innerHTML = `<div style="padding:10px 0 20px;text-align:left">
@@ -3735,74 +3728,6 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-        }
-
-        // ---------- MUSIC VIDEO MODE ----------
-        let _musicVideoMode = false;
-        let _musicVideoSearchToken = 0;
-
-        async function musicToggleVideoMode() {
-            if (!_musicCurrentTrack) return;
-            _musicVideoMode = !_musicVideoMode;
-            const btn = document.getElementById('musicVideoToggleBtn');
-            btn.style.color = _musicVideoMode ? '#1a73e8' : '#888';
-
-            if (_musicVideoMode) {
-                await musicLoadVideoForCurrentTrack();
-            } else {
-                musicExitVideoMode();
-            }
-        }
-
-        async function musicLoadVideoForCurrentTrack() {
-            if (!_musicCurrentTrack) return;
-            const token = ++_musicVideoSearchToken;
-            const artEl = document.getElementById('musicFullArt');
-            const vidContainer = document.getElementById('musicVideoContainer');
-            const vidFrame = document.getElementById('musicVideoFrame');
-            const progressSection = document.getElementById('musicProgressSection');
-            const mainControls = document.getElementById('musicMainControls');
-
-            // Tampilkan loading state di artwork dulu
-            artEl.style.display = 'none';
-            vidContainer.style.display = 'block';
-            vidFrame.src = '';
-
-            try {
-                const q = encodeURIComponent(`${_musicCurrentTrack.title} ${_musicCurrentTrack.artist} official music video`);
-                const r = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&videoCategoryId=10&maxResults=1&key=${YT_KEY}`);
-                const d = await r.json();
-                if (token !== _musicVideoSearchToken) return; // user sudah ganti lagu lain
-
-                const vid = d.items && d.items[0] && d.items[0].id.videoId;
-                if (!vid) {
-                    musicExitVideoMode();
-                    alert('Video musik tidak ditemukan');
-                    return;
-                }
-
-                // Pause audio iTunes — video YouTube yang jadi sumber suara
-                if (_musicAudio) { _musicAudio.pause(); }
-                progressSection.style.opacity = '0.3';
-                progressSection.style.pointerEvents = 'none';
-
-                vidFrame.src = `https://www.youtube.com/embed/${vid}?autoplay=1&rel=0&enablejsapi=1`;
-            } catch(e) {
-                console.warn('musicLoadVideoForCurrentTrack error:', e);
-                musicExitVideoMode();
-            }
-        }
-
-        function musicExitVideoMode() {
-            _musicVideoMode = false;
-            document.getElementById('musicVideoToggleBtn').style.color = '#888';
-            document.getElementById('musicVideoFrame').src = '';
-            document.getElementById('musicVideoContainer').style.display = 'none';
-            document.getElementById('musicFullArt').style.display = 'block';
-            document.getElementById('musicProgressSection').style.opacity = '1';
-            document.getElementById('musicProgressSection').style.pointerEvents = 'auto';
-            // Lanjutkan audio iTunes dari posisi terakhir
-            if (_musicAudio && _musicPlaying) _musicAudio.play().catch(()=>{});
         }
 
         function openLivesportModal() {
