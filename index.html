@@ -2922,216 +2922,271 @@
 
 
     <!-- ===== MUSIC MODAL ===== -->
-    <div id="musicModal" style="display:none;position:fixed;inset:0;z-index:9700;background:#0a0a0a;flex-direction:column;overflow:hidden">
+    <div id="musicModal" style="display:none;position:fixed;inset:0;z-index:9700;background:#111;flex-direction:column;overflow:hidden">
 
         <!-- ===== HOME TAB ===== -->
         <div id="musicHomeTab" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;flex-shrink:0">
-                <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer" onclick="closeMusicModal()"></i>
-                <div style="flex:1">
-                    <div id="musicGreeting" style="font-size:19px;font-weight:800;color:#fff">Selamat Datang</div>
+            <!-- Top bar -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px;flex-shrink:0">
+                <div>
+                    <div id="musicGreeting" style="font-size:22px;font-weight:800;color:#fff">Good Morning</div>
                 </div>
-                <i class="fa-solid fa-magnifying-glass" style="font-size:17px;color:#fff;cursor:pointer;padding:6px" onclick="musicShowTab('search')"></i>
+                <div style="display:flex;align-items:center;gap:14px">
+                    <i class="fa-solid fa-magnifying-glass" style="font-size:18px;color:#fff;cursor:pointer" onclick="musicShowTab('search')"></i>
+                    <div onclick="musicShowTab('profile')" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1a73e8,#0d47a1);display:flex;align-items:center;justify-content:center;cursor:pointer">
+                        <i class="fa-solid fa-user" style="font-size:15px;color:#fff"></i>
+                    </div>
+                </div>
             </div>
 
-            <div id="musicHomeScroll" style="flex:1;overflow-y:auto;padding-bottom:140px">
-                <!-- Featured banner -->
-                <div style="margin:0 16px 20px;border-radius:16px;overflow:hidden;position:relative;height:140px;background:linear-gradient(135deg,#1a73e8,#0d47a1)">
-                    <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:20px">
-                        <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.8);letter-spacing:1px;margin-bottom:6px">TRENDING</div>
-                        <div style="font-size:22px;font-weight:900;color:#fff;line-height:1.2">Trending<br>Indonesia</div>
+            <div id="musicHomeScroll" style="flex:1;overflow-y:auto;padding-bottom:160px">
+                <!-- Featured Hero Banner -->
+                <div id="musicFeaturedBanner" style="margin:10px 20px 24px;border-radius:18px;overflow:hidden;position:relative;height:200px;background:#1a1a2e;cursor:pointer" onclick="musicPlayFeatured()">
+                    <div id="musicFeaturedBg" style="position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(0.5)"></div>
+                    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.8) 0%,transparent 60%)"></div>
+                    <div style="position:absolute;bottom:0;left:0;right:0;padding:16px 18px">
+                        <div id="musicFeaturedTitle" style="font-size:22px;font-weight:900;color:#fff;line-height:1.2">Trending</div>
+                        <div id="musicFeaturedSub" style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px">Indonesia</div>
+                        <div style="display:flex;gap:8px;margin-top:10px">
+                            <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
+                                <i class="fa-solid fa-play" style="color:#fff;font-size:13px;margin-left:2px"></i>
+                            </div>
+                        </div>
                     </div>
-                    <i class="fa-solid fa-music" style="position:absolute;right:16px;bottom:16px;font-size:48px;color:rgba(255,255,255,0.15)"></i>
+                    <!-- Album row overlaid -->
+                    <div id="musicFeaturedAlbums" style="position:absolute;bottom:72px;right:10px;display:flex;gap:6px"></div>
                 </div>
 
                 <!-- Recently Played -->
-                <div id="musicRecentSection" style="display:none;margin-bottom:22px">
-                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 16px 10px">
-                        <span style="font-size:15px;font-weight:800;color:#fff">Recently Played</span>
+                <div id="musicRecentSection" style="display:none;margin-bottom:26px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 20px 12px">
+                        <span style="font-size:16px;font-weight:800;color:#fff">Recently Played</span>
                     </div>
-                    <div id="musicRecentScroll" style="display:flex;gap:12px;overflow-x:auto;padding:0 16px;scrollbar-width:none"></div>
+                    <div id="musicRecentScroll" style="display:flex;gap:14px;overflow-x:auto;padding:0 20px;scrollbar-width:none"></div>
                 </div>
 
                 <!-- Made For You -->
-                <div style="margin-bottom:22px">
-                    <div style="padding:0 16px 10px"><span style="font-size:15px;font-weight:800;color:#fff">Made For You</span></div>
-                    <div id="musicMadeForYouScroll" style="display:flex;gap:12px;overflow-x:auto;padding:0 16px;scrollbar-width:none"></div>
+                <div style="margin-bottom:26px">
+                    <div style="padding:0 20px 12px"><span style="font-size:16px;font-weight:800;color:#fff">Made For You</span></div>
+                    <div id="musicMadeForYouScroll" style="display:flex;gap:14px;overflow-x:auto;padding:0 20px;scrollbar-width:none"></div>
                 </div>
 
-                <!-- Mood Playlist -->
-                <div style="margin-bottom:22px">
-                    <div style="padding:0 16px 10px"><span style="font-size:15px;font-weight:800;color:#fff">Mood Playlist</span></div>
-                    <div style="display:flex;gap:10px;overflow-x:auto;padding:0 16px;scrollbar-width:none">
-                        <div onclick="musicLoadMood('Happy')" style="flex-shrink:0;width:90px;height:60px;border-radius:12px;background:#141414;border:1px solid #1a73e8;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:12px;font-weight:800;color:#fff">😊 Happy</span></div>
-                        <div onclick="musicLoadMood('Chill')" style="flex-shrink:0;width:90px;height:60px;border-radius:12px;background:#141414;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:12px;font-weight:800;color:#fff">😌 Chill</span></div>
-                        <div onclick="musicLoadMood('Sad')" style="flex-shrink:0;width:90px;height:60px;border-radius:12px;background:#141414;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:12px;font-weight:800;color:#fff">😢 Sad</span></div>
-                        <div onclick="musicLoadMood('Workout')" style="flex-shrink:0;width:90px;height:60px;border-radius:12px;background:#141414;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:12px;font-weight:800;color:#fff">🔥 Workout</span></div>
-                        <div onclick="musicLoadMood('Romantic')" style="flex-shrink:0;width:90px;height:60px;border-radius:12px;background:#141414;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:12px;font-weight:800;color:#fff">💕 Romantic</span></div>
-                        <div onclick="musicLoadMood('Sleep')" style="flex-shrink:0;width:90px;height:60px;border-radius:12px;background:#141414;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:12px;font-weight:800;color:#fff">😴 Sleep</span></div>
+                <!-- Mood Playlist — grid kategori seperti Spotify Search -->
+                <div style="margin-bottom:26px">
+                    <div style="padding:0 20px 12px"><span style="font-size:16px;font-weight:800;color:#fff">Browse Categories</span></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px">
+                        <div onclick="musicLoadMood('Happy');musicShowTab('search')" style="height:80px;border-radius:14px;background:#1a1a1a;border:1px solid #222;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">
+                            <span style="font-size:24px;position:absolute;right:12px;bottom:8px;opacity:0.6">😊</span>
+                            <span style="font-size:13px;font-weight:800;color:#fff;padding:14px">Happy</span>
+                        </div>
+                        <div onclick="musicLoadMood('Chill');musicShowTab('search')" style="height:80px;border-radius:14px;background:#1a1a1a;border:1px solid #222;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">
+                            <span style="font-size:24px;position:absolute;right:12px;bottom:8px;opacity:0.6">😌</span>
+                            <span style="font-size:13px;font-weight:800;color:#fff;padding:14px">Chill</span>
+                        </div>
+                        <div onclick="musicLoadMood('K-Pop');musicShowTab('search')" style="height:80px;border-radius:14px;background:#1a1a1a;border:1px solid #1a73e8;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">
+                            <span style="font-size:24px;position:absolute;right:12px;bottom:8px;opacity:0.6">🎤</span>
+                            <span style="font-size:13px;font-weight:800;color:#fff;padding:14px">K-Pop</span>
+                        </div>
+                        <div onclick="musicLoadMood('Indie');musicShowTab('search')" style="height:80px;border-radius:14px;background:#1a1a1a;border:1px solid #222;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">
+                            <span style="font-size:24px;position:absolute;right:12px;bottom:8px;opacity:0.6">🎸</span>
+                            <span style="font-size:13px;font-weight:800;color:#fff;padding:14px">Indie</span>
+                        </div>
+                        <div onclick="musicLoadMood('Rock');musicShowTab('search')" style="height:80px;border-radius:14px;background:#1a1a1a;border:1px solid #222;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">
+                            <span style="font-size:24px;position:absolute;right:12px;bottom:8px;opacity:0.6">🤘</span>
+                            <span style="font-size:13px;font-weight:800;color:#fff;padding:14px">Rock</span>
+                        </div>
+                        <div onclick="musicLoadMood('R&B');musicShowTab('search')" style="height:80px;border-radius:14px;background:#1a1a1a;border:1px solid #222;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">
+                            <span style="font-size:24px;position:absolute;right:12px;bottom:8px;opacity:0.6">🎵</span>
+                            <span style="font-size:13px;font-weight:800;color:#fff;padding:14px">R&B</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Trending Indonesia -->
-                <div style="margin-bottom:22px">
-                    <div style="padding:0 16px 10px"><span style="font-size:15px;font-weight:800;color:#fff">Trending Indonesia</span></div>
-                    <div id="musicTrendingIDScroll" style="display:flex;gap:12px;overflow-x:auto;padding:0 16px;scrollbar-width:none"></div>
+                <div style="margin-bottom:26px">
+                    <div style="padding:0 20px 12px"><span style="font-size:16px;font-weight:800;color:#fff">Trending Indonesia</span></div>
+                    <div id="musicTrendingIDScroll" style="display:flex;gap:14px;overflow-x:auto;padding:0 20px;scrollbar-width:none"></div>
                 </div>
 
                 <!-- Artis Populer -->
-                <div style="margin-bottom:22px">
-                    <div style="padding:0 16px 10px"><span style="font-size:15px;font-weight:800;color:#fff">Artis Populer</span></div>
-                    <div id="musicArtistScroll" style="display:flex;gap:14px;overflow-x:auto;padding:0 16px;scrollbar-width:none"></div>
+                <div style="margin-bottom:26px">
+                    <div style="padding:0 20px 12px"><span style="font-size:16px;font-weight:800;color:#fff">Artis Populer</span></div>
+                    <div id="musicArtistScroll" style="display:flex;gap:14px;overflow-x:auto;padding:0 20px;scrollbar-width:none"></div>
                 </div>
             </div>
         </div>
 
         <!-- ===== SEARCH TAB ===== -->
         <div id="musicSearchTab" style="display:none;flex:1;flex-direction:column;overflow:hidden">
-            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;flex-shrink:0">
-                <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer" onclick="musicShowTab('home')"></i>
-                <div style="flex:1;display:flex;align-items:center;gap:10px;background:#1a1a1a;border-radius:12px;padding:10px 14px">
-                    <i class="fa-solid fa-magnifying-glass" style="color:#555;font-size:14px"></i>
-                    <input id="musicSearchInp" type="text" placeholder="Cari lagu, artis, album..." autocomplete="off"
+            <div style="padding:16px 20px 10px;flex-shrink:0">
+                <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:14px">Search</div>
+                <div style="display:flex;align-items:center;gap:10px;background:#1e1e1e;border-radius:12px;padding:11px 14px">
+                    <i class="fa-solid fa-magnifying-glass" style="color:#666;font-size:14px"></i>
+                    <input id="musicSearchInp" type="text" placeholder="Artists, songs, podcasts" autocomplete="off"
                         style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px"
-                        oninput="musicDebounceSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();musicSearch(this.value)}">
+                        oninput="musicDebounceSearch(this.value)" onkeydown="if(event.key='Enter'){event.preventDefault();musicSearch(this.value)}">
+                    <i class="fa-solid fa-xmark" style="color:#666;cursor:pointer;font-size:14px" onclick="document.getElementById('musicSearchInp').value='';document.getElementById('musicSearchResults').innerHTML=''"></i>
                 </div>
             </div>
-            <div id="musicSearchResults" style="flex:1;overflow-y:auto;padding:8px 0 140px"></div>
+            <div id="musicSearchResults" style="flex:1;overflow-y:auto;padding:4px 0 160px"></div>
         </div>
 
         <!-- ===== LIBRARY TAB ===== -->
         <div id="musicLibraryTab" style="display:none;flex:1;flex-direction:column;overflow:hidden">
-            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;flex-shrink:0">
-                <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer" onclick="musicShowTab('home')"></i>
-                <span style="font-size:17px;font-weight:800;color:#fff;flex:1">Library</span>
+            <div style="padding:16px 20px 10px;flex-shrink:0">
+                <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:14px">Your Library</div>
+                <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none">
+                    <div class="music-lib-tab" id="libTabLiked" onclick="musicLibSwitch('liked')" style="flex-shrink:0;padding:8px 18px;border-radius:20px;background:#1a73e8;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Liked</div>
+                    <div class="music-lib-tab" id="libTabPlaylist" onclick="musicLibSwitch('playlist')" style="flex-shrink:0;padding:8px 18px;border-radius:20px;background:#1e1e1e;color:#888;font-size:12px;font-weight:700;cursor:pointer">Playlist</div>
+                    <div class="music-lib-tab" id="libTabAlbum" onclick="musicLibSwitch('album')" style="flex-shrink:0;padding:8px 18px;border-radius:20px;background:#1e1e1e;color:#888;font-size:12px;font-weight:700;cursor:pointer">Albums</div>
+                    <div class="music-lib-tab" id="libTabArtist" onclick="musicLibSwitch('artist')" style="flex-shrink:0;padding:8px 18px;border-radius:20px;background:#1e1e1e;color:#888;font-size:12px;font-weight:700;cursor:pointer">Artists</div>
+                    <div class="music-lib-tab" id="libTabHistory" onclick="musicLibSwitch('history')" style="flex-shrink:0;padding:8px 18px;border-radius:20px;background:#1e1e1e;color:#888;font-size:12px;font-weight:700;cursor:pointer">History</div>
+                </div>
             </div>
-            <div style="display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;flex-shrink:0">
-                <div class="music-lib-tab active" id="libTabLiked" onclick="musicLibSwitch('liked')" style="flex-shrink:0;padding:8px 16px;border-radius:20px;background:#1a73e8;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Disukai</div>
-                <div class="music-lib-tab" id="libTabPlaylist" onclick="musicLibSwitch('playlist')" style="flex-shrink:0;padding:8px 16px;border-radius:20px;background:#1a1a1a;color:#888;font-size:12px;font-weight:700;cursor:pointer">Playlist</div>
-                <div class="music-lib-tab" id="libTabAlbum" onclick="musicLibSwitch('album')" style="flex-shrink:0;padding:8px 16px;border-radius:20px;background:#1a1a1a;color:#888;font-size:12px;font-weight:700;cursor:pointer">Album</div>
-                <div class="music-lib-tab" id="libTabArtist" onclick="musicLibSwitch('artist')" style="flex-shrink:0;padding:8px 16px;border-radius:20px;background:#1a1a1a;color:#888;font-size:12px;font-weight:700;cursor:pointer">Artis</div>
-                <div class="music-lib-tab" id="libTabHistory" onclick="musicLibSwitch('history')" style="flex-shrink:0;padding:8px 16px;border-radius:20px;background:#1a1a1a;color:#888;font-size:12px;font-weight:700;cursor:pointer">Riwayat</div>
-            </div>
-            <div id="musicLibraryContent" style="flex:1;overflow-y:auto;padding:8px 0 140px"></div>
+            <div id="musicLibraryContent" style="flex:1;overflow-y:auto;padding:8px 0 160px"></div>
         </div>
 
         <!-- ===== PROFILE TAB ===== -->
         <div id="musicProfileTab" style="display:none;flex:1;flex-direction:column;overflow:hidden">
-            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;flex-shrink:0">
-                <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer" onclick="musicShowTab('home')"></i>
-                <span style="font-size:17px;font-weight:800;color:#fff;flex:1">Profil</span>
+            <div style="padding:16px 20px 10px;flex-shrink:0">
+                <div style="font-size:22px;font-weight:800;color:#fff">Profile</div>
             </div>
-            <div style="flex:1;overflow-y:auto;padding:20px 16px 140px">
-                <div style="text-align:center;margin-bottom:24px">
-                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#1a73e8,#0d47a1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:32px;color:#fff"><i class="fa-solid fa-user"></i></div>
-                    <div style="font-size:16px;font-weight:800;color:#fff">Music Lover</div>
-                    <div style="font-size:12px;color:#555;margin-top:2px" id="musicStatLiked">0 lagu disukai</div>
+            <div style="flex:1;overflow-y:auto;padding:10px 20px 160px">
+                <div style="text-align:center;margin-bottom:28px">
+                    <div style="width:88px;height:88px;border-radius:50%;background:#1e1e1e;border:2px solid #1a73e8;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+                        <i class="fa-solid fa-user" style="font-size:34px;color:#1a73e8"></i>
+                    </div>
+                    <div style="font-size:18px;font-weight:800;color:#fff">Music Lover</div>
+                    <div style="font-size:12px;color:#555;margin-top:4px" id="musicStatLiked">0 songs liked</div>
                 </div>
-                <div onclick="musicLibSwitch('liked');musicShowTab('library')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#111;border-radius:12px;margin-bottom:10px;cursor:pointer">
-                    <i class="fa-solid fa-heart" style="color:#1a73e8;font-size:18px;width:20px"></i>
-                    <span style="font-size:13px;font-weight:700;color:#fff;flex:1">Lagu Disukai</span>
-                    <i class="fa-solid fa-chevron-right" style="color:#444;font-size:12px"></i>
+                <div onclick="musicLibSwitch('liked');musicShowTab('library')" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #1e1e1e;cursor:pointer">
+                    <div style="width:44px;height:44px;border-radius:12px;background:#1e1e1e;display:flex;align-items:center;justify-content:center">
+                        <i class="fa-solid fa-heart" style="color:#1a73e8;font-size:18px"></i>
+                    </div>
+                    <div style="flex:1">
+                        <div style="font-size:14px;font-weight:700;color:#fff">Liked Songs</div>
+                        <div style="font-size:11px;color:#555;margin-top:2px">Your favorites</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color:#333;font-size:12px"></i>
                 </div>
-                <div onclick="musicLibSwitch('history');musicShowTab('library')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#111;border-radius:12px;margin-bottom:10px;cursor:pointer">
-                    <i class="fa-solid fa-clock-rotate-left" style="color:#1a73e8;font-size:18px;width:20px"></i>
-                    <span style="font-size:13px;font-weight:700;color:#fff;flex:1">Riwayat Putar</span>
-                    <i class="fa-solid fa-chevron-right" style="color:#444;font-size:12px"></i>
+                <div onclick="musicLibSwitch('history');musicShowTab('library')" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #1e1e1e;cursor:pointer">
+                    <div style="width:44px;height:44px;border-radius:12px;background:#1e1e1e;display:flex;align-items:center;justify-content:center">
+                        <i class="fa-solid fa-clock-rotate-left" style="color:#1a73e8;font-size:18px"></i>
+                    </div>
+                    <div style="flex:1">
+                        <div style="font-size:14px;font-weight:700;color:#fff">Recently Played</div>
+                        <div style="font-size:11px;color:#555;margin-top:2px">Your history</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color:#333;font-size:12px"></i>
                 </div>
-                <div onclick="musicClearAllData()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#111;border-radius:12px;cursor:pointer">
-                    <i class="fa-solid fa-trash" style="color:#ff4444;font-size:18px;width:20px"></i>
-                    <span style="font-size:13px;font-weight:700;color:#ff4444;flex:1">Hapus Semua Data</span>
+                <div onclick="musicClearAllData()" style="display:flex;align-items:center;gap:14px;padding:14px 0;cursor:pointer">
+                    <div style="width:44px;height:44px;border-radius:12px;background:#1e1e1e;display:flex;align-items:center;justify-content:center">
+                        <i class="fa-solid fa-trash" style="color:#ff4444;font-size:18px"></i>
+                    </div>
+                    <div style="flex:1">
+                        <div style="font-size:14px;font-weight:700;color:#ff4444">Clear All Data</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== MINI PLAYER (sticky) ===== -->
-        <div id="musicMiniPlayer" onclick="musicOpenFullPlayer()" style="display:none;position:absolute;bottom:64px;left:0;right:0;background:#181818;cursor:pointer;z-index:50">
+        <!-- ===== MINI PLAYER (sticky, above nav) ===== -->
+        <div id="musicMiniPlayer" onclick="musicOpenFullPlayer()" style="display:none;position:absolute;bottom:64px;left:0;right:0;background:#1e1e1e;cursor:pointer;z-index:50;border-top:1px solid #2a2a2a">
             <div id="musicMiniProgress" style="height:2px;background:#1a73e8;width:0%;transition:width 0.3s linear"></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:8px 12px">
-                <img id="musicMiniArt" src="" style="width:38px;height:38px;border-radius:6px;object-fit:cover;background:#222">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 16px">
+                <img id="musicMiniArt" src="" style="width:42px;height:42px;border-radius:8px;object-fit:cover;background:#2a2a2a;flex-shrink:0">
                 <div style="flex:1;overflow:hidden">
-                    <div id="musicMiniTitle" style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-                    <div id="musicMiniArtist" style="font-size:10px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+                    <div id="musicMiniTitle" style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+                    <div id="musicMiniArtist" style="font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px"></div>
                 </div>
-                <i id="musicMiniLikeBtn" class="fa-regular fa-heart" onclick="event.stopPropagation();musicToggleLike()" style="color:#888;font-size:16px;padding:6px"></i>
-                <i id="musicMiniPlayBtn" class="fa-solid fa-pause" onclick="event.stopPropagation();musicTogglePlay()" style="color:#fff;font-size:20px;padding:6px"></i>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <i id="musicMiniLikeBtn" class="fa-regular fa-heart" onclick="event.stopPropagation();musicToggleLike()" style="color:#666;font-size:17px;padding:6px"></i>
+                    <i id="musicMiniPlayBtn" class="fa-solid fa-pause" onclick="event.stopPropagation();musicTogglePlay()" style="color:#fff;font-size:22px;padding:6px"></i>
+                    <i class="fa-solid fa-forward-step" onclick="event.stopPropagation();musicNext()" style="color:#fff;font-size:18px;padding:6px"></i>
+                </div>
             </div>
         </div>
 
         <!-- ===== FULL PLAYER MODAL ===== -->
-        <div id="musicFullPlayer" style="display:none;position:absolute;inset:0;z-index:60;background:#0a0a0a;flex-direction:column;overflow:hidden">
-            <div id="musicFullPlayerBg" style="position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(40px) brightness(0.35);transform:scale(1.2);transition:background-image 0.6s ease"></div>
-            <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%">
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:16px">
+        <div id="musicFullPlayer" style="display:none;position:absolute;inset:0;z-index:60;background:#111;flex-direction:column;overflow:hidden">
+            <div id="musicFullPlayerBg" style="position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(60px) brightness(0.25);transform:scale(1.3);transition:background-image 0.8s ease"></div>
+            <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:0 0 10px">
+                <!-- Top bar -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 0">
                     <i class="fa-solid fa-chevron-down" style="font-size:20px;color:#fff;cursor:pointer;padding:6px" onclick="musicCloseFullPlayer()"></i>
-                    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);letter-spacing:1px">SEDANG DIPUTAR</span>
-                    <i class="fa-solid fa-share-nodes" style="font-size:18px;color:#fff;cursor:pointer;padding:6px" onclick="musicShare()"></i>
-                </div>
-
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;position:relative">
-                    <img id="musicFullArt" src="" style="width:78%;max-width:300px;aspect-ratio:1;border-radius:14px;object-fit:cover;box-shadow:0 20px 50px rgba(0,0,0,0.5);background:#222">
-                </div>
-
-                <div style="padding:0 28px 8px">
-                    <div style="display:flex;justify-content:space-between;align-items:center">
-                        <div style="flex:1;overflow:hidden">
-                            <div id="musicFullTitle" style="font-size:19px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-                            <div id="musicFullArtist" style="font-size:13px;color:#999;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-                        </div>
-                        <i id="musicFullLikeBtn" class="fa-regular fa-heart" onclick="musicToggleLike()" style="color:#fff;font-size:22px;padding:8px;cursor:pointer"></i>
+                    <div style="text-align:center">
+                        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:1.5px">PLAYING FROM</div>
+                        <div style="font-size:12px;font-weight:700;color:#fff;margin-top:2px" id="musicFullContext">Your Library</div>
                     </div>
+                    <i class="fa-solid fa-ellipsis" style="font-size:18px;color:#fff;cursor:pointer;padding:6px" onclick="musicShowPanel('queue')"></i>
                 </div>
 
-                <!-- Progress -->
-                <div style="padding:6px 28px">
-                    <div id="musicFullProgressBar" onclick="musicSeek(event)" style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;cursor:pointer;position:relative">
-                        <div id="musicFullProgress" style="height:100%;background:#fff;border-radius:2px;width:0%;position:relative"></div>
-                        <div id="musicFullThumb" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%);width:13px;height:13px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>
+                <!-- Artwork -->
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px 40px 10px">
+                    <img id="musicFullArt" src="" style="width:100%;max-width:300px;aspect-ratio:1;border-radius:18px;object-fit:cover;box-shadow:0 30px 70px rgba(0,0,0,0.6);background:#1e1e1e">
+                </div>
+
+                <!-- Track info -->
+                <div style="padding:10px 24px 4px;display:flex;align-items:center;justify-content:space-between">
+                    <div style="flex:1;overflow:hidden">
+                        <div id="musicFullTitle" style="font-size:22px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.3px"></div>
+                        <div id="musicFullArtist" style="font-size:14px;color:#666;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
                     </div>
-                    <div style="display:flex;justify-content:space-between;margin-top:6px">
-                        <span id="musicFullCurTime" style="font-size:10px;color:#999">0:00</span>
-                        <span id="musicFullDurTime" style="font-size:10px;color:#999">0:00</span>
+                    <i id="musicFullLikeBtn" class="fa-regular fa-heart" onclick="musicToggleLike()" style="color:#666;font-size:24px;padding:8px 0 8px 14px;cursor:pointer;flex-shrink:0"></i>
+                </div>
+
+                <!-- Progress bar -->
+                <div style="padding:4px 24px">
+                    <div id="musicFullProgressBar" onclick="musicSeek(event)" style="height:4px;background:rgba(255,255,255,0.15);border-radius:2px;cursor:pointer;position:relative;margin-bottom:6px">
+                        <div id="musicFullProgress" style="height:100%;background:#fff;border-radius:2px;width:0%"></div>
+                        <div id="musicFullThumb" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%);width:14px;height:14px;background:#fff;border-radius:50%"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between">
+                        <span id="musicFullCurTime" style="font-size:11px;color:#666">0:00</span>
+                        <span id="musicFullDurTime" style="font-size:11px;color:#666">0:00</span>
                     </div>
                 </div>
 
                 <!-- Main controls -->
-                <div style="display:flex;align-items:center;justify-content:space-around;padding:14px 20px">
-                    <i id="musicShuffleBtn" class="fa-solid fa-shuffle" onclick="musicToggleShuffle()" style="color:#888;font-size:18px;cursor:pointer;padding:8px"></i>
-                    <i class="fa-solid fa-backward-step" onclick="musicPrev()" style="color:#fff;font-size:24px;cursor:pointer;padding:8px"></i>
-                    <div id="musicFullPlayBtn" onclick="musicTogglePlay()" style="width:62px;height:62px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer">
-                        <i class="fa-solid fa-pause" style="color:#000;font-size:24px"></i>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 28px">
+                    <i id="musicShuffleBtn" class="fa-solid fa-shuffle" onclick="musicToggleShuffle()" style="color:#555;font-size:20px;cursor:pointer;padding:8px"></i>
+                    <i class="fa-solid fa-backward-step" onclick="musicPrev()" style="color:#fff;font-size:28px;cursor:pointer;padding:8px"></i>
+                    <div id="musicFullPlayBtn" onclick="musicTogglePlay()" style="width:66px;height:66px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(255,255,255,0.15)">
+                        <i class="fa-solid fa-pause" style="color:#111;font-size:26px"></i>
                     </div>
-                    <i class="fa-solid fa-forward-step" onclick="musicNext()" style="color:#fff;font-size:24px;cursor:pointer;padding:8px"></i>
-                    <i id="musicRepeatBtn" class="fa-solid fa-repeat" onclick="musicToggleRepeat()" style="color:#888;font-size:18px;cursor:pointer;padding:8px"></i>
+                    <i class="fa-solid fa-forward-step" onclick="musicNext()" style="color:#fff;font-size:28px;cursor:pointer;padding:8px"></i>
+                    <i id="musicRepeatBtn" class="fa-solid fa-repeat" onclick="musicToggleRepeat()" style="color:#555;font-size:20px;cursor:pointer;padding:8px"></i>
                 </div>
 
                 <!-- Secondary controls -->
-                <div style="display:flex;align-items:center;justify-content:space-around;padding:6px 24px 10px">
-                    <i class="fa-solid fa-quote-left" onclick="musicShowPanel('lyrics')" style="color:#888;font-size:15px;cursor:pointer;padding:8px" title="Lirik"></i>
-                    <i class="fa-solid fa-list-ul" onclick="musicShowPanel('queue')" style="color:#888;font-size:15px;cursor:pointer;padding:8px" title="Antrian"></i>
-                    <i class="fa-solid fa-sliders" onclick="musicShowPanel('eq')" style="color:#888;font-size:15px;cursor:pointer;padding:8px" title="Equalizer"></i>
-                    <i class="fa-solid fa-download" onclick="musicDownload()" style="color:#888;font-size:15px;cursor:pointer;padding:8px" title="Download"></i>
+                <div style="display:flex;align-items:center;justify-content:space-around;padding:2px 24px 8px">
+                    <i class="fa-solid fa-quote-left" onclick="musicShowPanel('lyrics')" style="color:#555;font-size:18px;cursor:pointer;padding:8px"></i>
+                    <i class="fa-solid fa-list-ul" onclick="musicShowPanel('queue')" style="color:#555;font-size:18px;cursor:pointer;padding:8px"></i>
+                    <i class="fa-solid fa-sliders" onclick="musicShowPanel('eq')" style="color:#555;font-size:18px;cursor:pointer;padding:8px"></i>
+                    <i class="fa-solid fa-download" onclick="musicDownload()" style="color:#555;font-size:18px;cursor:pointer;padding:8px"></i>
+                    <i class="fa-solid fa-share-nodes" onclick="musicShare()" style="color:#555;font-size:18px;cursor:pointer;padding:8px"></i>
                 </div>
 
                 <!-- Volume -->
-                <div style="display:flex;align-items:center;gap:10px;padding:4px 28px 18px">
-                    <i class="fa-solid fa-volume-low" style="color:#888;font-size:13px"></i>
+                <div style="display:flex;align-items:center;gap:10px;padding:0 28px 8px">
+                    <i class="fa-solid fa-volume-low" style="color:#555;font-size:14px"></i>
                     <input type="range" id="musicVolumeSlider" min="0" max="100" value="100" oninput="musicSetVolume(this.value)"
-                        style="flex:1;height:3px;accent-color:#fff">
-                    <i class="fa-solid fa-volume-high" style="color:#888;font-size:13px"></i>
+                        style="flex:1;height:3px;accent-color:#fff;cursor:pointer">
+                    <i class="fa-solid fa-volume-high" style="color:#555;font-size:14px"></i>
                 </div>
             </div>
 
-            <!-- Bottom sheet panels: Lyrics / Queue / Equalizer -->
-            <div id="musicPanelOverlay" onclick="musicClosePanel()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:70"></div>
-            <div id="musicPanel" style="display:none;position:absolute;left:0;right:0;bottom:0;max-height:70%;background:#151515;border-radius:18px 18px 0 0;z-index:71;flex-direction:column;overflow:hidden">
-                <div style="width:36px;height:4px;background:#444;border-radius:2px;margin:10px auto 4px"></div>
-                <div id="musicPanelTitle" style="text-align:center;font-size:14px;font-weight:800;color:#fff;padding:6px 0 12px"></div>
-                <div id="musicPanelBody" style="flex:1;overflow-y:auto;padding:0 20px 24px"></div>
+            <!-- Bottom sheet panels -->
+            <div id="musicPanelOverlay" onclick="musicClosePanel()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:70"></div>
+            <div id="musicPanel" style="display:none;position:absolute;left:0;right:0;bottom:0;max-height:72%;background:#181818;border-radius:20px 20px 0 0;z-index:71;flex-direction:column;overflow:hidden">
+                <div style="width:36px;height:4px;background:#333;border-radius:2px;margin:12px auto 4px"></div>
+                <div id="musicPanelTitle" style="text-align:center;font-size:15px;font-weight:800;color:#fff;padding:6px 0 14px"></div>
+                <div id="musicPanelBody" style="flex:1;overflow-y:auto;padding:0 20px 28px"></div>
             </div>
         </div>
 
-        <!-- Bottom nav -->
+        <!-- Music nav tab bar (Home / Search / Library) -->
+        <div style="position:absolute;bottom:64px;left:0;right:0;height:0" id="musicNavSpacer"></div>
         <nav class="bottom-nav" id="musicBottomNav" style="flex-shrink:0"></nav>
     </div>
 
