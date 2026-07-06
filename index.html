@@ -3073,7 +3073,7 @@
 
         <!-- ===== PROFILE TAB ===== -->
         <!-- ===== PLAYLIST DETAIL SCREEN ===== -->
-        <div id="musicPlaylistDetail" style="display:none;position:absolute;inset:0;z-index:55;background:#000;flex-direction:column;overflow:hidden">
+        <div id="musicPlaylistDetail" style="display:none;position:absolute;top:0;left:0;right:0;bottom:62px;z-index:30;background:#000;flex-direction:column;overflow:hidden">
             <div style="flex:1;overflow-y:auto;padding-bottom:160px">
                 <div style="position:relative;height:220px;background:#141414">
                     <div id="musicPlDetailArt" style="position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(0.55)"></div>
@@ -3100,7 +3100,7 @@
         </div>
 
         <!-- ===== ALBUM DETAIL SCREEN ===== -->
-        <div id="musicAlbumDetail" style="display:none;position:absolute;inset:0;z-index:55;background:#000;flex-direction:column;overflow:hidden">
+        <div id="musicAlbumDetail" style="display:none;position:absolute;top:0;left:0;right:0;bottom:62px;z-index:30;background:#000;flex-direction:column;overflow:hidden">
             <div style="flex:1;overflow-y:auto;padding-bottom:160px">
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0">
                     <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer;padding:6px" onclick="musicCloseAlbumDetail()"></i>
@@ -3125,7 +3125,7 @@
         </div>
 
         <!-- ===== ARTIST PROFILE SCREEN ===== -->
-        <div id="musicArtistProfile" style="display:none;position:absolute;inset:0;z-index:55;background:#000;flex-direction:column;overflow:hidden">
+        <div id="musicArtistProfile" style="display:none;position:absolute;top:0;left:0;right:0;bottom:62px;z-index:30;background:#000;flex-direction:column;overflow:hidden">
             <div style="flex:1;overflow-y:auto;padding-bottom:160px">
                 <div style="position:relative;height:230px;background:#141414">
                     <div id="musicArtistBg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#222,#111)">
@@ -3157,7 +3157,7 @@
         </div>
 
         <!-- ===== EQUALIZER SCREEN ===== -->
-        <div id="musicEqScreen" style="display:none;position:absolute;inset:0;z-index:65;background:#000;flex-direction:column;overflow:hidden">
+        <div id="musicEqScreen" style="display:none;position:absolute;top:0;left:0;right:0;bottom:62px;z-index:30;background:#000;flex-direction:column;overflow:hidden">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 4px;flex-shrink:0">
                 <div style="display:flex;align-items:center;gap:14px">
                     <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer;padding:6px" onclick="musicCloseEqScreen()"></i>
@@ -3204,7 +3204,7 @@
         </div>
 
         <!-- ===== FULL PLAYER MODAL ===== -->
-        <div id="musicFullPlayer" style="display:none;position:absolute;inset:0;z-index:60;background:#000;flex-direction:column;overflow:hidden">
+        <div id="musicFullPlayer" style="display:none;position:absolute;top:0;left:0;right:0;bottom:62px;z-index:30;background:#000;flex-direction:column;overflow:hidden">
             <div id="musicFullPlayerBg" style="position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(60px) brightness(0.25);transform:scale(1.3);transition:background-image 0.8s ease"></div>
             <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:0 0 10px">
                 <!-- Top bar -->
@@ -3505,6 +3505,35 @@
             }
         }
 
+        // ---------- ARTIST ARTWORK (iTunes tidak punya endpoint foto artis,
+        // jadi dipakai artwork lagu/album teratas milik artis itu sebagai foto) ----------
+        const _musicArtistArtCache = {};
+        async function musicFetchArtistArt(artistId) {
+            if (_musicArtistArtCache[artistId] !== undefined) return _musicArtistArtCache[artistId];
+            try {
+                const r = await fetch(`${ITUNES_API}/lookup?id=${artistId}&entity=song&limit=1`);
+                const d = await r.json();
+                const track = (d.results || []).find(t => t.wrapperType === 'track' && t.artworkUrl100);
+                const url = track ? track.artworkUrl100.replace('100x100','300x300') : null;
+                _musicArtistArtCache[artistId] = url;
+                return url;
+            } catch(e) {
+                _musicArtistArtCache[artistId] = null;
+                return null;
+            }
+        }
+        // artists: [{artistId, ...}] — mengisi elemen circle #artistCircle-{artistId}-{scopeSalt} dengan foto asli
+        function musicHydrateArtistArt(artists, scopeSalt) {
+            artists.forEach(a => {
+                if (!a.artistId) return;
+                musicFetchArtistArt(a.artistId).then(url => {
+                    if (!url) return;
+                    const el = document.getElementById(`artistCircle-${a.artistId}-${scopeSalt}`);
+                    if (el) el.innerHTML = `<img src="${url}" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+                });
+            });
+        }
+
         async function musicFetchArtists() {
             const el = document.getElementById('musicArtistScroll');
             el.innerHTML = musicSkeletonCards(6, true);
@@ -3515,11 +3544,12 @@
                 if (!artists.length) { el.innerHTML = ''; return; }
                 el.innerHTML = artists.map(a => `
                     <div onclick="musicOpenArtistProfile(${a.artistId},'${(a.artistName||'').replace(/'/g,"&#39;")}')" style="flex-shrink:0;width:84px;text-align:center;cursor:pointer">
-                        <div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#222,#111);display:flex;align-items:center;justify-content:center;margin-bottom:8px;overflow:hidden">
+                        <div id="artistCircle-${a.artistId}-home" style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#222,#111);display:flex;align-items:center;justify-content:center;margin-bottom:8px;overflow:hidden">
                             <i class="fa-solid fa-user-music" style="font-size:30px;color:#444"></i>
                         </div>
                         <div style="font-size:11px;font-weight:600;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.artistName}</div>
                     </div>`).join('');
+                musicHydrateArtistArt(artists, 'home');
             } catch(e) {
                 el.innerHTML = '';
             }
@@ -3744,13 +3774,15 @@
                 .then(r => r.json()).then(d => {
                     const scroll = document.getElementById('musicSearchTopArtistsScroll');
                     if (!scroll) return;
-                    scroll.innerHTML = (d.results || []).map(a => `
+                    const artists = (d.results || []).filter(a => a.artistId && a.artistName);
+                    scroll.innerHTML = artists.map(a => `
                         <div onclick="musicOpenArtistProfile(${a.artistId},'${(a.artistName||'').replace(/'/g,"&#39;")}')" style="flex-shrink:0;width:76px;text-align:center;cursor:pointer">
-                            <div style="width:76px;height:76px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;margin-bottom:6px">
+                            <div id="artistCircle-${a.artistId}-teratas" style="width:76px;height:76px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;margin-bottom:6px">
                                 <i class="fa-solid fa-user-music" style="font-size:26px;color:#444"></i>
                             </div>
                             <div style="font-size:11px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.artistName}</div>
                         </div>`).join('');
+                    musicHydrateArtistArt(artists, 'teratas');
                 }).catch(()=>{});
         }
         async function musicSearch(q) {
@@ -3779,7 +3811,7 @@
                         <div style="display:flex;gap:16px;overflow-x:auto;padding:0 16px;scrollbar-width:none">
                             ${artists.map(a => `
                                 <div onclick="musicOpenArtistProfile(${a.artistId},'${(a.artistName||'').replace(/'/g,"&#39;")}')" style="flex-shrink:0;width:78px;text-align:center;cursor:pointer">
-                                    <div style="width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#222,#111);display:flex;align-items:center;justify-content:center;margin-bottom:6px">
+                                    <div id="artistCircle-${a.artistId}-searchres" style="width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#222,#111);display:flex;align-items:center;justify-content:center;margin-bottom:6px">
                                         <i class="fa-solid fa-user-music" style="font-size:28px;color:#444"></i>
                                     </div>
                                     <div style="font-size:11px;font-weight:600;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.artistName}</div>
@@ -3792,6 +3824,7 @@
                     html += tracks.map((t, i) => musicListItemHTML(t, i)).join('');
                 }
                 el.innerHTML = html;
+                if (artists.length) musicHydrateArtistArt(artists, 'searchres');
             } catch(e) {
                 el.innerHTML = `<div style="text-align:center;padding:50px 20px;color:#444">Gagal memuat hasil</div>`;
             }
@@ -3803,6 +3836,8 @@
             document.getElementById('musicArtistProfile').style.display = 'flex';
             history.pushState({view:'music', tab:'artistProfile'}, '');
             document.getElementById('musicArtistName').textContent = artistName || '';
+            document.getElementById('musicArtistBg').innerHTML = '<i class="fa-solid fa-user-music" style="font-size:56px;color:#333"></i>';
+            document.getElementById('musicArtistBg').style.backgroundImage = '';
             document.getElementById('musicArtistSongs').innerHTML = musicSkeletonListRows(5);
             document.getElementById('musicArtistAlbums').innerHTML = musicSkeletonCards(4);
             try {
@@ -3813,6 +3848,14 @@
                 const songs = (songRes.results || []).filter(t => t.wrapperType === 'track' && t.trackId).map(musicNormalize);
                 const albums = (albumRes.results || []).filter(a => a.wrapperType === 'collection' && a.collectionId);
                 _musicArtistSongs = songs;
+                if (songs.length && songs[0].artwork) {
+                    const bg = document.getElementById('musicArtistBg');
+                    bg.style.backgroundImage = `url(${songs[0].artwork})`;
+                    bg.style.backgroundSize = 'cover';
+                    bg.style.backgroundPosition = 'center';
+                    bg.style.filter = 'brightness(0.65)';
+                    bg.innerHTML = '';
+                }
                 document.getElementById('musicArtistSongs').innerHTML = songs.length
                     ? songs.slice(0,10).map((t,i) => musicListItemHTML(t,i).replace(`musicPlayFromQueue(${i})`, `musicPlayArtistSongAt(${i})`)).join('')
                     : '<div style="text-align:center;padding:20px;color:#444;font-size:12px">Lagu tidak ditemukan</div>';
@@ -4128,10 +4171,12 @@
         function musicOpenFullPlayer() {
             if (!_musicCurrentTrack) return;
             document.getElementById('musicFullPlayer').style.display = 'flex';
+            document.getElementById('musicMiniPlayer').style.display = 'none';
             history.pushState({view:'musicFullPlayer'}, '');
         }
         function musicCloseFullPlayer() {
             document.getElementById('musicFullPlayer').style.display = 'none';
+            musicRestoreMiniPlayer();
             musicClosePanel();
         }
         function musicRestoreMiniPlayer() {
