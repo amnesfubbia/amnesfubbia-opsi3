@@ -3042,12 +3042,12 @@
         <!-- ===== SEARCH TAB ===== -->
         <div id="musicSearchTab" style="display:none;flex:1;flex-direction:column;overflow:hidden">
             <div style="padding:16px 20px 10px;flex-shrink:0">
-                <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:14px">Cari</div>
-                <div style="display:flex;align-items:center;gap:10px;background:#1e1e1e;border-radius:12px;padding:11px 14px">
-                    <i class="fa-solid fa-magnifying-glass" style="color:#666;font-size:14px"></i>
+                <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:14px">Cari</div>
+                <div style="display:flex;align-items:center;gap:10px;background:#1e1e1e;border-radius:24px;padding:12px 16px">
+                    <i class="fa-solid fa-magnifying-glass" style="color:#777;font-size:14px"></i>
                     <input id="musicSearchInp" type="text" placeholder="Cari lagu, album, artis, podcast" autocomplete="off"
                         style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px"
-                        oninput="musicDebounceSearch(this.value)" onkeydown="if(event.key='Enter'){event.preventDefault();musicSearch(this.value)}">
+                        oninput="musicDebounceSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();musicSearch(this.value)}">
                     <i class="fa-solid fa-xmark" style="color:#666;cursor:pointer;font-size:14px" onclick="document.getElementById('musicSearchInp').value='';musicRenderSearchLanding()"></i>
                 </div>
             </div>
@@ -3758,15 +3758,15 @@
             if (!el) return;
             const recent = JSON.parse(localStorage.getItem('musicRecentSearches') || '[]');
             el.innerHTML = `
-                <div style="padding:4px 20px 22px">
-                    <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:12px">Teratas</div>
-                    <div id="musicSearchTopArtistsScroll" style="display:flex;gap:16px;overflow-x:auto;scrollbar-width:none">${musicSkeletonCards(4, true)}</div>
+                <div style="padding:4px 20px 24px">
+                    <div style="font-size:15px;font-weight:700;color:#eee;margin-bottom:14px">Teratas</div>
+                    <div id="musicSearchTopArtistsScroll" style="display:flex;gap:18px;overflow-x:auto;scrollbar-width:none">${musicSkeletonCards(4, true)}</div>
                 </div>
                 <div style="padding:0 20px">
-                    <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:10px">Pencarian terbaru</div>
+                    <div style="font-size:15px;font-weight:700;color:#eee;margin-bottom:6px">Pencarian terbaru</div>
                     ${recent.length ? recent.map(q => `
-                        <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1a1a1a">
-                            <span onclick="musicSearch('${q.replace(/'/g,"\\'")}')" style="font-size:13px;color:#ccc;cursor:pointer;flex:1">${q}</span>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #1a1a1a">
+                            <span onclick="musicSearch('${q.replace(/'/g,"\\'")}')" style="font-size:14px;color:#ddd;cursor:pointer;flex:1">${q}</span>
                             <i class="fa-solid fa-xmark" style="color:#555;cursor:pointer;padding:6px" onclick="musicRemoveRecentSearch('${q.replace(/'/g,"\\'")}')"></i>
                         </div>`).join('') : '<div style="color:#444;font-size:12px;padding:10px 0 20px">Belum ada pencarian</div>'}
                 </div>`;
