@@ -963,7 +963,7 @@
             flex: 1; font-size: 14px; font-weight: 800; color: #fff; letter-spacing: -0.3px;
         }
         .tv-live-dot {
-            width: 7px; height: 7px; border-radius: 50%; background: #1a73e8;
+            width: 7px; height: 7px; border-radius: 50%; background: #ff3b30;
             animation: livePulse 1.5s ease-in-out infinite; flex-shrink: 0;
         }
         @keyframes livePulse {
@@ -986,32 +986,38 @@
         }
         /* Channel grid — bigger cards with live indicator */
         .tv-channel-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 8px; padding: 0 15px 6px;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 10px; padding: 0 15px 6px;
         }
         .tv-ch-card {
-            background: #111; border: 1px solid #1c1c1c; border-radius: 12px;
-            padding: 10px 6px; text-align: center; cursor: pointer;
+            background: #111; border: 1px solid #1c1c1c; border-radius: 14px;
+            padding: 14px 8px; text-align: center; cursor: pointer;
             transition: all 0.18s; position: relative; overflow: hidden;
         }
         .tv-ch-card:active { transform: scale(0.93); background: #1a1a1a; }
         .tv-ch-card.active-ch { border-color: #fff; background: #1a1a1a; }
         .tv-ch-logo-box {
-            width: 42px; height: 42px; border-radius: 10px;
-            background: #222; margin: 0 auto 6px;
+            width: 56px; height: 56px; border-radius: 12px;
+            background: #222; margin: 0 auto 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 9px; font-weight: 900; color: #fff; letter-spacing: -0.5px;
+            font-size: 11px; font-weight: 900; color: #fff; letter-spacing: -0.3px;
             overflow: hidden;
         }
         .tv-ch-logo-box img { width: 100%; height: 100%; object-fit: contain; }
         .tv-ch-name {
-            font-size: 8px; font-weight: 700; color: #ccc;
+            font-size: 11px; font-weight: 700; color: #ddd;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
+        .tv-ch-fav-btn {
+            position: absolute; top: 6px; left: 6px; z-index: 2;
+            width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+            color: #666; font-size: 12px;
+        }
+        .tv-ch-fav-btn.is-fav { color: #ff3b30; }
         /* LIVE badge on active channel */
         .tv-ch-live-badge {
             position: absolute; top: 5px; right: 5px;
-            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            background: #ff3b30;
             color: #fff;
             font-size: 6px; font-weight: 900; letter-spacing: 0.5px;
             padding: 1px 4px; border-radius: 3px;
@@ -2800,6 +2806,7 @@
             <div class="tv-tab-item active-tv-tab" id="tvTabNasional" onclick="switchTvTab('nasional')">Nasional</div>
             <div class="tv-tab-item" id="tvTabLokal" onclick="switchTvTab('lokal')">Lokal</div>
             <div class="tv-tab-item" id="tvTabBerita" onclick="switchTvTab('berita')">Berita</div>
+            <div class="tv-tab-item" id="tvTabFavorit" onclick="switchTvTab('favorit')">Favorit</div>
         </div>
 
         <!-- Search box -->
@@ -2815,9 +2822,11 @@
             <div id="tvPlayerArea">
                 <iframe id="tvPlayerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
             </div>
+            <!-- jadwal acara channel yang sedang tayang -->
+            <div id="tvScheduleArea"></div>
             <!-- tombol LiveSport di antara video dan channel list -->
             <div style="padding:10px 16px 4px">
-                <button onclick="openLivesportModal()" style="width:100%;background:linear-gradient(135deg,#1a73e8,#0d47a1);border:none;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px rgba(26,115,232,0.35)">
+                <button onclick="openLivesportModal()" style="width:100%;background:linear-gradient(135deg,#d32f2f,#8b0000);border:none;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px rgba(211,47,47,0.35)">
                     <i class="fa-solid fa-signal-stream"></i> Live Sport — Dami TV
                 </button>
             </div>
@@ -3012,12 +3021,17 @@
         <div id="musicSearchTab" style="display:none;flex:1;flex-direction:column;overflow:hidden">
             <div style="padding:16px 20px 10px;flex-shrink:0">
                 <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:14px">Cari</div>
-                <div style="display:flex;align-items:center;gap:10px;background:#1e1e1e;border-radius:24px;padding:12px 16px">
-                    <i class="fa-solid fa-magnifying-glass" style="color:#777;font-size:14px"></i>
-                    <input id="musicSearchInp" type="text" placeholder="Cari lagu, album, artis, podcast" autocomplete="off"
-                        style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px"
-                        oninput="musicDebounceSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();musicSearch(this.value)}">
-                    <i class="fa-solid fa-xmark" style="color:#666;cursor:pointer;font-size:14px" onclick="document.getElementById('musicSearchInp').value='';musicRenderSearchLanding()"></i>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div style="flex:1;display:flex;align-items:center;gap:10px;background:#1e1e1e;border-radius:24px;padding:12px 16px">
+                        <i class="fa-solid fa-magnifying-glass" style="color:#777;font-size:14px"></i>
+                        <input id="musicSearchInp" type="text" placeholder="Cari lagu, album, artis, podcast" autocomplete="off"
+                            style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px"
+                            oninput="musicDebounceSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();musicSearch(this.value)}">
+                        <i class="fa-solid fa-xmark" style="color:#666;cursor:pointer;font-size:14px" onclick="document.getElementById('musicSearchInp').value='';musicRenderSearchLanding()"></i>
+                    </div>
+                    <div onclick="musicShowPanel('genrefilter')" style="flex-shrink:0;width:46px;height:46px;border-radius:14px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;cursor:pointer">
+                        <i class="fa-solid fa-sliders" style="color:#ccc;font-size:15px"></i>
+                    </div>
                 </div>
             </div>
             <div id="musicSearchResults" style="flex:1;overflow-y:auto;padding:4px 0 160px"></div>
@@ -3076,7 +3090,7 @@
                     <i id="musicAlbumLikeBtn" class="fa-regular fa-heart" style="font-size:19px;color:#666;cursor:pointer;padding:6px" onclick="musicToggleAlbumLike()"></i>
                 </div>
                 <div style="text-align:center;padding:6px 20px 0">
-                    <img id="musicAlbumArt" src="" onerror="musicImgFallback(this)" style="width:170px;height:170px;border-radius:14px;object-fit:cover;background:#1a1a1a;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+                    <img id="musicAlbumArt" src="" style="width:170px;height:170px;border-radius:14px;object-fit:cover;background:#1a1a1a;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
                     <div id="musicAlbumTitle" style="font-size:19px;font-weight:900;color:#fff;margin-top:16px"></div>
                     <div id="musicAlbumArtist" style="font-size:13px;color:#666;margin-top:4px"></div>
                     <div id="musicAlbumMeta" style="font-size:11px;color:#555;margin-top:2px"></div>
@@ -3159,7 +3173,7 @@
         <div id="musicMiniPlayer" onclick="musicOpenFullPlayer()" style="display:none;position:absolute;bottom:64px;left:0;right:0;background:#1e1e1e;cursor:pointer;z-index:50;border-top:1px solid #2a2a2a">
             <div id="musicMiniProgress" style="height:2px;background:#ccc;width:0%;transition:width 0.3s linear"></div>
             <div style="display:flex;align-items:center;gap:12px;padding:10px 16px">
-                <img id="musicMiniArt" src="" onerror="musicImgFallback(this)" style="width:42px;height:42px;border-radius:8px;object-fit:cover;background:#2a2a2a;flex-shrink:0">
+                <img id="musicMiniArt" src="" style="width:42px;height:42px;border-radius:8px;object-fit:cover;background:#2a2a2a;flex-shrink:0">
                 <div style="flex:1;overflow:hidden">
                     <div id="musicMiniTitle" style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
                     <div id="musicMiniArtist" style="font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px"></div>
@@ -3188,7 +3202,7 @@
 
                 <!-- Artwork -->
                 <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px 40px 10px">
-                    <img id="musicFullArt" src="" onerror="musicImgFallback(this)" style="width:100%;max-width:300px;aspect-ratio:1;border-radius:18px;object-fit:cover;box-shadow:0 30px 70px rgba(0,0,0,0.6);background:#1e1e1e">
+                    <img id="musicFullArt" src="" style="width:100%;max-width:300px;aspect-ratio:1;border-radius:18px;object-fit:cover;box-shadow:0 30px 70px rgba(0,0,0,0.6);background:#1e1e1e">
                 </div>
 
                 <!-- Track info -->
@@ -3323,6 +3337,12 @@
         const ITUNES_API = 'https://itunes.apple.com';
         const MUSIC_PLACEHOLDER_IMG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#181818"/><text x="100" y="128" font-size="86" text-anchor="middle" fill="#3a3a3a" font-family="sans-serif">&#9834;</text></svg>');
         function musicImgFallback(el) { el.onerror = null; el.src = MUSIC_PLACEHOLDER_IMG; }
+        // Pasang onerror lewat JS (bukan atribut statis di HTML) supaya tidak race
+        // dengan parsing sebelum fungsi ini terdefinisi.
+        ['musicAlbumArt','musicMiniArt','musicFullArt'].forEach(function(id){
+            var el = document.getElementById(id);
+            if (el) el.onerror = function(){ musicImgFallback(this); };
+        });
         let _musicQueue = [];           // antrian lagu aktif (array of track objects)
         let _musicQueueIdx = -1;        // index lagu yang sedang main
         let _musicAudio = null;
@@ -4246,7 +4266,22 @@
             overlay.style.display = 'block';
             panel.style.display = 'flex';
 
-            if (type === 'lyrics') {
+            if (type === 'genrefilter') {
+                title.textContent = 'Filter Genre';
+                const genres = [
+                    { label:'Galau', query:'lagu galau indonesia' },
+                    { label:'Santai', query:'santai chill indonesia' },
+                    { label:'Semangat', query:'upbeat semangat indonesia' },
+                    { label:'Nostalgia', query:'lagu indonesia nostalgia 2000an' },
+                    { label:'Romantis', query:'lagu romantis indonesia' },
+                    { label:'Rock', query:'rock indonesia' },
+                    { label:'Pop', query:'pop indonesia' },
+                    { label:'Akustik', query:'akustik indonesia' },
+                ];
+                body.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:10px;padding-top:4px">
+                    ${genres.map(g => `<div class="music-pill" onclick="musicClosePanel();musicSearch('${g.query.replace(/'/g,"&#39;")}')">${g.label}</div>`).join('')}
+                </div>`;
+            } else if (type === 'lyrics') {
                 title.textContent = 'Lirik';
                 if (!_musicCurrentTrack) { body.innerHTML = '<div style="text-align:center;padding:30px;color:#444">Tidak ada lagu diputar</div>'; return; }
                 body.innerHTML = `<div style="text-align:center;padding:30px 0;color:#555"><i class="fa-solid fa-compact-disc fa-spin" style="font-size:24px;color:#fff"></i><div style="margin-top:10px;font-size:12px">Memuat lirik...</div></div>`;
@@ -5151,7 +5186,7 @@
             if (frame && frame.src) frame.src = '';
             document.getElementById('tvPlayerArea').style.display = 'none';
 
-            const labels = { nasional: 'Nasional', lokal: 'Lokal & Regional', berita: 'Berita' };
+            const labels = { nasional: 'Nasional', lokal: 'Lokal & Regional', berita: 'Berita', favorit: 'Favorit' };
             tvTitle.textContent = labels[tab] || 'Live TV';
             tvModal.scrollTop = 0;
             renderTvList('', tab);
@@ -5220,10 +5255,37 @@
                 }
             }, { passive: true });
         }
+        const TV_FAV_KEY = 'tvFavoriteChannels';
+        function getTvFavorites() {
+            try { return JSON.parse(localStorage.getItem(TV_FAV_KEY) || '[]'); } catch(e) { return []; }
+        }
+        function toggleTvFavorite(name, ev) {
+            if (ev) ev.stopPropagation();
+            let favs = getTvFavorites();
+            if (favs.includes(name)) favs = favs.filter(n => n !== name);
+            else favs.unshift(name);
+            localStorage.setItem(TV_FAV_KEY, JSON.stringify(favs));
+            renderTvList(document.getElementById('tvSearchInp') ? document.getElementById('tvSearchInp').value : '', _currentTvTab);
+        }
         function renderTvList(filter, tab) {
             const cont = document.getElementById('tvChannelList');
             const q = (filter || '').toLowerCase();
             const activeTab = tab || _currentTvTab;
+            const favs = getTvFavorites();
+
+            if (activeTab === 'favorit') {
+                const allChannels = [];
+                tvCategories.forEach(cat => { if (cat.label !== 'Sports') allChannels.push(...cat.channels); });
+                const favChannels = allChannels.filter(ch => favs.includes(ch.name) && ch.name.toLowerCase().includes(q));
+                if (!favChannels.length) {
+                    cont.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#444"><i class="fa-regular fa-heart" style="font-size:32px;margin-bottom:12px;display:block"></i>Belum ada channel favorit<br><span style="font-size:11px">Tap ikon hati pada channel untuk menyimpannya di sini</span></div>`;
+                    return;
+                }
+                cont.innerHTML = `<div class="tv-category-label">Favorit</div><div class="tv-channel-grid">` +
+                    favChannels.map(ch => tvChannelCardHTML(ch, favs)).join('') + `</div>`;
+                return;
+            }
+
             const tabMap = { nasional: 'Nasional', lokal: 'Lokal & Regional', berita: 'Berita' };
             const catLabel = tabMap[activeTab];
             let html = '';
@@ -5233,17 +5295,22 @@
                 const filtered = cat.channels.filter(ch => ch.name.toLowerCase().includes(q));
                 if (filtered.length === 0) return;
                 html += `<div class="tv-category-label">${cat.label}</div><div class="tv-channel-grid">`;
-                filtered.forEach(ch => {
-                    html += `<div class="tv-ch-card" id="tvch-${ch.name.replace(/\s/g,'_')}" onclick="playTvChannelInPane('${ch.name}', '${ch.url}')">
-                        <div class="tv-ch-live-badge">LIVE</div>
-                        <div class="tv-ch-logo-box">${ch.logo}</div>
-                        <div class="tv-ch-name">${ch.name}</div>
-                    </div>`;
-                });
+                filtered.forEach(ch => { html += tvChannelCardHTML(ch, favs); });
                 html += `</div>`;
             });
             if (!html) html = '<div class="text-center py-10 text-zinc-600 text-xs">Channel not found.</div>';
             cont.innerHTML = html;
+        }
+        function tvChannelCardHTML(ch, favs) {
+            const isFav = favs.includes(ch.name);
+            return `<div class="tv-ch-card" id="tvch-${ch.name.replace(/\s/g,'_')}" onclick="playTvChannelInPane('${ch.name}', '${ch.url}')">
+                <div class="tv-ch-fav-btn ${isFav ? 'is-fav' : ''}" onclick="toggleTvFavorite('${ch.name.replace(/'/g,"\\'")}', event)">
+                    <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
+                </div>
+                <div class="tv-ch-live-badge">LIVE</div>
+                <div class="tv-ch-logo-box">${ch.logo}</div>
+                <div class="tv-ch-name">${ch.name}</div>
+            </div>`;
         }
 
         function playTvChannelInPane(name, url) {
@@ -5259,7 +5326,13 @@
             const frame = document.getElementById('tvPlayerFrame');
             playerArea.style.display = 'block';
             frame.src = url;
+            // tampilkan jadwal acara channel ini (Now Playing / Next / jadwal lengkap)
+            _tvActiveScheduleChannel = name;
+            const schedArea = document.getElementById('tvScheduleArea');
+            const schedHTML = buildScheduleHTML(name);
+            schedArea.innerHTML = schedHTML || '';
         }
+        let _tvActiveScheduleChannel = null;
 
         function initTvChannels() { /* channels di-render saat switchTvTab dipanggil */ }
         function filterTvChannels(q) { renderTvList(q, _currentTvTab); }
@@ -5285,12 +5358,22 @@
             document.getElementById('tvSearchBox').style.display = 'none';
             document.getElementById('tvPlayerArea').style.display = 'none';
             document.getElementById('tvPlayerFrame').src = '';
+            document.getElementById('tvScheduleArea').innerHTML = '';
+            _tvActiveScheduleChannel = null;
             document.getElementById('tvModal').style.display = 'block';
             document.getElementById('tvModal').scrollTop = 0;
             document.body.style.overflow = 'hidden';
             history.pushState({view: 'tv'}, "");
             switchTvTab('nasional');
+            if (_tvScheduleTimer) clearInterval(_tvScheduleTimer);
+            _tvScheduleTimer = setInterval(() => {
+                if (_tvActiveScheduleChannel) {
+                    const el = document.getElementById('tvScheduleArea');
+                    if (el) el.innerHTML = buildScheduleHTML(_tvActiveScheduleChannel) || '';
+                }
+            }, 60000);
         }
+        let _tvScheduleTimer = null;
 
         function closeTvModal() {
             document.getElementById('tvPlayerFrame').src = '';
@@ -5298,6 +5381,7 @@
             document.body.style.overflow = 'auto';
             updateActiveNav(document.getElementById('homeBtnNav'));
             history.replaceState({view: 'home'}, '');
+            if (_tvScheduleTimer) { clearInterval(_tvScheduleTimer); _tvScheduleTimer = null; }
         }
 
         function playTvChannel(name, url) {
