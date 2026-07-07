@@ -934,6 +934,17 @@
         .music-pill.music-pill-active { background:#fff; color:#000; border-color:#fff; }
         .music-koleksi-row { display:flex; align-items:center; gap:14px; padding:13px 0; border-bottom:1px solid #1a1a1a; cursor:pointer; }
         .music-koleksi-row i { width:20px; text-align:center; color:#ccc; font-size:17px; }
+        /* ---- gaya dipinjam dari bagian film (avatar gradient ring, tab underline, dll) ---- */
+        .music-avatar-ring { padding:2px; border-radius:50%; background:linear-gradient(135deg,#e5527c,#f2994a,#9b59d0); }
+        .music-avatar-ring-inner { width:100%; height:100%; border-radius:50%; overflow:hidden; background:#161616; display:flex; align-items:center; justify-content:center; }
+        .music-tabswitch { display:flex; gap:28px; border-bottom:1px solid #1a1a1a; padding:0 20px; }
+        .music-tabswitch-item { padding:12px 0; font-size:15px; font-weight:700; color:#666; cursor:pointer; position:relative; }
+        .music-tabswitch-item.active { color:#fff; }
+        .music-tabswitch-item.active::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:#fff; border-radius:2px; }
+        .music-section-label { font-size:11px; font-weight:800; letter-spacing:0.6px; color:#888; text-transform:uppercase; }
+        .music-stat-num { font-size:22px; font-weight:800; color:#fff; display:block; text-align:center; }
+        .music-stat-lbl { font-size:12px; color:#888; text-align:center; margin-top:2px; }
+        .music-row-chevron { color:#333; font-size:13px; flex-shrink:0; }
 
         /* --- TV MODAL (Professional) --- */
         #tvModal {
@@ -2948,7 +2959,7 @@
             <div id="musicHomeScroll" style="flex:1;overflow-y:auto;padding-bottom:160px">
                 <!-- Rekomendasi -->
                 <div style="margin-bottom:28px">
-                    <div style="padding:0 20px 10px"><span style="font-size:20px;font-weight:800;color:#fff">Rekomendasi</span></div>
+                    <div style="padding:0 20px 12px"><span class="music-section-label"><i class="fa-solid fa-tower-broadcast" style="margin-right:6px"></i>Rekomendasi</span></div>
                     <div id="musicRecoList"></div>
                 </div>
 
@@ -2979,7 +2990,7 @@
 
                 <!-- Rilis baru -->
                 <div style="margin-bottom:28px">
-                    <div style="padding:0 20px 10px"><span style="font-size:20px;font-weight:800;color:#fff">Rilis baru</span></div>
+                    <div style="padding:0 20px 12px"><span class="music-section-label"><i class="fa-solid fa-compact-disc" style="margin-right:6px"></i>Rilis Baru</span></div>
                     <div id="musicNewReleaseList"></div>
                 </div>
 
@@ -3392,7 +3403,7 @@
         // Rekomendasi — daftar gaya "radio" (riwayat jika ada, kalau belum ada pakai top hits)
         let _musicHomeQueues = { reco: [], newrelease: [] };
         function musicRadioRowHTML(t, i, section) {
-            return `<div style="display:flex;align-items:center;gap:14px;padding:11px 20px;cursor:pointer" onclick="musicPlayHomeRow('${section}',${i})">
+            return `<div style="display:flex;align-items:center;gap:14px;padding:11px 20px;cursor:pointer;border-bottom:1px solid #161616" onclick="musicPlayHomeRow('${section}',${i})">
                 <img src="${t.artworkSmall}" onerror="musicImgFallback(this)" style="width:52px;height:52px;border-radius:10px;object-fit:cover;background:#1a1a1a;flex-shrink:0">
                 <div style="flex:1;overflow:hidden">
                     <div style="display:flex;align-items:center;gap:6px">
@@ -3552,8 +3563,10 @@
                 if (!artists.length) { el.innerHTML = ''; return; }
                 el.innerHTML = artists.map(a => `
                     <div onclick="musicOpenArtistProfile(${a.artistId},'${(a.artistName||'').replace(/'/g,"&#39;")}')" style="flex-shrink:0;width:84px;text-align:center;cursor:pointer">
-                        <div id="artistCircle-${a.artistId}-home" style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#222,#111);display:flex;align-items:center;justify-content:center;margin-bottom:8px;overflow:hidden">
-                            <i class="fa-solid fa-user-music" style="font-size:30px;color:#444"></i>
+                        <div class="music-avatar-ring" style="width:84px;height:84px;margin-bottom:8px">
+                            <div id="artistCircle-${a.artistId}-home" class="music-avatar-ring-inner">
+                                <i class="fa-solid fa-user-music" style="font-size:30px;color:#444"></i>
+                            </div>
                         </div>
                         <div style="font-size:11px;font-weight:600;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.artistName}</div>
                     </div>`).join('');
@@ -3586,17 +3599,30 @@
             { id:'romantis',title:'Romantis',             query:'lagu romantis indonesia',   color:'#161616' },
         ];
         let _musicPlaylistDetail = null; // playlist yang sedang dibuka {id,title,tracks}
-        function musicPlaylistCardHTML(p) {
+        function musicPlaylistCardHTML(p, scope) {
+            scope = scope || 'main';
             return `<div onclick="musicOpenPlaylistDetail('${p.id}')" style="cursor:pointer">
-                <div style="width:100%;aspect-ratio:1;border-radius:12px;background:${p.color};display:flex;align-items:center;justify-content:center">
-                    <i class="fa-solid fa-record-vinyl" style="font-size:26px;color:rgba(255,255,255,0.3)"></i>
+                <div id="plCardBg-${p.id}-${scope}" style="width:100%;aspect-ratio:1;border-radius:12px;background:${p.color};background-size:cover;background-position:center;position:relative;overflow:hidden;display:flex;align-items:flex-end">
+                    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.85) 0%,transparent 55%)"></div>
+                    <div style="position:relative;padding:10px;font-size:13px;font-weight:800;color:#fff;line-height:1.25">${p.title}</div>
                 </div>
-                <div style="margin-top:8px;font-size:12px;font-weight:700;color:#fff">${p.title}</div>
-                <div style="font-size:10px;color:#666">Playlist • Nash</div>
+                <div style="font-size:10px;color:#666;margin-top:6px">Playlist • Nash</div>
             </div>`;
         }
+        function musicHydratePlaylistArt(scope) {
+            MUSIC_PLAYLISTS.forEach(async p => {
+                try {
+                    const r = await fetch(`${ITUNES_API}/search?term=${encodeURIComponent(p.query)}&media=music&limit=1`);
+                    const d = await r.json();
+                    const t = (d.results || [])[0];
+                    const el = document.getElementById(`plCardBg-${p.id}-${scope}`);
+                    if (el && t && t.artworkUrl100) el.style.backgroundImage = `url(${t.artworkUrl100.replace('100x100','400x400')})`;
+                } catch(e) {}
+            });
+        }
         function musicRenderPlaylistTab() {
-            document.getElementById('musicPlaylistGrid').innerHTML = MUSIC_PLAYLISTS.map(musicPlaylistCardHTML).join('');
+            document.getElementById('musicPlaylistGrid').innerHTML = MUSIC_PLAYLISTS.map(p => musicPlaylistCardHTML(p, 'tab')).join('');
+            musicHydratePlaylistArt('tab');
         }
         async function musicOpenPlaylistDetail(id) {
             const p = MUSIC_PLAYLISTS.find(x => x.id === id);
@@ -3770,8 +3796,10 @@
                     const artists = (d.results || []).filter(a => a.artistId && a.artistName);
                     scroll.innerHTML = artists.map(a => `
                         <div onclick="musicOpenArtistProfile(${a.artistId},'${(a.artistName||'').replace(/'/g,"&#39;")}')" style="flex-shrink:0;width:76px;text-align:center;cursor:pointer">
-                            <div id="artistCircle-${a.artistId}-teratas" style="width:76px;height:76px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;margin-bottom:6px">
-                                <i class="fa-solid fa-user-music" style="font-size:26px;color:#444"></i>
+                            <div class="music-avatar-ring" style="width:76px;height:76px;margin-bottom:6px">
+                                <div id="artistCircle-${a.artistId}-teratas" class="music-avatar-ring-inner">
+                                    <i class="fa-solid fa-user-music" style="font-size:26px;color:#444"></i>
+                                </div>
                             </div>
                             <div style="font-size:11px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.artistName}</div>
                         </div>`).join('');
@@ -3804,8 +3832,10 @@
                         <div style="display:flex;gap:16px;overflow-x:auto;padding:0 16px;scrollbar-width:none">
                             ${artists.map(a => `
                                 <div onclick="musicOpenArtistProfile(${a.artistId},'${(a.artistName||'').replace(/'/g,"&#39;")}')" style="flex-shrink:0;width:78px;text-align:center;cursor:pointer">
-                                    <div id="artistCircle-${a.artistId}-searchres" style="width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#222,#111);display:flex;align-items:center;justify-content:center;margin-bottom:6px">
-                                        <i class="fa-solid fa-user-music" style="font-size:28px;color:#444"></i>
+                                    <div class="music-avatar-ring" style="width:78px;height:78px;margin-bottom:6px">
+                                        <div id="artistCircle-${a.artistId}-searchres" class="music-avatar-ring-inner">
+                                            <i class="fa-solid fa-user-music" style="font-size:28px;color:#444"></i>
+                                        </div>
                                     </div>
                                     <div style="font-size:11px;font-weight:600;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.artistName}</div>
                                 </div>`).join('')}
@@ -4073,8 +4103,37 @@
                 { icon:'fa-solid fa-podcast',     label:'Podcast',  count:'Segera hadir',                onclick:"" },
                 { icon:'fa-solid fa-download',    label:'Download', count:'0 lagu',                      onclick:"musicLibSwitch('download')" },
             ];
+            const genrePills = [
+                { label:'Galau',    icon:'fa-solid fa-cloud-rain',   query:'lagu galau indonesia' },
+                { label:'Santai',   icon:'fa-solid fa-mug-hot',      query:'santai chill indonesia' },
+                { label:'Semangat', icon:'fa-solid fa-bolt',         query:'upbeat semangat indonesia' },
+                { label:'Nostalgia',icon:'fa-solid fa-clock-rotate-left', query:'lagu indonesia nostalgia 2000an' },
+                { label:'Romantis', icon:'fa-solid fa-heart',        query:'lagu romantis indonesia' },
+            ];
             const content = document.getElementById('musicLibraryContent');
             content.innerHTML = `
+                <!-- Stats row gaya profil film -->
+                <div style="display:flex;padding:4px 20px 20px;border-bottom:1px solid #1a1a1a;margin-bottom:18px">
+                    <div style="flex:1;cursor:pointer" onclick="musicLibSwitch('liked')"><span class="music-stat-num">${liked.length}</span><span class="music-stat-lbl">lagu</span></div>
+                    <div style="width:1px;background:#222"></div>
+                    <div style="flex:1;cursor:pointer" onclick="musicLibSwitch('album')"><span class="music-stat-num">${albumSet.size}</span><span class="music-stat-lbl">album</span></div>
+                    <div style="width:1px;background:#222"></div>
+                    <div style="flex:1;cursor:pointer" onclick="musicLibSwitch('artist')"><span class="music-stat-num">${artistSet.size}</span><span class="music-stat-lbl">artis</span></div>
+                    <div style="width:1px;background:#222"></div>
+                    <div style="flex:1;cursor:pointer" onclick="musicShowTab('playlist')"><span class="music-stat-num">${MUSIC_PLAYLISTS.length}</span><span class="music-stat-lbl">playlist</span></div>
+                </div>
+
+                <!-- Genre cepat, gaya lingkaran kategori film -->
+                <div style="display:flex;gap:18px;padding:0 20px 22px;overflow-x:auto;scrollbar-width:none">
+                    ${genrePills.map(g => `
+                        <div onclick="musicSearch('${g.query.replace(/'/g,"&#39;")}')" style="flex-shrink:0;text-align:center;cursor:pointer">
+                            <div style="width:56px;height:56px;border-radius:50%;background:#1a1a1a;border:1px solid #262626;display:flex;align-items:center;justify-content:center;margin-bottom:6px">
+                                <i class="${g.icon}" style="font-size:18px;color:#ccc"></i>
+                            </div>
+                            <div style="font-size:10px;color:#999;width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.label}</div>
+                        </div>`).join('')}
+                </div>
+
                 <div style="padding:0 20px">
                     ${rows.map(r => `
                         <div class="music-koleksi-row" onclick="${r.onclick}">
@@ -4083,18 +4142,16 @@
                                 <div style="font-size:14px;font-weight:700;color:#fff">${r.label}</div>
                                 <div style="font-size:11px;color:#666;margin-top:2px">${r.count}</div>
                             </div>
-                            <i class="fa-solid fa-chevron-right" style="color:#333;font-size:12px"></i>
+                            <i class="fa-solid fa-chevron-right music-row-chevron"></i>
                         </div>`).join('')}
                 </div>
                 ${hist.length ? `
                 <div style="padding:22px 20px 0;display:flex;justify-content:space-between;align-items:center">
-                    <span style="font-size:15px;font-weight:800;color:#fff">Terbaru diputar</span>
-                    <span onclick="musicLibSwitch('history')" style="font-size:11px;color:#ccc;font-weight:700;cursor:pointer">Lihat semua</span>
+                    <span class="music-section-label">Terbaru Diputar</span>
+                    <span onclick="musicClearAllData()" style="font-size:11px;color:#ccc;font-weight:700;cursor:pointer">Hapus Semua</span>
                 </div>
-                <div style="padding:8px 8px 0">${hist.slice(0,5).map((t,i) => musicListItemHTML(t,i).replace(`musicPlayFromQueue(${i})`, `musicPlayHistoryAt(${i})`)).join('')}</div>` : ''}
-                <div style="padding:26px 20px 0">
-                    <div onclick="musicClearAllData()" style="font-size:12px;font-weight:700;color:#999;cursor:pointer;text-align:center">Hapus semua data musik</div>
-                </div>
+                <div style="padding:8px 8px 0">${hist.slice(0,5).map((t,i) => musicListItemHTML(t,i).replace(`musicPlayFromQueue(${i})`, `musicPlayHistoryAt(${i})`)).join('')}</div>
+                <div style="padding:6px 20px 0"><span onclick="musicLibSwitch('history')" style="font-size:12px;color:#888;font-weight:700;cursor:pointer">Lihat semua riwayat →</span></div>` : ''}
             `;
         }
         function musicLibSwitch(tab) {
@@ -4117,7 +4174,8 @@
                     : '<div style="text-align:center;padding:60px 20px;color:#444"><i class="fa-solid fa-clock-rotate-left" style="font-size:32px;margin-bottom:12px;display:block"></i>Belum ada riwayat</div>';
                 _musicQueue = hist;
             } else if (tab === 'playlist') {
-                content.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:6px 12px">${MUSIC_PLAYLISTS.map(musicPlaylistCardHTML).join('')}</div>`;
+                content.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:6px 12px">${MUSIC_PLAYLISTS.map(p => musicPlaylistCardHTML(p, 'koleksi')).join('')}</div>`;
+                musicHydratePlaylistArt('koleksi');
             } else if (tab === 'album') {
                 const liked = JSON.parse(localStorage.getItem(_musicLikedKey) || '[]');
                 const hist = JSON.parse(localStorage.getItem(_musicHistoryKey) || '[]');
