@@ -2830,7 +2830,7 @@
             <!-- tombol LiveSport di antara video dan channel list -->
             <div style="padding:10px 16px 4px">
                 <button onclick="openLivesportModal()" style="width:100%;background:#2a2a2a;border:1px solid #3a3a3a;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px">
-                    <i class="fa-solid fa-signal-stream"></i> Live Sport — Dami TV
+                    <i class="fa-solid fa-signal-stream"></i> Live Sport
                 </button>
             </div>
             <!-- scrollable channel list -->
@@ -3797,6 +3797,18 @@
         }
 
         // ---------- CARD RENDER ----------
+        function musicAlbumLandscapeCardHTML(t) {
+            return `<div onclick='musicPlayTrack(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer">
+                <div style="position:relative;width:100%;aspect-ratio:16/10;border-radius:12px;overflow:hidden;background:#1a1a1a">
+                    <img src="${t.artwork || t.artworkSmall}" loading="lazy" onerror="musicImgFallback(this)" style="width:100%;height:100%;object-fit:cover">
+                    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.15) 55%,transparent 75%)"></div>
+                    <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px">
+                        <div style="font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div>
+                        <div style="font-size:11px;color:#ccc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.artist}</div>
+                    </div>
+                </div>
+            </div>`;
+        }
         function musicCardHTML(t) {
             const isLiked = musicIsLiked(t.id);
             return `<div style="flex-shrink:0;width:130px;cursor:pointer" onclick='musicPlayTrack(${JSON.stringify(t).replace(/'/g,"&#39;")})'>
@@ -4071,6 +4083,22 @@
             }
         }
 
+        // ---------- AUDIO DUCKING — musik auto-pause saat trailer/streaming/reels/TV/livesport main,
+        // biar suaranya nggak dobel/tumpuk. Lanjut otomatis begitu sumber lain berhenti. ----------
+        let _musicDuckedByOther = false;
+        function musicDuckForOtherAudio() {
+            if (_musicAudio && _musicPlaying) {
+                musicTogglePlay();
+                _musicDuckedByOther = true;
+            }
+        }
+        function musicResumeFromDuck() {
+            if (_musicDuckedByOther && _musicAudio && !_musicPlaying) {
+                musicTogglePlay();
+            }
+            _musicDuckedByOther = false;
+        }
+
         function musicNext() {
             if (!_musicQueue.length) return;
             if (_musicShuffle) {
@@ -4252,7 +4280,7 @@
                 const seen = new Set(); const albums = [];
                 liked.concat(hist).forEach(t => { if (t.album && !seen.has(t.album)) { seen.add(t.album); albums.push(t); } });
                 content.innerHTML = albums.length
-                    ? `<div style="display:flex;flex-wrap:wrap;gap:14px;padding:6px 20px">${albums.map(t => musicCardHTML(t)).join('')}</div>`
+                    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:6px 20px">${albums.map(t => musicAlbumLandscapeCardHTML(t)).join('')}</div>`
                     : '<div style="text-align:center;padding:60px 20px;color:#444"><i class="fa-solid fa-compact-disc" style="font-size:32px;margin-bottom:12px;display:block"></i>Belum ada album<br><span style="font-size:11px">Sukai atau putar lagu untuk mengisi Album</span></div>';
             } else if (tab === 'artist') {
                 const liked = JSON.parse(localStorage.getItem(_musicLikedKey) || '[]');
@@ -4498,6 +4526,7 @@
 
         let _tvFrameSrcBeforeLivesport = null;
         function openLivesportModal() {
+            musicDuckForOtherAudio();
             // Hentikan audio channel TV yang sedang jalan supaya tidak dobel suara dengan Live Sport
             const tvFrame = document.getElementById('tvPlayerFrame');
             if (tvFrame && tvFrame.src) {
@@ -4514,6 +4543,7 @@
             renderBottomNav('livesportBottomNav', 'sport', null);
         }
         function closeLivesportModal() {
+            musicResumeFromDuck();
             document.getElementById('livesportIframe').src = '';
             document.getElementById('livesportModal').style.display = 'none';
             document.body.style.overflow = 'hidden'; // tvModal masih terbuka
@@ -5403,6 +5433,7 @@
         }
 
         function playTvChannelInPane(name, url) {
+            musicDuckForOtherAudio();
             // highlight active channel card
             document.querySelectorAll('.tv-ch-card').forEach(c => c.classList.remove('active-ch'));
             const card = document.getElementById('tvch-' + name.replace(/\s/g,'_'));
@@ -5465,6 +5496,7 @@
         let _tvScheduleTimer = null;
 
         function closeTvModal() {
+            musicResumeFromDuck();
             document.getElementById('tvPlayerFrame').src = '';
             document.getElementById('tvModal').style.display = 'none';
             document.body.style.overflow = 'auto';
@@ -5884,6 +5916,7 @@
         }
 
         function _closeReelsSilent() {
+            musicResumeFromDuck();
             document.getElementById('reelsModal').style.display = 'none';
             document.getElementById('reelsBottomNav').style.display = 'none';
             document.querySelectorAll('#reelsContainer iframe').forEach(f => {
@@ -6709,6 +6742,7 @@
         const PORTRAIT_REGEX = /\bvertical\b|\bportrait\b|9\s*:\s*16|\breels?\b|\btiktok\b|#shorts|\bshorts\b/i;
 
         async function openReels() {
+            musicDuckForOtherAudio();
             // Pause/mute semua video dari modal film yang mungkin masih main
             document.querySelectorAll('#carouselTrack iframe').forEach(f => {
                 try { f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
@@ -6730,6 +6764,7 @@
         }
 
         function closeReels() {
+            musicResumeFromDuck();
             // Tutup detail sheet jika masih terbuka
             document.getElementById('reelDetailOverlay').style.display = 'none';
             document.getElementById('reelDetailSheet').style.display = 'none';
@@ -7058,7 +7093,9 @@
                     const player = new YT.Player(iframe, {
                         events: {
                             onStateChange: (event) => {
-                                // State 0 = ended
+                                // State 0 = ended, 1 = playing, 2 = paused
+                                if (event.data === 1) musicDuckForOtherAudio();
+                                else if (event.data === 2 || event.data === 0) musicResumeFromDuck();
                                 if (event.data === 0) {
                                     const sheet = document.getElementById('reelDetailSheet');
                                     if (sheet && sheet.style.display === 'block') return;
@@ -7106,6 +7143,11 @@
             try {
                 const d = JSON.parse(e.data);
                 if (d.event !== 'infoDelivery' || !d.info) return;
+                // playerState: 1=playing, 2=paused, 0=ended — dipakai untuk auto-pause/lanjutkan musik
+                if (typeof d.info.playerState === 'number') {
+                    if (d.info.playerState === 1) musicDuckForOtherAudio();
+                    else if (d.info.playerState === 2 || d.info.playerState === 0) musicResumeFromDuck();
+                }
                 const cur = d.info.currentTime, dur = d.info.duration;
                 if (!dur || dur <= 0) return;
                 const pct = (cur / dur * 100).toFixed(2);
@@ -8627,6 +8669,7 @@
         }
 
         async function openModal(id, type) {
+            musicDuckForOtherAudio();
             const actorModal = document.getElementById('actorModal');
             if (actorModal.style.display === 'block') actorModal.style.display = 'none';
             window.currentMediaId = id; window.currentMediaType = type;
@@ -9041,6 +9084,7 @@
         }
 
         function closeModal() {
+            musicResumeFromDuck();
             const track = document.getElementById('carouselTrack'); 
             if(track) { 
                 track.querySelectorAll('iframe').forEach(f => { f.src = ""; f.remove(); }); 
@@ -9150,6 +9194,7 @@
         })();
 
         function playVid(url, el) { 
+            musicDuckForOtherAudio();
             const track = document.getElementById('carouselTrack'); 
             const dots = document.getElementById('carouselDots'); 
             const loader = document.getElementById('videoLoader');
