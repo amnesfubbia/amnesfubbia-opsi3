@@ -2828,7 +2828,7 @@
             <!-- sticky video player -->
             <div id="tvPlayerArea">
                 <iframe id="tvPlayerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-                <video id="tvPlayerVideo" playsinline controls style="display:none;width:100%;height:100%;background:#000"></video>
+                <video id="tvPlayerVideo" playsinline controls style="display:none;width:100%;height:100%;background:#000;opacity:0.999;border-radius:1px;-webkit-transform:translateZ(0);transform:translateZ(0)"></video>
             </div>
             <!-- tombol LiveSport di antara video dan channel list -->
             <div style="padding:10px 16px 4px;flex-shrink:0">
@@ -5284,19 +5284,31 @@
                 if (cat.label === 'Sports') return; // Sports hanya di tab LiveSport
                 const filtered = cat.channels.filter(ch => ch.name.toLowerCase().includes(q));
                 if (filtered.length === 0) return;
-                html += `<div class="tv-category-label">${cat.label}</div><div class="tv-channel-grid">`;
+                html += `<div class="tv-category-label">${cat.label}</div><div class="tv-channel-grid" id="tvGrid-${activeTab}">`;
                 filtered.forEach(ch => { html += tvChannelCardHTML(ch, favs); });
                 html += `</div>`;
             });
             if (!html) html = '<div class="text-center py-10 text-zinc-600 text-xs">Channel not found.</div>';
             cont.innerHTML = html;
 
-            // Tambahkan channel dari iptv-org yang cocok kategori ini (async, nyusul di bawah daftar kurasi manual)
+            // Ganti channel kurasi dengan versi iptv-org kalau namanya cocok (lineup tetap sama, sumbernya
+            // yang di-upgrade ke iptv-org bila ketemu), dan tambahkan channel baru yang belum ada di daftar kurasi
             if (['nasional', 'lokal', 'berita'].includes(activeTab)) {
                 loadIptvOrgChannels().then(channels => {
                     if (_currentTvTab !== activeTab) return; // user sudah pindah tab
                     const curatedNames = new Set();
                     tvCategories.forEach(cat => { if (cat.label === catLabel) cat.channels.forEach(ch => curatedNames.add(ch.name)); });
+                    // Swap kurasi -> iptv-org kalau nama cocok (substring match, bukan exact — nama sering beda dikit)
+                    curatedNames.forEach(name => {
+                        const normName = tvNormalizeChannelName(name);
+                        const match = channels.find(ch => {
+                            const normCh = tvNormalizeChannelName(ch.name);
+                            return normCh === normName || normCh.includes(normName) || normName.includes(normCh);
+                        });
+                        if (!match) return;
+                        const cardEl = document.getElementById('tvch-' + name.replace(/\s/g,'_'));
+                        if (cardEl) cardEl.outerHTML = tvChannelCardHTML(match, favs);
+                    });
                     const extra = channels.filter(ch => ch.category === activeTab && !curatedNames.has(ch.name) && ch.name.toLowerCase().includes(q));
                     if (!extra.length) return;
                     const extraHTML = `<div class="tv-category-label">Dari iptv-org</div><div class="tv-channel-grid">` +
@@ -5307,31 +5319,54 @@
         }
         // ---------- IPTV-ORG (channel tambahan, diambil otomatis, bukan hardcode manual) ----------
         let _iptvOrgChannels = null; // null = belum di-fetch, [] = sudah tapi kosong/gagal
+        let _iptvOrgStreamLabels = null;
+        async function loadIptvOrgStreamLabels() {
+            if (_iptvOrgStreamLabels !== null) return _iptvOrgStreamLabels;
+            try {
+                const res = await fetch('https://iptv-org.github.io/api/streams.json');
+                const data = await res.json();
+                const map = {};
+                data.forEach(s => { if (s.channel && s.label) map[s.channel] = s.label; });
+                _iptvOrgStreamLabels = map;
+            } catch (e) {
+                _iptvOrgStreamLabels = {};
+            }
+            return _iptvOrgStreamLabels;
+        }
         async function loadIptvOrgChannels() {
             if (_iptvOrgChannels !== null) return _iptvOrgChannels;
             try {
-                const res = await fetch('https://iptv-org.github.io/iptv/countries/id.m3u');
-                const text = await res.text();
+                const [m3uRes, labels] = await Promise.all([
+                    fetch('https://iptv-org.github.io/iptv/countries/id.m3u'),
+                    loadIptvOrgStreamLabels()
+                ]);
+                const text = await m3uRes.text();
                 const lines = text.split('\n');
                 const channels = [];
-                let pendingName = null, pendingLogo = '', pendingGroup = '';
+                let pendingName = null, pendingLogo = '', pendingGroup = '', pendingId = '';
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (line.startsWith('#EXTINF')) {
                         const logoMatch = line.match(/tvg-logo="([^"]*)"/);
                         const groupMatch = line.match(/group-title="([^"]*)"/);
+                        const idMatch = line.match(/tvg-id="([^"]*)"/);
                         const nameMatch = line.match(/,(.*)$/);
                         pendingLogo = logoMatch ? logoMatch[1] : '';
                         pendingGroup = groupMatch ? groupMatch[1] : '';
+                        pendingId = idMatch ? idMatch[1] : '';
                         pendingName = nameMatch ? nameMatch[1].trim() : 'Channel';
                     } else if (line && !line.startsWith('#') && pendingName) {
-                        channels.push({
-                            name: pendingName, url: line,
-                            logo: pendingLogo || pendingName.slice(0,4).toUpperCase(),
-                            isHls: true,
-                            category: tvCategorizeIptvChannel(pendingGroup)
-                        });
-                        pendingName = null; pendingLogo = ''; pendingGroup = '';
+                        // Lewati channel yang sudah diketahui geo-blocked (data dari iptv-org sendiri)
+                        const label = labels[pendingId];
+                        if (label !== 'Geo-blocked') {
+                            channels.push({
+                                name: pendingName, url: line,
+                                logo: pendingLogo || pendingName.slice(0,4).toUpperCase(),
+                                isHls: true,
+                                category: tvCategorizeIptvChannel(pendingGroup)
+                            });
+                        }
+                        pendingName = null; pendingLogo = ''; pendingGroup = ''; pendingId = '';
                     }
                 }
                 // Buang duplikat nama channel
@@ -5343,6 +5378,10 @@
             return _iptvOrgChannels;
         }
         // Petakan group-title dari iptv-org ke tab kita (Nasional/Lokal/Berita), sisanya masuk 'lainnya'
+        // Normalisasi nama channel untuk pencocokan (huruf kecil, buang spasi/simbol) — "TVRI Nasional" ~ "TVRI"
+        function tvNormalizeChannelName(name) {
+            return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
         function tvCategorizeIptvChannel(groupTitle) {
             const g = (groupTitle || '').toLowerCase();
             if (/news|business/.test(g)) return 'berita';
