@@ -950,11 +950,13 @@
         /* --- TV MODAL (Professional) --- */
         #tvModal {
             display: none; position: fixed; inset: 0;
-            background: #000; z-index: 9600; overflow-y: auto;
+            background: #000; z-index: 9600; overflow: hidden;
             animation: aboutSlideIn 0.3s cubic-bezier(0.25,1,0.5,1);
+            flex-direction: column;
         }
+        #tvModal.tv-modal-flex { display: flex; }
         .tv-topbar {
-            position: sticky; top: 0; z-index: 200;
+            flex-shrink: 0;
             background: rgba(0,0,0,0.92);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid #1a1a1a;
@@ -1055,16 +1057,17 @@
             justify-content: center;
             flex-direction: column;
         }
-        /* Channel pane wrapper */
+        /* Channel pane wrapper — flex column filling remaining height below topbar/tabs */
         #tvChannelPane {
-            display: block;
+            display: flex; flex-direction: column;
+            flex: 1; min-height: 0; overflow: hidden;
         }
-        /* Sticky video player */
+        /* Video player — static position (not sticky). Kanal list scroll SENDIRI di bawahnya,
+           tidak pernah lewat di belakang video, supaya tidak ada masalah video "nembus" konten lain
+           (keterbatasan video native di beberapa browser Android yang render di layer hardware sendiri). */
         #tvPlayerArea {
             display: none;
-            position: sticky;
-            top: 108px; /* topbar + tabbar */
-            z-index: 150;
+            flex-shrink: 0;
             background: #000;
             width: 100%;
             aspect-ratio: 16/9;
@@ -1072,8 +1075,9 @@
         #tvPlayerArea iframe {
             width: 100%; height: 100%; border: none; display: block;
         }
-        /* Channel list scrolls independently below player */
+        /* Channel list scrolls independently below player, dalam wadahnya sendiri */
         #tvChannelList {
+            flex: 1; min-height: 0; overflow-y: auto;
             padding-bottom: 80px;
         }
         .tv-mode .carousel-slide { 
@@ -2827,7 +2831,7 @@
                 <video id="tvPlayerVideo" playsinline controls style="display:none;width:100%;height:100%;background:#000"></video>
             </div>
             <!-- tombol LiveSport di antara video dan channel list -->
-            <div style="padding:10px 16px 4px">
+            <div style="padding:10px 16px 4px;flex-shrink:0">
                 <button onclick="openLivesportModal()" style="width:100%;background:#2a2a2a;border:1px solid #3a3a3a;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px">
                     <i class="fa-solid fa-signal-stream"></i> Live Sport
                 </button>
@@ -4444,7 +4448,7 @@
         }
         function _navAction(target) {
             // Tutup semua modal yang mungkin terbuka
-            try { if(document.getElementById('tvModal').style.display==='block'){ document.getElementById('tvPlayerFrame').src=''; tvStopHls(); document.getElementById('tvModal').style.display='none'; document.body.style.overflow='auto'; }} catch(e){}
+            try { if(document.getElementById('tvModal').style.display==='flex'){ document.getElementById('tvPlayerFrame').src=''; tvStopHls(); document.getElementById('tvModal').style.display='none'; document.body.style.overflow='auto'; }} catch(e){}
             try { if(document.getElementById('livesportModal')&&document.getElementById('livesportModal').style.display==='flex') closeLivesportModal(); } catch(e){}
             try { if(document.getElementById('musicModal')&&document.getElementById('musicModal').style.display==='flex' && target!=='music') { document.getElementById('musicModal').style.display='none'; document.body.style.overflow='auto'; } } catch(e){}
             try { if(document.getElementById('reelsModal')&&document.getElementById('reelsModal').style.display==='block') _closeReelsSilent(); } catch(e){}
@@ -5247,7 +5251,7 @@
                 cont.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#444"><i class="fa-solid fa-spinner fa-spin" style="font-size:28px;margin-bottom:12px;display:block"></i>Memuat channel dari iptv-org...</div>`;
                 loadIptvOrgChannels().then(channels => {
                     if (_currentTvTab !== 'lainnya') return; // user sudah pindah tab, jangan overwrite
-                    const filtered = channels.filter(ch => ch.name.toLowerCase().includes(q));
+                    const filtered = channels.filter(ch => ch.category === 'lainnya' && ch.name.toLowerCase().includes(q));
                     if (!filtered.length) {
                         cont.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#444"><i class="fa-solid fa-satellite-dish" style="font-size:32px;margin-bottom:12px;display:block"></i>Tidak ada channel ditemukan<br><span style="font-size:11px">Sumber: iptv-org (free-to-air)</span></div>`;
                         return;
@@ -5286,6 +5290,20 @@
             });
             if (!html) html = '<div class="text-center py-10 text-zinc-600 text-xs">Channel not found.</div>';
             cont.innerHTML = html;
+
+            // Tambahkan channel dari iptv-org yang cocok kategori ini (async, nyusul di bawah daftar kurasi manual)
+            if (['nasional', 'lokal', 'berita'].includes(activeTab)) {
+                loadIptvOrgChannels().then(channels => {
+                    if (_currentTvTab !== activeTab) return; // user sudah pindah tab
+                    const curatedNames = new Set();
+                    tvCategories.forEach(cat => { if (cat.label === catLabel) cat.channels.forEach(ch => curatedNames.add(ch.name)); });
+                    const extra = channels.filter(ch => ch.category === activeTab && !curatedNames.has(ch.name) && ch.name.toLowerCase().includes(q));
+                    if (!extra.length) return;
+                    const extraHTML = `<div class="tv-category-label">Dari iptv-org</div><div class="tv-channel-grid">` +
+                        extra.map(ch => tvChannelCardHTML(ch, favs)).join('') + `</div>`;
+                    cont.insertAdjacentHTML('beforeend', extraHTML);
+                });
+            }
         }
         // ---------- IPTV-ORG (channel tambahan, diambil otomatis, bukan hardcode manual) ----------
         let _iptvOrgChannels = null; // null = belum di-fetch, [] = sudah tapi kosong/gagal
@@ -5296,17 +5314,24 @@
                 const text = await res.text();
                 const lines = text.split('\n');
                 const channels = [];
-                let pendingName = null, pendingLogo = '';
+                let pendingName = null, pendingLogo = '', pendingGroup = '';
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (line.startsWith('#EXTINF')) {
                         const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                        const groupMatch = line.match(/group-title="([^"]*)"/);
                         const nameMatch = line.match(/,(.*)$/);
                         pendingLogo = logoMatch ? logoMatch[1] : '';
+                        pendingGroup = groupMatch ? groupMatch[1] : '';
                         pendingName = nameMatch ? nameMatch[1].trim() : 'Channel';
                     } else if (line && !line.startsWith('#') && pendingName) {
-                        channels.push({ name: pendingName, url: line, logo: pendingLogo || pendingName.slice(0,4).toUpperCase(), isHls: true });
-                        pendingName = null; pendingLogo = '';
+                        channels.push({
+                            name: pendingName, url: line,
+                            logo: pendingLogo || pendingName.slice(0,4).toUpperCase(),
+                            isHls: true,
+                            category: tvCategorizeIptvChannel(pendingGroup)
+                        });
+                        pendingName = null; pendingLogo = ''; pendingGroup = '';
                     }
                 }
                 // Buang duplikat nama channel
@@ -5316,6 +5341,14 @@
                 _iptvOrgChannels = [];
             }
             return _iptvOrgChannels;
+        }
+        // Petakan group-title dari iptv-org ke tab kita (Nasional/Lokal/Berita), sisanya masuk 'lainnya'
+        function tvCategorizeIptvChannel(groupTitle) {
+            const g = (groupTitle || '').toLowerCase();
+            if (/news|business/.test(g)) return 'berita';
+            if (/local|regional/.test(g)) return 'lokal';
+            if (/general|entertainment|undefined|^$/.test(g)) return 'nasional';
+            return 'lainnya'; // kids, religious, music, sports, movies, dll
         }
 
         function tvChannelCardHTML(ch, favs) {
@@ -5409,7 +5442,7 @@
             document.getElementById('tvPlayerArea').style.display = 'none';
             document.getElementById('tvPlayerFrame').src = '';
             tvStopHls();
-            document.getElementById('tvModal').style.display = 'block';
+            document.getElementById('tvModal').style.display = 'flex';
             document.getElementById('tvModal').scrollTop = 0;
             document.body.style.overflow = 'hidden';
             history.pushState({view: 'tv'}, "");
@@ -5437,7 +5470,7 @@
                 actorModal.style.display = 'none';
             }
             // Simpan state tvModal agar back bisa kembali ke sana
-            const wasTvOpen = document.getElementById('tvModal').style.display === 'block';
+            const wasTvOpen = document.getElementById('tvModal').style.display === 'flex';
             closeTvModal();
             const modal = document.getElementById('movieModal');
             modal.classList.add('tv-mode');
@@ -6019,7 +6052,7 @@
                 document.getElementById('tvSearchInp').value = '';
                 document.getElementById('tvSearchBox').style.display = 'none';
                 renderTvList('', _currentTvTab || 'nasional');
-                document.getElementById('tvModal').style.display = 'block';
+                document.getElementById('tvModal').style.display = 'flex';
                 document.getElementById('tvModal').scrollTop = 0;
                 document.body.style.overflow = 'hidden';
                 history.replaceState({view: 'tv'}, '');
@@ -6046,7 +6079,7 @@
             }
 
             // TV modal
-            if (document.getElementById('tvModal').style.display === 'block') {
+            if (document.getElementById('tvModal').style.display === 'flex') {
                 _closeTvModalSilent();
                 return;
             }
@@ -8972,7 +9005,7 @@
                 document.getElementById('tvSearchInp').value = '';
                 document.getElementById('tvSearchBox').style.display = 'none';
                 renderTvList('');
-                document.getElementById('tvModal').style.display = 'block';
+                document.getElementById('tvModal').style.display = 'flex';
                 document.getElementById('tvModal').scrollTop = 0;
                 document.body.style.overflow = 'hidden';
                 history.replaceState({view: 'tv'}, '');
