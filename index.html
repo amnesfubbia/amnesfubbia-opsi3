@@ -5298,17 +5298,8 @@
                     if (_currentTvTab !== activeTab) return; // user sudah pindah tab
                     const curatedNames = new Set();
                     tvCategories.forEach(cat => { if (cat.label === catLabel) cat.channels.forEach(ch => curatedNames.add(ch.name)); });
-                    // Swap kurasi -> iptv-org kalau nama cocok (substring match, bukan exact — nama sering beda dikit)
-                    curatedNames.forEach(name => {
-                        const normName = tvNormalizeChannelName(name);
-                        const match = channels.find(ch => {
-                            const normCh = tvNormalizeChannelName(ch.name);
-                            return normCh === normName || normCh.includes(normName) || normName.includes(normCh);
-                        });
-                        if (!match) return;
-                        const cardEl = document.getElementById('tvch-' + name.replace(/\s/g,'_'));
-                        if (cardEl) cardEl.outerHTML = tvChannelCardHTML(match, favs);
-                    });
+                    // Channel kurasi manual TIDAK ditukar otomatis lagi (channel iptv-org belum tentu lebih andal) —
+                    // iptv-org sekarang murni tambahan, bukan pengganti.
                     const extra = channels.filter(ch => ch.category === activeTab && !curatedNames.has(ch.name) && ch.name.toLowerCase().includes(q));
                     if (!extra.length) return;
                     const extraHTML = `<div class="tv-category-label">Dari iptv-org</div><div class="tv-channel-grid">` +
@@ -5319,27 +5310,37 @@
         }
         // ---------- IPTV-ORG (channel tambahan, diambil otomatis, bukan hardcode manual) ----------
         let _iptvOrgChannels = null; // null = belum di-fetch, [] = sudah tapi kosong/gagal
-        let _iptvOrgStreamLabels = null;
-        async function loadIptvOrgStreamLabels() {
-            if (_iptvOrgStreamLabels !== null) return _iptvOrgStreamLabels;
+        let _iptvOrgStreamData = null;
+        async function loadIptvOrgStreamData() {
+            if (_iptvOrgStreamData !== null) return _iptvOrgStreamData;
             try {
                 const res = await fetch('https://iptv-org.github.io/api/streams.json');
                 const data = await res.json();
-                const map = {};
-                data.forEach(s => { if (s.channel && s.label) map[s.channel] = s.label; });
-                _iptvOrgStreamLabels = map;
+                const labels = {}; const urlsByChannel = {};
+                data.forEach(s => {
+                    if (!s.channel) return;
+                    if (s.label) labels[s.channel] = s.label;
+                    if (s.url) {
+                        if (!urlsByChannel[s.channel]) urlsByChannel[s.channel] = [];
+                        if (s.label !== 'Geo-blocked' && !urlsByChannel[s.channel].includes(s.url)) {
+                            urlsByChannel[s.channel].push(s.url);
+                        }
+                    }
+                });
+                _iptvOrgStreamData = { labels, urlsByChannel };
             } catch (e) {
-                _iptvOrgStreamLabels = {};
+                _iptvOrgStreamData = { labels: {}, urlsByChannel: {} };
             }
-            return _iptvOrgStreamLabels;
+            return _iptvOrgStreamData;
         }
         async function loadIptvOrgChannels() {
             if (_iptvOrgChannels !== null) return _iptvOrgChannels;
             try {
-                const [m3uRes, labels] = await Promise.all([
+                const [m3uRes, streamData] = await Promise.all([
                     fetch('https://iptv-org.github.io/iptv/countries/id.m3u'),
-                    loadIptvOrgStreamLabels()
+                    loadIptvOrgStreamData()
                 ]);
+                const { labels, urlsByChannel } = streamData;
                 const text = await m3uRes.text();
                 const lines = text.split('\n');
                 const channels = [];
@@ -5359,8 +5360,11 @@
                         // Lewati channel yang sudah diketahui geo-blocked (data dari iptv-org sendiri)
                         const label = labels[pendingId];
                         if (label !== 'Geo-blocked') {
+                            // Kumpulkan semua mirror URL yang diketahui untuk channel ini (selain yang dari m3u)
+                            const knownMirrors = (urlsByChannel[pendingId] || []).filter(u => u !== line);
                             channels.push({
                                 name: pendingName, url: line,
+                                mirrors: knownMirrors,
                                 logo: pendingLogo || pendingName.slice(0,4).toUpperCase(),
                                 isHls: true,
                                 category: tvCategorizeIptvChannel(pendingGroup)
@@ -5402,6 +5406,7 @@
                 <div class="tv-ch-live-badge">LIVE</div>
                 <div class="tv-ch-logo-box">${logoHTML}</div>
                 <div class="tv-ch-name">${ch.name}</div>
+                ${ch.isHls ? '<div style="font-size:8px;color:#555;margin-top:2px">komunitas</div>' : ''}
             </div>`;
         }
 
@@ -5428,31 +5433,45 @@
             tvStopHls();
 
             if (isHls) {
-                // Stream .m3u8 langsung (dari iptv-org) — butuh <video> + HLS.js, bukan iframe
+                // Susun antrean URL: url utama dulu, lalu semua mirror yang diketahui dari streams.json
+                const chObj = _iptvOrgChannels ? _iptvOrgChannels.find(c => c.name === name) : null;
+                const urlQueue = [url, ...((chObj && chObj.mirrors) || [])];
                 frame.src = '';
                 frame.style.display = 'none';
                 video.style.display = 'block';
-                if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    // Safari/iOS bisa main HLS native
-                    video.src = url;
-                    video.play().catch(() => {});
-                } else if (window.Hls && Hls.isSupported()) {
-                    _tvHls = new Hls();
-                    _tvHls.loadSource(url);
-                    _tvHls.attachMedia(video);
-                    _tvHls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-                    _tvHls.on(Hls.Events.ERROR, (evt, data) => {
-                        if (data.fatal) {
-                            showToast('Channel ini gagal dimuat (sumber tidak tersedia)');
-                        }
-                    });
-                } else {
-                    showToast('Browser ini tidak mendukung pemutaran channel ini');
-                }
+                tvTryHlsQueue(video, urlQueue, 0, name);
             } else {
                 frame.style.display = 'block';
                 video.style.display = 'none';
                 frame.src = url;
+            }
+        }
+        function tvTryHlsQueue(video, urlQueue, idx, name) {
+            if (idx >= urlQueue.length) {
+                showToast(`${name}: semua sumber gagal dimuat`);
+                return;
+            }
+            const url = urlQueue[idx];
+            const tryNext = () => tvTryHlsQueue(video, urlQueue, idx + 1, name);
+            if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari/iOS bisa main HLS native
+                video.src = url;
+                video.onerror = tryNext;
+                video.play().catch(() => {});
+            } else if (window.Hls && Hls.isSupported()) {
+                _tvHls = new Hls();
+                _tvHls.loadSource(url);
+                _tvHls.attachMedia(video);
+                _tvHls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+                _tvHls.on(Hls.Events.ERROR, (evt, data) => {
+                    if (data.fatal) {
+                        try { _tvHls.destroy(); } catch(e) {}
+                        _tvHls = null;
+                        tryNext(); // otomatis coba mirror berikutnya, diam-diam
+                    }
+                });
+            } else {
+                showToast('Browser ini tidak mendukung pemutaran channel ini');
             }
         }
 
