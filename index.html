@@ -2830,10 +2830,13 @@
                 <iframe id="tvPlayerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
                 <video id="tvPlayerVideo" playsinline controls style="display:none;width:100%;height:100%;background:#000;opacity:0.999;border-radius:1px;-webkit-transform:translateZ(0);transform:translateZ(0)"></video>
             </div>
-            <!-- tombol LiveSport di antara video dan channel list -->
-            <div style="padding:10px 16px 4px;flex-shrink:0">
-                <button onclick="openLivesportModal()" style="width:100%;background:#2a2a2a;border:1px solid #3a3a3a;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px">
+            <!-- tombol LiveSport & Highlight di antara video dan channel list -->
+            <div style="padding:10px 16px 4px;flex-shrink:0;display:flex;gap:10px">
+                <button onclick="openLivesportModal('https://damitv.st//livetv','Live Sport')" style="flex:1;background:#2a2a2a;border:1px solid #3a3a3a;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px">
                     <i class="fa-solid fa-signal-stream"></i> Live Sport
+                </button>
+                <button onclick="openLivesportModal('https://replay-exc.pages.dev/','Highlight')" style="flex:1;background:#2a2a2a;border:1px solid #3a3a3a;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px">
+                    <i class="fa-solid fa-clapperboard"></i> Highlight
                 </button>
             </div>
             <!-- scrollable channel list -->
@@ -3270,7 +3273,7 @@
     <div id="livesportModal" style="display:none;position:fixed;inset:0;z-index:9700;background:#0a0a0a;flex-direction:column">
         <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#000;position:sticky;top:0;z-index:10">
             <i class="fa-solid fa-chevron-left" style="font-size:20px;color:#fff;cursor:pointer" onclick="closeLivesportModal()"></i>
-            <span style="font-size:17px;font-weight:800;color:#fff">Live Sport</span>
+            <span id="livesportTitle" style="font-size:17px;font-weight:800;color:#fff">Live Sport</span>
         </div>
         <iframe id="livesportIframe" src="" style="flex:1;width:100%;border:none;display:block" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         <nav class="bottom-nav" id="livesportBottomNav" style="position:sticky;bottom:0"></nav>
@@ -4376,7 +4379,9 @@
         }
 
         let _tvFrameSrcBeforeLivesport = null;
-        function openLivesportModal() {
+        function openLivesportModal(url, title) {
+            url = url || 'https://damitv.st//livetv';
+            title = title || 'Live Sport';
             musicDuckForOtherAudio();
             // Hentikan audio channel TV yang sedang jalan supaya tidak dobel suara dengan Live Sport
             const tvFrame = document.getElementById('tvPlayerFrame');
@@ -4390,7 +4395,9 @@
             _tvVideoWasPlayingBeforeLivesport = !!(tvVideo && !tvVideo.paused);
             if (tvVideo && !tvVideo.paused) tvVideo.pause();
             document.getElementById('livesportModal').style.display = 'flex';
-            document.getElementById('livesportIframe').src = 'https://dami-tv.pro/';
+            document.getElementById('livesportIframe').src = url;
+            const titleEl = document.getElementById('livesportTitle');
+            if (titleEl) titleEl.textContent = title;
             document.body.style.overflow = 'hidden';
             // pushState di atas tv — back akan kembali ke state tv
             history.pushState({view:'livesport'}, '');
