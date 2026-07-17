@@ -26,6 +26,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
     <style>
         /* ===== THEME VARIABLES ===== */
         :root {
@@ -2830,6 +2831,8 @@
                 <iframe id="tvPlayerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
                 <video id="tvPlayerVideo" playsinline controls style="display:none;width:100%;height:100%;background:#000;opacity:0.999;border-radius:1px;-webkit-transform:translateZ(0);transform:translateZ(0)"></video>
             </div>
+            <!-- jadwal acara yang sedang tayang (data asli dari iptv-epg.org, kalau ketemu) -->
+            <div id="tvScheduleArea" style="flex-shrink:0"></div>
             <!-- tombol LiveSport & Highlight di antara video dan channel list -->
             <div style="padding:10px 16px 4px;flex-shrink:0;display:flex;gap:10px">
                 <button onclick="openLivesportModal('https://damitv.st//livetv','Live Sport')" style="flex:1;background:#2a2a2a;border:1px solid #3a3a3a;color:#fff;font-size:13px;font-weight:700;padding:11px 0;border-radius:12px;cursor:pointer;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px">
@@ -5166,6 +5169,9 @@
             if (frame && frame.src) frame.src = '';
             tvStopHls();
             document.getElementById('tvPlayerArea').style.display = 'none';
+            const schedEl = document.getElementById('tvScheduleArea');
+            if (schedEl) schedEl.innerHTML = '';
+            _currentTvChannelName = null;
 
             const labels = { nasional: 'Nasional', lokal: 'Lokal & Regional', berita: 'Berita', lainnya: 'Lainnya', favorit: 'Favorit' };
             tvTitle.textContent = labels[tab] || 'Live TV';
@@ -5374,6 +5380,7 @@
                                 mirrors: knownMirrors,
                                 logo: pendingLogo || pendingName.slice(0,4).toUpperCase(),
                                 isHls: true,
+                                tvgId: pendingId,
                                 category: tvCategorizeIptvChannel(pendingGroup)
                             });
                         }
@@ -5382,11 +5389,38 @@
                 }
                 // Buang duplikat nama channel
                 const seen = new Set();
-                _iptvOrgChannels = channels.filter(c => { if (seen.has(c.name)) return false; seen.add(c.name); return true; });
+                let cleaned = channels.filter(c => { if (seen.has(c.name)) return false; seen.add(c.name); return true; });
+                cleaned = tvCleanupIptvChannels(cleaned);
+                _iptvOrgChannels = cleaned;
             } catch (e) {
                 _iptvOrgChannels = [];
             }
             return _iptvOrgChannels;
+        }
+        // Bersihkan daftar channel iptv-org: buang entri sampah, buang yang sudah ada versi embed
+        // yang lebih andal, dan buat grup channel regional (TVRI, Stara TV, JTV, Jawa Pos TV)
+        // cuma simpan satu (versi Nasional/utama saja, sisanya dihapus).
+        function tvCleanupIptvChannels(channels) {
+            // Entri sampah — nama-nya kebetulan berisi string user-agent browser (bug parsing dari sumber data)
+            channels = channels.filter(c => !/like Gecko|Chrome\/|Mozilla\/|AppleWebKit/i.test(c.name));
+
+            // Channel yang sudah ada versi embed sendiri (dipakai di tab kurasi manual) — jangan dobel
+            const alreadyEmbedded = new Set(['antv','rcti','trans7','transtv','mnctv','newtv','rtv']);
+            channels = channels.filter(c => !alreadyEmbedded.has(tvNormalizeChannelName(c.name)));
+
+            // Grup regional — simpan cuma satu (yang match "nasional", atau nama terpendek kalau tidak ada)
+            const keepOnlyOne = (list, pattern) => {
+                const group = list.filter(c => pattern.test(c.name));
+                if (group.length <= 1) return list;
+                const keep = group.find(c => /nasional/i.test(c.name))
+                    || group.slice().sort((a,b) => a.name.length - b.name.length)[0];
+                return list.filter(c => !pattern.test(c.name) || c === keep);
+            };
+            channels = keepOnlyOne(channels, /^tvri\b/i);
+            channels = keepOnlyOne(channels, /^stara\s*tv\b/i);
+            channels = keepOnlyOne(channels, /^jtv\b/i);
+            channels = keepOnlyOne(channels, /^jawa\s*pos\s*tv\b/i);
+            return channels;
         }
         // Petakan group-title dari iptv-org ke tab kita (Nasional/Lokal/Berita), sisanya masuk 'lainnya'
         // Normalisasi nama channel untuk pencocokan (huruf kecil, buang spasi/simbol) — "TVRI Nasional" ~ "TVRI"
@@ -5399,6 +5433,82 @@
             if (/local|regional/.test(g)) return 'lokal';
             if (/general|entertainment|undefined|^$/.test(g)) return 'nasional';
             return 'lainnya'; // kids, religious, music, sports, movies, dll
+        }
+
+        // ---------- EPG (jadwal acara asli dari iptv-epg.org) ----------
+        // Beda sumber dari iptv-org (yang urus URL siaran) — ini XMLTV buat jadwal acaranya.
+        // ID channel di sini belum tentu sama dengan tvg-id iptv-org, jadi dicocokkan juga lewat nama.
+        let _epgData = null; // { byId: {id:{name,programmes:[...]}}, byNormName: {normName:id} }
+        async function loadEpgData() {
+            if (_epgData !== null) return _epgData;
+            try {
+                const res = await fetch('https://iptv-epg.org/files/epg-id.xml.gz');
+                const buf = await res.arrayBuffer();
+                const bytes = new Uint8Array(buf);
+                let xmlText;
+                if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+                    // Masih gzip mentah — decompress manual pakai pako
+                    xmlText = window.pako ? pako.inflate(bytes, { to: 'string' }) : '';
+                } else {
+                    // Server sudah auto-decompress, ini teks XML biasa
+                    xmlText = new TextDecoder('utf-8').decode(bytes);
+                }
+                if (!xmlText) { _epgData = { byId: {}, byNormName: {} }; return _epgData; }
+                const xmlDoc = new DOMParser().parseFromString(xmlText, 'text/xml');
+                const byId = {}; const byNormName = {};
+                xmlDoc.querySelectorAll('channel').forEach(chEl => {
+                    const id = chEl.getAttribute('id');
+                    const dn = chEl.querySelector('display-name');
+                    const rawName = dn ? dn.textContent : id;
+                    if (!id) return;
+                    // Nama di file ini berformat "ID - ANTV" dll — buang prefix negara sebelum dicocokkan
+                    const cleanName = rawName.replace(/^[A-Za-z]{2,3}\s*-\s*/, '').trim();
+                    byId[id] = { name: cleanName, programmes: [] };
+                    byNormName[tvNormalizeChannelName(cleanName)] = id;
+                });
+                const parseTime = t => {
+                    // Format XMLTV: YYYYMMDDHHmmss +0000
+                    if (!t) return null;
+                    const m = t.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+                    if (!m) return null;
+                    return new Date(Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]));
+                };
+                xmlDoc.querySelectorAll('programme').forEach(pEl => {
+                    const chId = pEl.getAttribute('channel');
+                    if (!chId || !byId[chId]) return;
+                    const titleEl = pEl.querySelector('title');
+                    byId[chId].programmes.push({
+                        start: parseTime(pEl.getAttribute('start')),
+                        stop: parseTime(pEl.getAttribute('stop')),
+                        title: titleEl ? titleEl.textContent : 'Tanpa judul'
+                    });
+                });
+                _epgData = { byId, byNormName };
+            } catch (e) {
+                _epgData = { byId: {}, byNormName: {} };
+            }
+            return _epgData;
+        }
+        // Cari programme yang sedang tayang untuk sebuah channel (cocokkan lewat tvg-id dulu, baru nama)
+        function tvFindCurrentProgramme(epg, tvgId, channelName) {
+            let entry = tvgId && epg.byId[tvgId] ? epg.byId[tvgId] : null;
+            if (!entry) {
+                const normTarget = tvNormalizeChannelName(channelName);
+                let matchedId = epg.byNormName[normTarget];
+                if (!matchedId) {
+                    // Coba cocok sebagian — nama beda dikit (mis. "TVRI Nasional" vs "TVRI")
+                    for (const normName in epg.byNormName) {
+                        if (normName.length >= 3 && (normName.includes(normTarget) || normTarget.includes(normName))) {
+                            matchedId = epg.byNormName[normName];
+                            break;
+                        }
+                    }
+                }
+                if (matchedId) entry = epg.byId[matchedId];
+            }
+            if (!entry) return null;
+            const now = new Date();
+            return entry.programmes.find(p => p.start && p.stop && now >= p.start && now <= p.stop) || null;
         }
 
         function tvChannelCardHTML(ch, favs) {
@@ -5425,6 +5535,7 @@
         }
         function playTvChannelInPane(name, url, isHls) {
             musicDuckForOtherAudio();
+            _currentTvChannelName = name;
             // highlight active channel card
             document.querySelectorAll('.tv-ch-card').forEach(c => c.classList.remove('active-ch'));
             const card = document.getElementById('tvch-' + name.replace(/\s/g,'_'));
@@ -5452,7 +5563,24 @@
                 video.style.display = 'none';
                 frame.src = url;
             }
+            tvShowCurrentProgramme(name, isHls ? (( _iptvOrgChannels ? _iptvOrgChannels.find(c => c.name === name) : null) || {}).tvgId : null);
         }
+        async function tvShowCurrentProgramme(name, tvgId) {
+            const el = document.getElementById('tvScheduleArea');
+            if (!el) return;
+            el.innerHTML = '';
+            const epg = await loadEpgData();
+            if (_currentTvChannelName !== name) return; // user sudah ganti channel lagi
+            const prog = tvFindCurrentProgramme(epg, tvgId, name);
+            if (!prog) return; // tidak ketemu jadwalnya — diam saja, tidak maksa nampilin apa-apa
+            const fmt = d => d ? `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '';
+            el.innerHTML = `<div style="padding:10px 16px 0;display:flex;align-items:center;gap:8px">
+                <span style="width:6px;height:6px;border-radius:50%;background:#ff3b30;flex-shrink:0"></span>
+                <span style="font-size:11px;color:#888">${fmt(prog.start)}–${fmt(prog.stop)}</span>
+                <span style="font-size:12px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${prog.title}</span>
+            </div>`;
+        }
+        let _currentTvChannelName = null;
         function tvTryHlsQueue(video, urlQueue, idx, name) {
             if (idx >= urlQueue.length) {
                 showToast(`${name}: semua sumber gagal dimuat`);
@@ -5466,16 +5594,34 @@
                 video.onerror = tryNext;
                 video.play().catch(() => {});
             } else if (window.Hls && Hls.isSupported()) {
-                _tvHls = new Hls();
+                let _networkRetried = false;
+                _tvHls = new Hls({
+                    // Channel lokal seringnya lambat merespons — kasih waktu lebih & retry lebih banyak
+                    // sebelum benar-benar dianggap gagal (sebelumnya kegagalan koneksi lambat dianggap
+                    // fatal error terlalu cepat, padahal sebenarnya masih bisa jalan kalau dikasih waktu).
+                    manifestLoadingMaxRetry: 4,
+                    manifestLoadingRetryDelay: 1000,
+                    manifestLoadingMaxRetryTimeout: 10000,
+                    levelLoadingMaxRetry: 4,
+                    levelLoadingRetryDelay: 1000,
+                    fragLoadingMaxRetry: 6,
+                    fragLoadingRetryDelay: 1000,
+                });
                 _tvHls.loadSource(url);
                 _tvHls.attachMedia(video);
                 _tvHls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
                 _tvHls.on(Hls.Events.ERROR, (evt, data) => {
-                    if (data.fatal) {
-                        try { _tvHls.destroy(); } catch(e) {}
-                        _tvHls = null;
-                        tryNext(); // otomatis coba mirror berikutnya, diam-diam
+                    if (!data.fatal) return;
+                    // Untuk error jaringan, coba sekali lagi di URL yang sama sebelum pindah mirror
+                    // (server lokal kadang cuma butuh sedikit waktu buat "bangun")
+                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR && !_networkRetried) {
+                        _networkRetried = true;
+                        try { _tvHls.startLoad(); } catch(e) { tryNext(); }
+                        return;
                     }
+                    try { _tvHls.destroy(); } catch(e) {}
+                    _tvHls = null;
+                    tryNext(); // otomatis coba mirror berikutnya, diam-diam
                 });
             } else {
                 showToast('Browser ini tidak mendukung pemutaran channel ini');
