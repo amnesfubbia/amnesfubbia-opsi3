@@ -201,8 +201,8 @@
         .server-btn.active-link { border: 1.5px solid #fff !important; background: rgba(255,255,255,0.1); }
         
         /* DOWNLOAD & TRAILER GRID - DIPERKECIL */
-        .dl-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; margin-bottom: 2px; }
-        .dl-link-btn { width: 100%; padding: 10px; border-radius: 12px; background: #000; color: #fff; font-size: 11px; font-weight: 800; text-transform: uppercase; text-align: center; border: 1px solid #333; cursor: pointer; }
+        .dl-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 8px; margin-bottom: 2px; }
+        .dl-link-btn { width: 100%; padding: 8px 2px; border-radius: 10px; background: #000; color: #fff; font-size: 9.5px; font-weight: 800; text-transform: uppercase; text-align: center; border: 1px solid #333; cursor: pointer; }
         
         /* PENYELARASAN WARNA TOMBOL TRAILER */
         .btn-trailer-special { background: #000; color: #fff; border: 1px solid #333; }
@@ -1888,6 +1888,26 @@
         }
         .lb-dot.active { background: #fff; }
 
+        /* ===== TABLET/DESKTOP FIX =====
+           App ini didesain mobile-first (lebar ~375-430px). Di layar lebar (tablet/desktop),
+           semua "layar" full-screen (home, semua modal, bottom nav) dipaksa jadi kolom
+           selebar HP dan diposisikan di tengah, bukan melebar penuh — supaya spacing yang
+           didesain untuk lebar HP tidak jadi berantakan/renggang di tablet.
+           Semua elemen ini sudah pakai position:fixed;inset:0 (atau setara), jadi
+           max-width + margin:auto otomatis membuatnya jadi kolom di tengah pada layar lebar,
+           dan tetap full-width normal di layar HP (karena max-width tidak berpengaruh kalau
+           lebar layar sudah di bawah nilai max-width itu sendiri). */
+        body {
+            background: #000;
+        }
+        #mainProfile, .bottom-nav, #searchOverlay, .modal-player, .actor-modal,
+        #actorPhotosModal, #decadeModal, #lightboxModal, #livesportModal,
+        #movieografiModal, #musicModal, #notifModal, #reelsModal, #soundtrackModal,
+        #tvModal, #sideMenu, #splashScreen, .landscape-overlay {
+            max-width: 480px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
     </style>
 </head>
 <body>
@@ -2528,7 +2548,7 @@
 
                 <div id="serverList" class="server-scroll-wrapper mt-4 px-4"></div>
                 
-                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px;margin-bottom:2px;">
+                <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:8px;margin-bottom:2px;">
                     <button class="dl-link-btn" onclick="handleDownload()">Down1</button>
                     <button class="dl-link-btn" onclick="handleDownload2()">Down2</button>
                     <button class="dl-link-btn" onclick="handleDownload3()">Down3</button>
@@ -3610,20 +3630,6 @@
         }
 
         // ---------- CARD RENDER ----------
-        function musicCardHTML(t) {
-            const isLiked = musicIsLiked(t.id);
-            return `<div style="flex-shrink:0;width:130px;cursor:pointer" onclick='musicPlayTrack(${JSON.stringify(t).replace(/'/g,"&#39;")})'>
-                <div style="position:relative;width:130px;height:130px;border-radius:10px;overflow:hidden;background:#1a1a1a">
-                    <img src="${t.artwork || t.artworkSmall}" loading="lazy" onerror="musicImgFallback(this)" style="width:100%;height:100%;object-fit:cover">
-                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.25)">
-                        <i class="fa-solid fa-play" style="color:#fff;font-size:20px"></i>
-                    </div>
-                </div>
-                <div style="margin-top:7px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div>
-                <div style="font-size:10px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.artist}</div>
-            </div>`;
-        }
-
         function musicSkeletonCards(n, round) {
             return Array(n).fill(`<div style="flex-shrink:0;width:${round?'84px':'130px'}">
                 <div class="sk" style="width:${round?'84px':'130px'};height:${round?'84px':'130px'};border-radius:${round?'50%':'10px'}"></div>
@@ -5190,6 +5196,16 @@
         function handleDownload2() {
             if(window.currentMediaId && window.currentMediaType) {
                 const isTV = window.currentMediaType === 'tv';
+                const url = isTV
+                    ? `https://1embed.cc/download/tv/${window.currentMediaId}/${activeSeason || 1}/${activeEpisode || 1}`
+                    : `https://1embed.cc/download/movie/${window.currentMediaId}`;
+                window.open(url, '_blank');
+            } else { showToast('Media tidak ditemukan.'); }
+        }
+
+        function handleDownload3() {
+            if(window.currentMediaId && window.currentMediaType) {
+                const isTV = window.currentMediaType === 'tv';
                 const downloadUrl = isTV
                     ? `https://02moviedownloader.site/api/download/tv/${window.currentMediaId}/${activeSeason || 1}/${activeEpisode || 1}`
                     : `https://02moviedownloader.site/api/download/movie/${window.currentMediaId}`;
@@ -5197,7 +5213,7 @@
             } else { showToast('Media tidak ditemukan.'); }
         }
 
-        function handleDownload3() {
+        function handleDownload4() {
             if(window.currentMediaId && window.currentMediaType) {
                 const isTV = window.currentMediaType === 'tv';
                 const url = isTV
@@ -5207,7 +5223,7 @@
             } else { showToast('Media tidak ditemukan.'); }
         }
 
-        function handleDownload4() {
+        function handleDownload5() {
             if(window.currentMediaId && window.currentMediaType) {
                 const isTV = window.currentMediaType === 'tv';
                 const url = isTV
@@ -5217,22 +5233,12 @@
             } else { showToast('Media tidak ditemukan.'); }
         }
 
-        function handleDownload5() {
+        function handleDownload6() {
             if(window.currentMediaId && window.currentMediaType) {
                 const isTV = window.currentMediaType === 'tv';
                 const url = isTV
                     ? `https://cinesrc.st/download/tv/${window.currentMediaId}`
                     : `https://cinesrc.st/download/movie/${window.currentMediaId}`;
-                window.open(url, '_blank');
-            } else { showToast('Media tidak ditemukan.'); }
-        }
-
-        function handleDownload6() {
-            if(window.currentMediaId && window.currentMediaType) {
-                const isTV = window.currentMediaType === 'tv';
-                const url = isTV
-                    ? `https://1embed.cc/download/tv/${window.currentMediaId}/${activeSeason || 1}/${activeEpisode || 1}`
-                    : `https://1embed.cc/download/movie/${window.currentMediaId}`;
                 window.open(url, '_blank');
             } else { showToast('Media tidak ditemukan.'); }
         }
@@ -5616,7 +5622,7 @@
         function buildLsServerList() {
             const scroll = document.getElementById('lsServerScroll');
             let html = '';
-            for (let i = 1; i <= 47; i++) {
+            for (let i = 1; i <= 18; i++) {
                 const active = (i === activeServerIdx) ? 'active-link' : '';
                 html += `<div class="ls-srv-btn ${active}" onclick="event.stopPropagation(); lsChangeServer(${i}, this)">Server ${i}</div>`;
             }
@@ -8282,7 +8288,7 @@
             // tanggal dihapus dari modal (sudah ada di info grid)
             
             let serverButtonsHTML = '';
-            for(let i=1; i<=47; i++) {
+            for(let i=1; i<=18; i++) {
                 serverButtonsHTML += `<button class="server-btn" onclick="changeServer(${i}, this)">Server ${i}</button>`;
             }
             document.getElementById('serverList').innerHTML = serverButtonsHTML;
@@ -8348,38 +8354,6 @@
             renderSynopsis();
         }
         
-        function handleModalBack() {
-            // Jika TV mode aktif, kembali ke tvModal
-            if (document.getElementById('movieModal').classList.contains('tv-mode')) {
-                _closeModalSilent();
-                document.getElementById('tvSearchInp').value = '';
-                document.getElementById('tvSearchBox').style.display = 'none';
-                renderTvList('');
-                document.getElementById('tvModal').style.display = 'block';
-                document.getElementById('tvModal').scrollTop = 0;
-                document.body.style.overflow = 'hidden';
-                history.replaceState({view: 'tv'}, '');
-            } else {
-                // Tombol ← layar: sembunyikan modal dulu, lalu pop state
-                _closeModalSilent();
-                // Restore actor/movieografi jika film dibuka dari sana
-                if (window._fromMovieografi) {
-                    window._fromMovieografi = false;
-                    document.getElementById('movieografiModal').style.display = 'block';
-                    document.getElementById('movieografiModal').scrollTop = 0;
-                    document.body.style.overflow = 'hidden';
-                } else if (window._actorModalPendingReopen) {
-                    window._actorModalPendingReopen = null;
-                    document.getElementById('actorModal').style.display = 'block';
-                    document.getElementById('actorModal').scrollTop = 0;
-                    document.body.style.overflow = 'hidden';
-                } else {
-                    document.body.style.overflow = 'auto';
-                }
-                history.back(); // pop state 'modal' — AMAN, hanya dari tombol ←
-            }
-        }
-
         function closeModal() {
             musicResumeFromDuck();
             const track = document.getElementById('carouselTrack'); 
@@ -8575,18 +8549,18 @@
                 case 5:  url = `https://111movies.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
                 case 6:  url = `https://embed.smashystream.com/playere.php?tmdb=${id}${type==='tv'?`&season=${s}&episode=${e}`:''}`; break;
                 case 7:  url = `https://cinesrc.st/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 8:  url = `https://vidsuper.net/${type}/${id}${seriesSuffix}`; break;
-                case 9:  url = `https://player.videasy.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoplay=1${type==='tv'?'&autoNext=true':''}`; break;
-                case 10: url = `https://vidlink.pro/${type}/${id}${seriesSuffix}`; break;
-                case 11: url = `https://vidcore.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true`; break;
-                case 12: url = `https://vidstorm.ru/embed/${type}/${id}${seriesSuffix}`; break;
-                case 13: url = `https://vidsync.xyz/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true${type==='tv'?'&autoNext=true':''}`; break;
-                case 14: url = `https://mgeb.top/embed/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
-                case 15: url = `https://player.vidzee.wtf/embed/${type}/${id}${seriesSuffix}`; break;
-                case 16: url = `https://2embed.cc/embed/${type}/${id}${seriesSuffix}`; break;
-                case 17: url = `https://embed.wfs.lol/embed/${type}/${id}${seriesSuffix}`; break;
-                case 18: url = `https://vaplayer.ru/embed/${type}/${id}${seriesSuffix}`; break;
-                case 19: url = `https://vidsync.live/embed/${type}/${id}${seriesSuffix}?autoPlay=true${type==='tv'?'&autoNext=true':''}`; break;
+                case 8:  url = `https://player.videasy.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoplay=1${type==='tv'?'&autoNext=true':''}`; break;
+                case 9:  url = `https://vidlink.pro/${type}/${id}${seriesSuffix}`; break;
+                case 10: url = `https://vidcore.net/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true`; break;
+                case 11: url = `https://vidstorm.ru/embed/${type}/${id}${seriesSuffix}`; break;
+                case 12: url = `https://vidsync.xyz/embed/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true${type==='tv'?'&autoNext=true':''}`; break;
+                case 13: url = `https://mgeb.top/embed/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
+                case 14: url = `https://player.vidzee.wtf/embed/${type}/${id}${seriesSuffix}`; break;
+                case 15: url = `https://2embed.cc/embed/${type}/${id}${seriesSuffix}`; break;
+                case 16: url = `https://embed.wfs.lol/embed/${type}/${id}${seriesSuffix}`; break;
+                case 17: url = `https://vaplayer.ru/embed/${type}/${id}${seriesSuffix}`; break;
+                case 18: url = `https://vidsync.live/embed/${type}/${id}${seriesSuffix}?autoPlay=true${type==='tv'?'&autoNext=true':''}`; break;
+                case 19: url = `https://vidsuper.net/${type}/${id}${seriesSuffix}`; break;
                 case 20: url = `https://vidfast.pro/${type}/${id}${type==='tv'?`/${s}/${e}`:''}`; break;
                 case 21: url = `https://vidrock.net/embed/${type}/${id}${seriesSuffix}`; break;
                 case 22: url = `https://vidup.to/${type}/${id}${type==='tv'?`/${s}/${e}`:''}?autoPlay=true`; break;
@@ -8952,11 +8926,11 @@
             // Build slides - semua portrait/landscape fit screen
             track.innerHTML = images.map((img, i) => {
                 const size = img.isBackdrop ? 'original' : 'w780';
-                return `<div class="lb-slide" style="min-width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:#000">
+                return `<div class="lb-slide" style="min-width:100%;height:100vh;display:flex;align-items:center;justify-content:center;background:#000">
                     <img src="https://image.tmdb.org/t/p/${size}${img.path}"
                          loading="${Math.abs(i - _lbIdx) <= 1 ? 'eager' : 'lazy'}"
                          draggable="false"
-                         style="max-width:100vw;max-height:100vh;object-fit:contain;display:block">
+                         style="max-width:100%;max-height:100vh;object-fit:contain;display:block">
                 </div>`;
             }).join('');
 
@@ -8976,7 +8950,7 @@
             const track = document.getElementById('lbTrack');
             if (!track) return;
             track.style.transition = animate ? 'transform 0.28s cubic-bezier(0.25,1,0.5,1)' : 'none';
-            track.style.transform = `translateX(calc(-${_lbIdx} * 100vw))`;
+            track.style.transform = `translateX(calc(-${_lbIdx} * 100%))`;
             const counter = document.getElementById('lbCounter');
             if (counter) counter.innerText = `${_lbIdx + 1} / ${images.length}`;
             document.querySelectorAll('.lb-dot').forEach((d, i) => {
@@ -9088,7 +9062,7 @@
                 if (Math.abs(_lbDx) < dy) return; // vertical scroll
                 // Live drag feedback
                 if (track) {
-                    track.style.transform = `translateX(calc(-${_lbIdx} * 100vw + ${_lbDx}px))`;
+                    track.style.transform = `translateX(calc(-${_lbIdx} * 100% + ${_lbDx}px))`;
                 }
             }, { passive: true });
 
@@ -9096,7 +9070,8 @@
                 if (!_lbDragging) return;
                 _lbDragging = false;
                 const images = window._galleryImages || [];
-                if (Math.abs(_lbDx) > window.innerWidth * 0.3) {
+                const lbWidth = document.getElementById('lightboxModal')?.clientWidth || window.innerWidth;
+                if (Math.abs(_lbDx) > lbWidth * 0.3) {
                     if (_lbDx < 0 && _lbIdx < images.length - 1) lbGoTo(_lbIdx + 1);
                     else if (_lbDx > 0 && _lbIdx > 0) lbGoTo(_lbIdx - 1);
                     else lbGoTo(_lbIdx); // snap back
@@ -9278,11 +9253,11 @@
             // Tidak perlu push history lagi karena actorPhotos sudah push
 
             track.innerHTML = window._galleryImages.map((img, i) => {
-                return `<div class="lb-slide" style="min-width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:#000">
+                return `<div class="lb-slide" style="min-width:100%;height:100vh;display:flex;align-items:center;justify-content:center;background:#000">
                     <img src="https://image.tmdb.org/t/p/w780${img.path}"
                          loading="${Math.abs(i - _lbIdx) <= 1 ? 'eager' : 'lazy'}"
                          draggable="false"
-                         style="max-width:100vw;max-height:100vh;object-fit:contain;display:block">
+                         style="max-width:100%;max-height:100vh;object-fit:contain;display:block">
                 </div>`;
             }).join('');
 
